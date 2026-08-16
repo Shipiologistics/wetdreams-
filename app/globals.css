@@ -3924,6 +3924,10 @@ body:has(.side-nav) .global-back-button-fixed {
     overscroll-behavior: contain;
     padding-bottom: calc(82px + var(--mobile-nav-bottom-gap));
   }
+  .app-main:has(.chat-screen) {
+    overflow: hidden;
+    padding-bottom: 0;
+  }
   body:has(.side-nav) .global-back-button-fixed { left: 12px; }
   .global-back-button-fixed {
     top: max(10px, calc(env(safe-area-inset-top) + 8px));

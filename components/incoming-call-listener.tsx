@@ -70,8 +70,11 @@ export function IncomingCallListener() {
         .limit(1);
       if (activeCalls?.[0]) await showIncoming(activeCalls[0]);
 
+      const channelId = typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const channel = supabase
-        .channel(`incoming-calls:${viewerId}`)
+        .channel(`incoming-calls:${viewerId}:${channelId}`)
         .on(
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "calls", filter: `receiver_id=eq.${viewerId}` },

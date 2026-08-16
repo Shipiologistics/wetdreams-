@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { ArrowRight, Globe2, LoaderCircle, Mail, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getOrCreateDeviceId, registerCurrentDevice } from "@/lib/device-id";
@@ -16,7 +15,6 @@ type AuthFormProps = {
 };
 
 export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
-  const router = useRouter();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [pending, setPending] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -29,8 +27,7 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
       await onSuccess();
       return;
     }
-    router.push(next);
-    router.refresh();
+    window.location.assign(next);
   }
 
   async function continueAsGuest() {
