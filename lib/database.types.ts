@@ -1070,6 +1070,7 @@ export type Database = {
         Args: { p_amount_inr?: number | null; p_coins: number }
         Returns: string
       }
+      disconnect_random_chat: { Args: { p_room_id: string }; Returns: undefined }
       end_call: { Args: { p_call_id: string }; Returns: undefined }
       get_room_block_state: {
         Args: { p_room_id: string }
@@ -1082,7 +1083,7 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_device_banned: { Args: { p_device_id: string }; Returns: boolean }
       mark_room_read: { Args: { p_room_id: string }; Returns: number }
-      match_random_chat: { Args: never; Returns: string }
+      match_random_chat: { Args: { p_reset?: boolean }; Returns: string | null }
       register_device: { Args: { p_device_id: string }; Returns: boolean }
       register_push_token: {
         Args: { p_device_id?: string | null; p_platform?: string; p_token: string }

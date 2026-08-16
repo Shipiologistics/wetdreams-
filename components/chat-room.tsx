@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   CircleAlert,
   Coins,
@@ -11,6 +12,7 @@ import {
   LoaderCircle,
   MoreVertical,
   Phone,
+  RefreshCcw,
   Send,
   ShieldAlert,
   SmilePlus,
@@ -68,6 +70,7 @@ export function ChatRoom({
   initialCall: Call | null;
   initialBlockState: BlockState;
 }) {
+  const router = useRouter();
   const [messages, setMessages] = useState(initialMessages);
   const [text, setText] = useState("");
   const [pending, setPending] = useState(false);
@@ -83,6 +86,7 @@ export function ChatRoom({
   const [otherAccount, setOtherAccount] = useState(other);
   const [topupOpen, setTopupOpen] = useState(false);
   const [tipBurst, setTipBurst] = useState<string | null>(null);
+  const [randomDisconnecting, setRandomDisconnecting] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const burstTimerRef = useRef<number | null>(null);
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null);
@@ -91,6 +95,7 @@ export function ChatRoom({
   const count = Math.max(room.message_count, messages.length);
   const paywalled = count >= 10 && !profile.free_chat_enabled && Number(profile.chat_rate_coins) > 0;
   const blocked = blockState.viewerBlockedOther || blockState.otherBlockedViewer;
+  const isRandomRoom = room.room_type === "random";
 
   useEffect(() => {
     const supabase = createClient();
@@ -131,6 +136,16 @@ export function ChatRoom({
       )
       .on(
         "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "chat_rooms", filter: `id=eq.${room.id}` },
+        (payload) => {
+          const nextRoom = payload.new as Room;
+          if (nextRoom.room_type === "random" && nextRoom.status === "closed") {
+            router.replace("/random?auto=1");
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
         { event: "UPDATE", schema: "public", table: "users", filter: `id=eq.${other.id}` },
         (payload) => setOtherAccount(payload.new as Account),
       )
@@ -159,7 +174,7 @@ export function ChatRoom({
       if (burstTimerRef.current) window.clearTimeout(burstTimerRef.current);
       void supabase.removeChannel(channel);
     };
-  }, [other.id, room.id, viewerId]);
+  }, [other.id, room.id, router, viewerId]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -273,6 +288,19 @@ export function ChatRoom({
     setError(`${other.display_name} has been unblocked.`);
   }
 
+  async function disconnectRandom() {
+    if (!isRandomRoom || randomDisconnecting) return;
+    setRandomDisconnecting(true);
+    setError(null);
+    const { error: disconnectError } = await createClient().rpc("disconnect_random_chat", { p_room_id: room.id });
+    if (disconnectError) {
+      setRandomDisconnecting(false);
+      setError(messageForError(disconnectError.message));
+      return;
+    }
+    router.replace("/random?auto=1");
+  }
+
   const grouped = useMemo(() => messages, [messages]);
   const otherBusy = otherAccount.status === "busy" || otherAccount.status === "in_call";
   const callDisabled = blocked || otherBusy;
@@ -288,6 +316,12 @@ export function ChatRoom({
           <strong>{otherAccount.display_name}</strong>
           <span>{typing ? "typing..." : otherPresence}</span>
         </div>
+        {isRandomRoom && (
+          <button className="random-next-button" type="button" onClick={disconnectRandom} disabled={randomDisconnecting} title="Disconnect and find next">
+            {randomDisconnecting ? <LoaderCircle className="spin" size={16} /> : <RefreshCcw size={16} />}
+            <span>Next</span>
+          </button>
+        )}
         <button className="icon-button" title={callDisabled ? "Unavailable" : "Audio call"} onClick={() => startCall("audio")} disabled={callDisabled}><Phone size={19} /></button>
         <button className="icon-button" title={callDisabled ? "Unavailable" : "Video call"} onClick={() => startCall("video")} disabled={callDisabled}><Video size={19} /></button>
         <div className="relative">

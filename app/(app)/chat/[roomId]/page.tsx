@@ -12,7 +12,7 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ roomI
   const supabase = await createClient();
 
   const { data: room } = await supabase.from("chat_rooms").select("*").eq("id", roomId).maybeSingle();
-  if (!room) notFound();
+  if (!room || room.status !== "active") notFound();
 
   const otherId = room.user_a === viewer.id ? room.user_b : room.user_a;
   const [{ data: account }, { data: profile }, { data: media }, { data: messages }, { data: calls }, { data: blockState }] = await Promise.all([

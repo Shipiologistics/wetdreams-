@@ -15,6 +15,8 @@ export default async function ChatsPage() {
     .from("chat_rooms")
     .select("*")
     .or(`user_a.eq.${viewer.id},user_b.eq.${viewer.id}`)
+    .eq("status", "active")
+    .neq("room_type", "random")
     .order("last_message_at", { ascending: false })
     .limit(80);
 

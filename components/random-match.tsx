@@ -6,13 +6,15 @@ import { HeartHandshake, LoaderCircle, ShieldCheck, Sparkles, X } from "lucide-r
 import { createClient } from "@/lib/supabase/client";
 import { messageForError } from "@/lib/format";
 
-export function RandomMatch({ userId }: { userId: string }) {
+export function RandomMatch({ userId, autoStart = false }: { userId: string; autoStart?: boolean }) {
   const router = useRouter();
   const [state, setState] = useState<"idle" | "waiting" | "matched">("idle");
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mounted = useRef(true);
   const openingRoom = useRef<string | null>(null);
+  const resetNextMatch = useRef(false);
+  const autoStarted = useRef(false);
 
   const openRoom = useCallback((roomId: string) => {
     if (openingRoom.current === roomId) return;
@@ -22,7 +24,9 @@ export function RandomMatch({ userId }: { userId: string }) {
   }, [router]);
 
   const match = useCallback(async () => {
-    const { data, error: matchError } = await createClient().rpc("match_random_chat");
+    const shouldReset = resetNextMatch.current;
+    resetNextMatch.current = false;
+    const { data, error: matchError } = await createClient().rpc("match_random_chat", { p_reset: shouldReset });
     if (!mounted.current) return;
     if (matchError) {
       if (matchError.message.includes("MATCH_RETRY")) return;
@@ -34,6 +38,25 @@ export function RandomMatch({ userId }: { userId: string }) {
       openRoom(data);
     }
   }, [openRoom]);
+
+  const beginSearch = useCallback(() => {
+    openingRoom.current = null;
+    resetNextMatch.current = true;
+    setError(null);
+    setConsent(true);
+    setState("waiting");
+  }, []);
+
+  useEffect(() => {
+    const shouldAutoStart = autoStart || new URLSearchParams(window.location.search).get("auto") === "1";
+    if (!shouldAutoStart || state !== "idle" || autoStarted.current) return;
+    const frame = window.requestAnimationFrame(() => {
+      if (autoStarted.current) return;
+      autoStarted.current = true;
+      beginSearch();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [autoStart, beginSearch, state]);
 
   useEffect(() => {
     mounted.current = true;
@@ -94,7 +117,7 @@ export function RandomMatch({ userId }: { userId: string }) {
               <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} />
               <span>I am 18+ and agree to the community rules.</span>
             </label>
-            <button className="button primary large" type="button" disabled={!consent} onClick={() => { setError(null); setState("waiting"); }}>
+            <button className="button primary large" type="button" disabled={!consent} onClick={beginSearch}>
               <HeartHandshake size={20} /> Find a chat
             </button>
           </div>
