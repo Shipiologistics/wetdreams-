@@ -13,6 +13,7 @@ import {
   UserRound,
 } from "lucide-react";
 import clsx from "clsx";
+import { BrandedLoader } from "@/components/branded-loader";
 import { Logo } from "@/components/logo";
 import { Avatar } from "@/components/avatar";
 import { DeviceRegistrar } from "@/components/device-registrar";
@@ -120,20 +121,5 @@ export function AppShell({
 }
 
 function AppRouteLoading({ label }: { label: string }) {
-  return (
-    <div className="page-shell route-loading-shell" aria-live="polite" aria-busy="true">
-      <header className="page-header">
-        <div>
-          <span className="eyebrow">Opening</span>
-          <h1>{label}</h1>
-        </div>
-      </header>
-      <div className="route-loading-grid">
-        <span />
-        <span />
-        <span />
-        <span />
-      </div>
-    </div>
-  );
+  return <BrandedLoader label={`Opening ${label}`} />;
 }
