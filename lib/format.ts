@@ -25,6 +25,8 @@ export function messageForError(message: string) {
     USER_BLOCKED: "This conversation is no longer available.",
     ACCOUNT_BANNED: "This account has been suspended.",
     DEVICE_BANNED: "This device has been permanently blocked.",
+    GUEST_AUTH_NOT_CONFIGURED: "Guest sign in is not configured yet.",
+    LOCATION_REQUIRED: "Location is required.",
     USER_UNAVAILABLE: "This user is no longer available.",
     MATCH_RETRY: "The queue moved quickly. Trying again now.",
     MEDIA_LIMIT_REACHED: "You have reached the media limit for this profile.",

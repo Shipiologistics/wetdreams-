@@ -35,12 +35,26 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
 
   async function continueAsGuest() {
     const cleanLocation = formatLocation(city, state);
-    if (!cleanLocation) return setError("Location is required.");
     setPending("guest");
     setError(null);
     setNotice(null);
-    const { error: guestError } = await createClient().auth.signInAnonymously({
-      options: { data: { display_name: "Guest", gender: "male" } },
+    const supabase = createClient();
+    const response = await fetch("/api/auth/guest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deviceId: getOrCreateDeviceId(), location: cleanLocation }),
+    });
+    const guest = await response.json().catch(() => null) as { email?: string; password?: string; error?: string } | null;
+
+    if (!response.ok || !guest?.email || !guest.password) {
+      setError(messageForError(guest?.error ?? "Guest sign in failed."));
+      setPending(null);
+      return;
+    }
+
+    const { error: guestError } = await supabase.auth.signInWithPassword({
+      email: guest.email,
+      password: guest.password,
     });
 
     if (guestError) {
@@ -51,9 +65,8 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
 
     try {
       await registerCurrentDevice();
-      await saveLocation(cleanLocation);
     } catch (caught) {
-      await createClient().auth.signOut();
+      await supabase.auth.signOut();
       setError(messageForError(caught instanceof Error ? caught.message : "DEVICE_BANNED"));
       setPending(null);
       return;
