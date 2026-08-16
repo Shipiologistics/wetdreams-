@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LoaderCircle, MessageCircle, Phone, Video } from "lucide-react";
+import { CoinTopupModal } from "@/components/coin-topup-modal";
 import { createClient } from "@/lib/supabase/client";
 import { messageForError } from "@/lib/format";
 
@@ -20,6 +21,7 @@ export function HostProfileActions({
   const router = useRouter();
   const [pending, setPending] = useState<"chat" | "audio" | "video" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [topupOpen, setTopupOpen] = useState(false);
   const self = viewerId === hostId;
 
   async function getRoom() {
@@ -42,7 +44,7 @@ export function HostProfileActions({
       const room = await getRoom();
       router.push(`/chat/${room}`);
     } catch (caught) {
-      setError(messageForError(caught instanceof Error ? caught.message : "Could not open chat."));
+      setError(messageForError(errorMessage(caught, "Could not open chat.")));
       setPending(null);
     }
   }
@@ -61,7 +63,13 @@ export function HostProfileActions({
       if (callError) throw callError;
       router.push(`/chat/${room}?call=${type}`);
     } catch (caught) {
-      setError(messageForError(caught instanceof Error ? caught.message : "Could not start call."));
+      const message = errorMessage(caught, "Could not start call.");
+      if (message.includes("INSUFFICIENT_BALANCE")) {
+        setTopupOpen(true);
+        setError("Add coins to start this call.");
+      } else {
+        setError(messageForError(message));
+      }
       setPending(null);
     }
   }
@@ -81,6 +89,19 @@ export function HostProfileActions({
         </button>
       </div>
       {error && <p className="card-error" role="alert">{error}</p>}
+      <CoinTopupModal
+        open={topupOpen}
+        onClose={() => setTopupOpen(false)}
+        onComplete={(_balance, coins) => setError(`${coins} coins added. Tap call again.`)}
+      />
     </div>
   );
+}
+
+function errorMessage(caught: unknown, fallback: string) {
+  if (caught instanceof Error) return caught.message;
+  if (caught && typeof caught === "object" && "message" in caught) {
+    return String((caught as { message?: unknown }).message ?? fallback);
+  }
+  return fallback;
 }

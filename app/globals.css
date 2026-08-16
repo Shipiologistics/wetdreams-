@@ -2733,7 +2733,7 @@ body:has(.side-nav) .global-back-button-fixed {
 
 .coin-packages button {
   position: relative;
-  min-height: 110px;
+  min-height: 132px;
   border: 1px solid var(--line);
   border-radius: 6px;
   display: flex;
@@ -2743,6 +2743,7 @@ body:has(.side-nav) .global-back-button-fixed {
   gap: 3px;
   background: #fbfbf8;
   color: var(--ink);
+  padding: 14px 10px 12px;
 }
 
 .coin-packages button:hover {
@@ -2752,12 +2753,58 @@ body:has(.side-nav) .global-back-button-fixed {
 
 .coin-packages strong {
   margin-top: 4px;
-  font-size: 21px;
+  font-size: 19px;
 }
 
 .coin-packages span {
   color: var(--muted);
   font-size: 11px;
+}
+
+.coin-offer-note {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.coin-packages .offer-label,
+.coin-packages .discount-code {
+  border-radius: 999px;
+  padding: 4px 7px;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.coin-packages .offer-label {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #fff3cc;
+  color: #7a5400;
+}
+
+.coin-packages .discount-code {
+  margin-top: 4px;
+  border: 1px dashed rgb(22 118 109 / 30%);
+  background: #e7f3f0;
+  color: var(--teal);
+}
+
+.coin-price-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.coin-price-row del {
+  color: #9ca19d;
+  font-size: 10px;
+  text-decoration-thickness: 2px;
 }
 
 .conversion-note {

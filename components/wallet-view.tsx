@@ -17,13 +17,13 @@ import {
   X,
 } from "lucide-react";
 import type { Database } from "@/lib/database.types";
+import { coinPackages, regularCoinsFor } from "@/lib/coin-packages";
 import { formatMoney, formatRelativeTime, messageForError } from "@/lib/format";
 import { createClient } from "@/lib/supabase/client";
 
 type Wallet = Database["public"]["Tables"]["wallets"]["Row"];
 type Transaction = Database["public"]["Tables"]["wallet_transactions"]["Row"];
 type Withdrawal = Database["public"]["Tables"]["withdrawal_requests"]["Row"];
-const packages = [100, 250, 500, 1000];
 const withdrawalPolicy = "Withdrawals are processed within 24 hours, except Sundays and government holidays.";
 
 export function WalletView({
@@ -43,11 +43,15 @@ export function WalletView({
   const [pending, setPending] = useState<number | "withdraw" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  async function topup(amount: number) {
-    setPending(amount);
+  async function topup(packageIndex: number) {
+    const packageItem = coinPackages[packageIndex];
+    setPending(packageIndex);
     setMessage(null);
     const supabase = createClient();
-    const { data: intent, error: intentError } = await supabase.rpc("create_payment_intent", { p_coins: amount });
+    const { data: intent, error: intentError } = await supabase.rpc("create_payment_intent", {
+      p_coins: packageItem.coins,
+      p_amount_inr: packageItem.priceInr,
+    });
     if (intentError || !intent) {
       setMessage(messageForError(intentError?.message ?? "Could not create payment."));
       setPending(null);
@@ -57,7 +61,7 @@ export function WalletView({
     setPending(null);
     if (error) return setMessage(messageForError(error.message));
     setTopupOpen(false);
-    setMessage(`${amount} coins added.`);
+    setMessage(`${formatMoney(packageItem.coins)} coins added.`);
     router.refresh();
   }
 
@@ -160,14 +164,26 @@ export function WalletView({
       {topupOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setTopupOpen(false)}>
           <div className="modal" role="dialog" aria-modal="true" aria-labelledby="topup-title" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="modal-header"><div><span className="eyebrow">Dummy checkout</span><h2 id="topup-title">Add coins</h2></div><button className="icon-button" title="Close" onClick={() => setTopupOpen(false)}><X size={20} /></button></div>
+            <div className="modal-header"><div><span className="eyebrow">Offers applied</span><h2 id="topup-title">Add coins</h2></div><button className="icon-button" title="Close" onClick={() => setTopupOpen(false)}><X size={20} /></button></div>
+            <p className="coin-offer-note">Lowest recharge: ₹50 gets 45 coins. Bigger packs include bonus coins.</p>
             <div className="coin-packages">
-              {packages.map((amount) => (
-                <button key={amount} type="button" onClick={() => topup(amount)} disabled={pending !== null}>
-                  <Coins size={20} /><strong>{amount}</strong><span>₹{amount}</span>
-                  {pending === amount && <LoaderCircle className="spin" size={17} />}
-                </button>
-              ))}
+              {coinPackages.map((packageItem, index) => {
+                const regularCoins = regularCoinsFor(packageItem);
+                const hasBonus = packageItem.coins > regularCoins;
+                return (
+                  <button key={packageItem.priceInr} type="button" onClick={() => topup(index)} disabled={pending !== null}>
+                    <span className="offer-label">{packageItem.label}</span>
+                    <Coins size={20} />
+                    <strong>{formatMoney(packageItem.coins)} coins</strong>
+                    <span className="coin-price-row">
+                      <span>₹{formatMoney(packageItem.priceInr)}</span>
+                      {hasBonus && <del>{formatMoney(regularCoins)} coins</del>}
+                    </span>
+                    <span className="discount-code">{packageItem.code}</span>
+                    {pending === index && <LoaderCircle className="spin" size={17} />}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

@@ -19,6 +19,7 @@ import {
 import clsx from "clsx";
 import Image from "next/image";
 import { AuthForm } from "@/components/auth-form";
+import { CoinTopupModal } from "@/components/coin-topup-modal";
 import type { DiscoveryProfile } from "@/lib/view-models";
 import { createClient } from "@/lib/supabase/client";
 import { messageForError } from "@/lib/format";
@@ -138,6 +139,7 @@ function ProfileCard({ profile, viewerId, eagerImage }: { profile: DiscoveryProf
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
+  const [topupOpen, setTopupOpen] = useState(false);
   const { account, media } = profile;
   const busy = account.status === "busy" || account.status === "in_call";
 
@@ -164,7 +166,7 @@ function ProfileCard({ profile, viewerId, eagerImage }: { profile: DiscoveryProf
     try {
       await openChatRoom();
     } catch (caught) {
-      setError(messageForError(caught instanceof Error ? caught.message : "Could not open chat."));
+      setError(messageForError(errorMessage(caught, "Could not open chat.")));
       setPending(null);
     }
   }
@@ -182,7 +184,13 @@ function ProfileCard({ profile, viewerId, eagerImage }: { profile: DiscoveryProf
       if (callError) throw callError;
       router.push(`/chat/${room}?call=${type}`);
     } catch (caught) {
-      setError(messageForError(caught instanceof Error ? caught.message : "Could not start call."));
+      const message = errorMessage(caught, "Could not start call.");
+      if (message.includes("INSUFFICIENT_BALANCE")) {
+        setTopupOpen(true);
+        setError("Add coins to start this call.");
+      } else {
+        setError(messageForError(message));
+      }
       setPending(null);
     }
   }
@@ -258,6 +266,11 @@ function ProfileCard({ profile, viewerId, eagerImage }: { profile: DiscoveryProf
           </div>
         </div>
       </div>
+      <CoinTopupModal
+        open={topupOpen}
+        onClose={() => setTopupOpen(false)}
+        onComplete={(_balance, coins) => setError(`${coins} coins added. Tap call again.`)}
+      />
       {authOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setAuthOpen(false)}>
           <div className="modal auth-choice-modal" role="dialog" aria-modal="true" aria-labelledby={`auth-${account.id}`} onMouseDown={(event) => event.stopPropagation()}>
@@ -274,7 +287,7 @@ function ProfileCard({ profile, viewerId, eagerImage }: { profile: DiscoveryProf
               try {
                 await openChatRoom();
               } catch (caught) {
-                setError(messageForError(caught instanceof Error ? caught.message : "Could not open chat."));
+                setError(messageForError(errorMessage(caught, "Could not open chat.")));
                 setPending(null);
               }
             }} />
@@ -283,4 +296,12 @@ function ProfileCard({ profile, viewerId, eagerImage }: { profile: DiscoveryProf
       )}
     </article>
   );
+}
+
+function errorMessage(caught: unknown, fallback: string) {
+  if (caught instanceof Error) return caught.message;
+  if (caught && typeof caught === "object" && "message" in caught) {
+    return String((caught as { message?: unknown }).message ?? fallback);
+  }
+  return fallback;
 }

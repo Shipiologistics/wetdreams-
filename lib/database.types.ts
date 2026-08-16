@@ -1066,7 +1066,10 @@ export type Database = {
         Args: { p_target_user: string }
         Returns: string
       }
-      create_payment_intent: { Args: { p_coins: number }; Returns: string }
+      create_payment_intent: {
+        Args: { p_amount_inr?: number | null; p_coins: number }
+        Returns: string
+      }
       end_call: { Args: { p_call_id: string }; Returns: undefined }
       get_room_block_state: {
         Args: { p_room_id: string }

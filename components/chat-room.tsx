@@ -221,6 +221,10 @@ export function ChatRoom({
     const { data, error: callError } = await createClient().rpc("start_call", { p_room_id: room.id, p_call_type: type });
     if (callError) {
       if (callError.message.includes("USER_BLOCKED")) setBlockState((current) => ({ ...current, otherBlockedViewer: true }));
+      if (callError.message.includes("INSUFFICIENT_BALANCE")) {
+        setTopupOpen(true);
+        return setError("Add coins to start this call.");
+      }
       return setError(messageForError(callError.message));
     }
     if (data) {
