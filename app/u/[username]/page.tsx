@@ -11,7 +11,14 @@ type Params = { params: Promise<{ username: string }> };
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { username } = await params;
   const supabase = await createClient();
-  const { data: account } = await supabase.from("users").select("display_name, username").eq("username", username).maybeSingle();
+  const { data: account } = await supabase
+    .from("users")
+    .select("display_name, username")
+    .eq("username", username)
+    .eq("is_banned", false)
+    .eq("is_guest", false)
+    .eq("role", "user")
+    .maybeSingle();
   if (!account) return { title: "Profile not found" };
   return {
     title: `${account.display_name} (@${account.username})`,
@@ -23,7 +30,14 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function PublicProfilePage({ params }: Params) {
   const { username } = await params;
   const supabase = await createClient();
-  const { data: account } = await supabase.from("users").select("*").eq("username", username).eq("is_banned", false).maybeSingle();
+  const { data: account } = await supabase
+    .from("users")
+    .select("*")
+    .eq("username", username)
+    .eq("is_banned", false)
+    .eq("is_guest", false)
+    .eq("role", "user")
+    .maybeSingle();
   if (!account) notFound();
   const [{ data: profile }, { data: media }, { data: ratings }] = await Promise.all([
     supabase.from("profiles").select("*").eq("user_id", account.id).single(),

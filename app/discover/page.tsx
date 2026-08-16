@@ -18,6 +18,7 @@ export default async function DiscoverPage() {
     .select("*")
     .eq("is_banned", false)
     .eq("is_guest", false)
+    .eq("role", "user")
     .order("status", { ascending: false })
     .order("created_at", { ascending: false });
 

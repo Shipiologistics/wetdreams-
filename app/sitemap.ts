@@ -4,7 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const supabase = await createClient();
-  const { data: users } = await supabase.from("users").select("username, updated_at").eq("is_banned", false);
+  const { data: users } = await supabase
+    .from("users")
+    .select("username, updated_at")
+    .eq("is_banned", false)
+    .eq("is_guest", false)
+    .eq("role", "user");
   return [
     { url: base, changeFrequency: "weekly", priority: 1 },
     ...(users ?? []).map((user) => ({
