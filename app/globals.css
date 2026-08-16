@@ -2797,13 +2797,21 @@ body:has(.side-nav) .global-back-button-fixed {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 7px;
   flex-wrap: wrap;
 }
 
+.coin-price-row > span {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
 .coin-price-row del {
-  color: #9ca19d;
-  font-size: 10px;
+  color: #747b76;
+  font-size: 12px;
+  font-weight: 700;
   text-decoration-thickness: 2px;
 }
 
