@@ -4134,7 +4134,13 @@ body:has(.side-nav) .global-back-button-fixed {
   .legal-links { gap: 8px 12px; }
   .conversation-row { grid-template-columns: 50px minmax(0, 1fr) auto; }
   .conversation-row .avatar { width: 50px !important; height: 50px !important; }
-  .chat-screen { height: calc(100dvh - 78px - var(--mobile-nav-bottom-gap)); grid-template-rows: 62px minmax(0, 1fr) auto; }
+  .chat-screen {
+    position: fixed;
+    inset: 0 0 calc(78px + var(--mobile-nav-bottom-gap));
+    width: 100%;
+    height: auto;
+    grid-template-rows: 62px minmax(0, 1fr) auto;
+  }
   .chat-header { gap: 3px; padding: 0 7px; }
   .chat-header .icon-button { width: 38px; height: 38px; flex-basis: 38px; }
   .chat-person { max-width: none; }
