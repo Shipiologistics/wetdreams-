@@ -2908,6 +2908,14 @@ body:has(.side-nav) .global-back-button-fixed {
   font-size: 28px;
 }
 
+.admin-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .admin-metrics {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -3593,9 +3601,16 @@ body:has(.side-nav) .global-back-button-fixed {
   }
   .admin-topbar {
     min-height: 80px;
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: center;
   }
   .admin-topbar h2 {
     font-size: 22px;
+  }
+  .admin-topbar-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
   .admin-metrics,
   .admin-metrics.expanded { grid-template-columns: 1fr; }

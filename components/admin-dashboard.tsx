@@ -9,6 +9,7 @@ import {
   ClipboardList,
   Eye,
   LoaderCircle,
+  LogOut,
   Radio,
   RefreshCcw,
   Search,
@@ -157,6 +158,12 @@ export function AdminDashboard({
     }));
   }
 
+  async function signOut() {
+    await createClient().auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
+
   const navItems: Array<{ key: Section; label: string; icon: typeof ShieldAlert; count?: number }> = [
     { key: "overview", label: "Overview", icon: Radio },
     { key: "visitors", label: "Visitors", icon: Eye, count: liveVisitors.length },
@@ -192,9 +199,14 @@ export function AdminDashboard({
             <span className="eyebrow">{section}</span>
             <h2>{titleForSection(section)}</h2>
           </div>
-          <button className="button secondary small" type="button" onClick={() => router.refresh()}>
-            <RefreshCcw size={16} /> Refresh
-          </button>
+          <div className="admin-topbar-actions">
+            <button className="button secondary small" type="button" onClick={() => router.refresh()}>
+              <RefreshCcw size={16} /> Refresh
+            </button>
+            <button className="button secondary small" type="button" onClick={signOut}>
+              <LogOut size={16} /> Sign out
+            </button>
+          </div>
         </header>
 
         {message && <div className="page-notice" role="status">{message}<button title="Dismiss" onClick={() => setMessage(null)}><X size={15} /></button></div>}
