@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   BadgeIndianRupee,
   Compass,
@@ -40,9 +41,27 @@ export function AppShell({
   };
 }) {
   const pathname = usePathname();
-  const navItems = viewer.role === "admin"
-    ? [...items, { href: "/admin", label: "Admin", icon: ShieldCheck }]
-    : items;
+  const router = useRouter();
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const navItems = useMemo(
+    () => viewer.role === "admin" ? [...items, { href: "/admin", label: "Admin", icon: ShieldCheck }] : items,
+    [viewer.role],
+  );
+  const visiblePendingHref = pendingHref && pendingHref !== pathname ? pendingHref : null;
+  const activePath = visiblePendingHref ?? pathname;
+  const routeLabel = useMemo(
+    () => navItems.find((item) => activePath.startsWith(item.href))?.label ?? "Loading",
+    [activePath, navItems],
+  );
+
+  useEffect(() => {
+    navItems.forEach((item) => router.prefetch(item.href));
+  }, [navItems, router]);
+
+  function startNavigation(href: string) {
+    if (href !== pathname) setPendingHref(href);
+    router.prefetch(href);
+  }
 
   return (
     <div className="app-frame">
@@ -55,7 +74,10 @@ export function AppShell({
             <Link
               key={href}
               href={href}
-              className={clsx("nav-link", pathname.startsWith(href) && "active")}
+              prefetch
+              onClick={() => startNavigation(href)}
+              onPointerEnter={() => router.prefetch(href)}
+              className={clsx("nav-link", activePath.startsWith(href) && "active")}
             >
               <Icon size={20} strokeWidth={1.8} />
               <span>{label}</span>
@@ -72,20 +94,44 @@ export function AppShell({
         </div>
       </aside>
 
-      <main className="app-main">{children}</main>
+      <main className="app-main">
+        {visiblePendingHref ? <AppRouteLoading label={routeLabel} /> : children}
+      </main>
 
       <nav className="bottom-nav" aria-label="Primary navigation">
         {navItems.slice(0, 5).map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
             href={href}
-            className={clsx("bottom-nav-link", pathname.startsWith(href) && "active")}
+            prefetch
+            onClick={() => startNavigation(href)}
+            onPointerEnter={() => router.prefetch(href)}
+            className={clsx("bottom-nav-link", activePath.startsWith(href) && "active")}
           >
             <Icon size={21} strokeWidth={1.8} />
             <span>{label}</span>
           </Link>
         ))}
       </nav>
+    </div>
+  );
+}
+
+function AppRouteLoading({ label }: { label: string }) {
+  return (
+    <div className="page-shell route-loading-shell" aria-live="polite" aria-busy="true">
+      <header className="page-header">
+        <div>
+          <span className="eyebrow">Opening</span>
+          <h1>{label}</h1>
+        </div>
+      </header>
+      <div className="route-loading-grid">
+        <span />
+        <span />
+        <span />
+        <span />
+      </div>
     </div>
   );
 }
