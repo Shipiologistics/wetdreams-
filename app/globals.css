@@ -1545,11 +1545,12 @@ body:has(.side-nav) .global-back-button-fixed {
 
 .message-bubble {
   position: relative;
+  min-width: 104px;
   max-width: min(78%, 560px);
   border-radius: 8px 8px 8px 2px;
   background: white;
   box-shadow: 0 2px 5px rgb(31 34 31 / 6%);
-  padding: 10px 11px 19px;
+  padding: 10px 12px 23px;
   font-size: 14px;
   line-height: 1.45;
   overflow-wrap: anywhere;
@@ -1561,6 +1562,7 @@ body:has(.side-nav) .global-back-button-fixed {
 }
 
 .message-bubble.emoji {
+  min-width: 58px;
   background: transparent;
   box-shadow: none;
   padding: 4px 4px 18px;
@@ -1575,7 +1577,9 @@ body:has(.side-nav) .global-back-button-fixed {
   align-items: center;
   gap: 4px;
   color: #858b86;
-  font-size: 8px;
+  font-size: 10px;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .message-media {
