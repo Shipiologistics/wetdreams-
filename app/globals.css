@@ -4230,9 +4230,11 @@ body:has(.side-nav) .global-back-button-fixed {
     padding-left: 72px;
   }
   .profile-page,
-  .settings-page,
-  .discover-page {
+  .settings-page {
     padding-bottom: calc(142px + var(--mobile-nav-bottom-gap));
+  }
+  .discover-page {
+    padding-bottom: 12px;
   }
   .app-page-header .button {
     min-height: 38px;
