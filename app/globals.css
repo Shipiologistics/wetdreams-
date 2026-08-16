@@ -2731,6 +2731,8 @@ body:has(.side-nav) .global-back-button-fixed {
 
 .profile-hero-media {
   position: relative;
+  width: 100%;
+  min-width: 0;
   min-height: 360px;
   aspect-ratio: 4 / 4.5;
   border-radius: 8px;
@@ -4078,6 +4080,10 @@ body:has(.side-nav) .global-back-button-fixed {
   .settings-page > .app-page-header {
     padding-left: 72px;
   }
+  .profile-page,
+  .settings-page {
+    padding-bottom: calc(142px + var(--mobile-nav-bottom-gap));
+  }
   .app-page-header .button {
     min-height: 38px;
     padding-inline: 12px;
@@ -4158,8 +4164,19 @@ body:has(.side-nav) .global-back-button-fixed {
   .wallet-summary > div { min-height: 62px; }
   .wallet-summary > div + div { border-left: 0; border-top: 1px solid var(--line); }
   .simple-table > div { grid-template-columns: 1fr auto; padding: 10px 0; }
-  .profile-hero { grid-template-columns: 1fr; gap: 18px; }
-  .profile-hero-media { min-height: 0; aspect-ratio: 4 / 3.8; }
+  .profile-hero {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 18px;
+  }
+  .profile-hero-media {
+    width: 100%;
+    min-height: auto;
+    aspect-ratio: 1 / 1;
+  }
+  .profile-hero-media .button {
+    max-width: calc(100% - 24px);
+  }
   .profile-identity { padding: 18px; }
   .profile-hero-actions { align-items: stretch; }
   .profile-hero-actions .button { flex: 1; }

@@ -41,14 +41,18 @@ export function AppShell({
     role: string;
     coins: number;
     location: string | null;
+    isGuest: boolean;
   };
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const navItems = useMemo(
-    () => viewer.role === "admin" ? [...items, { href: "/admin", label: "Admin", icon: ShieldCheck }] : items,
-    [viewer.role],
+    () => {
+      const allowedItems = viewer.isGuest ? items.filter((item) => item.href !== "/settings") : items;
+      return viewer.role === "admin" ? [...allowedItems, { href: "/admin", label: "Admin", icon: ShieldCheck }] : allowedItems;
+    },
+    [viewer.isGuest, viewer.role],
   );
   const visiblePendingHref = pendingHref && pendingHref !== pathname ? pendingHref : null;
   const activePath = visiblePendingHref ?? pathname;

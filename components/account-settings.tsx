@@ -113,17 +113,24 @@ export function AccountSettings({
       </section>
 
       <div className="settings-panel-grid">
-        <form className="settings-section account-panel" onSubmit={updatePassword}>
-          <div className="section-heading"><div><KeyRound size={20} /><h2>Password</h2></div></div>
-          <p className="settings-helper">Use at least 8 characters for your email login.</p>
-          <div className="form-grid single">
-            <label className="field">New password<input name="password" type="password" minLength={8} autoComplete="new-password" required /></label>
-            <label className="field">Confirm password<input name="confirm_password" type="password" minLength={8} autoComplete="new-password" required /></label>
-          </div>
-          <button className="button primary" type="submit" disabled={passwordPending}>
-            {passwordPending ? <LoaderCircle className="spin" size={18} /> : <LockKeyhole size={18} />} Change password
-          </button>
-        </form>
+        {account.is_guest ? (
+          <section className="settings-section account-panel">
+            <div className="section-heading"><div><UserRound size={20} /><h2>Guest account</h2></div></div>
+            <p className="settings-helper">This guest session stays tied to this device. Password settings are only for registered email accounts.</p>
+          </section>
+        ) : (
+          <form className="settings-section account-panel" onSubmit={updatePassword}>
+            <div className="section-heading"><div><KeyRound size={20} /><h2>Password</h2></div></div>
+            <p className="settings-helper">Use at least 8 characters for your email login.</p>
+            <div className="form-grid single">
+              <label className="field">New password<input name="password" type="password" minLength={8} autoComplete="new-password" required /></label>
+              <label className="field">Confirm password<input name="confirm_password" type="password" minLength={8} autoComplete="new-password" required /></label>
+            </div>
+            <button className="button primary" type="submit" disabled={passwordPending}>
+              {passwordPending ? <LoaderCircle className="spin" size={18} /> : <LockKeyhole size={18} />} Change password
+            </button>
+          </form>
+        )}
 
         <form className="settings-section account-panel" onSubmit={updateLocation}>
           <div className="section-heading"><div><MapPin size={20} /><h2>Location</h2></div></div>

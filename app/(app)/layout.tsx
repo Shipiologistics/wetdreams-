@@ -33,6 +33,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
         role: viewer.account.role,
         coins: Number(viewer.wallet.coins_balance),
         location: viewer.profile.location,
+        isGuest: viewer.account.is_guest,
       }}
     >
       {children}
