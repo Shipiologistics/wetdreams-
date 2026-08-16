@@ -29,7 +29,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <div className="auth-message">
           <span className="eyebrow">Good conversations are worth something</span>
           <h1>Meet people who are here to talk.</h1>
-          <p>Ten messages are always on us. Stay when the conversation feels right.</p>
+          <p>Ten messages are always on us. After that, chat is billed by the minute.</p>
         </div>
         <div className="auth-panel-stack">
           <AuthForm next={next} />

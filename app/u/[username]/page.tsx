@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (!account) return { title: "Profile not found" };
   return {
     title: `${account.display_name} (@${account.username})`,
-    description: `Chat with ${account.display_name} on WetDreams. The first ten messages are free.`,
+    description: `Chat with ${account.display_name} on WetDreams. The first ten messages are free, then chat is billed by the minute.`,
     alternates: { canonical: `/u/${account.username}` },
   };
 }
@@ -108,7 +108,7 @@ export default async function PublicProfilePage({ params }: Params) {
         </div>
       </section>
       <section className="public-rates">
-        <div><MessageCircle size={20} /><span>Chat</span><strong>{profile.free_chat_enabled ? "Free" : `${Number(profile.chat_rate_coins)} coins`}</strong><small>per message after 10</small></div>
+        <div><MessageCircle size={20} /><span>Chat</span><strong>{profile.free_chat_enabled ? "Free" : `${Number(profile.chat_rate_coins)} coins`}</strong><small>per minute after 10 messages</small></div>
         <div><Phone size={20} /><span>Audio</span><strong>{Number(profile.audio_call_rate_coins)} coins</strong><small>per minute</small></div>
         <div><Video size={20} /><span>Video</span><strong>{Number(profile.video_call_rate_coins)} coins</strong><small>per minute</small></div>
         <div><Coins size={20} /><span>First messages</span><strong>10 free</strong><small>in every new chat</small></div>

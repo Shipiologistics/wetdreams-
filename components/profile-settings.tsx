@@ -154,7 +154,7 @@ export function ProfileSettings({ account, profile, media }: { account: Account;
     profile.tags.length > 0,
   ];
   const completion = Math.round((completeItems.filter(Boolean).length / completeItems.length) * 100);
-  const earningMode = profile.free_chat_enabled ? "Free chat" : `${Number(profile.chat_rate_coins)} coins`;
+  const earningMode = profile.free_chat_enabled ? "Free chat" : `${Number(profile.chat_rate_coins)} coins/min`;
 
   async function copyProfileLink() {
     await navigator.clipboard.writeText(`${window.location.origin}${publicUrl}`);
@@ -360,12 +360,12 @@ export function ProfileSettings({ account, profile, media }: { account: Account;
         <section className="settings-section">
           <div className="section-heading"><div><span className="eyebrow">Money</span><h2>Rates</h2></div><IndianRupee size={22} /></div>
           <div className="rate-input-grid">
-            <label className="field">Chat / message<input name="chat_rate_coins" type="number" min="0" max="10000" step="0.01" defaultValue={profile.chat_rate_coins} required /><span>coins</span></label>
+            <label className="field">Chat / minute<input name="chat_rate_coins" type="number" min="0" max="10000" step="0.01" defaultValue={profile.chat_rate_coins} required /><span>coins</span></label>
             <label className="field">Audio / minute<input name="audio_call_rate_coins" type="number" min="0" max="100000" step="0.01" defaultValue={profile.audio_call_rate_coins} required /><span>coins</span></label>
             <label className="field">Video / minute<input name="video_call_rate_coins" type="number" min="0" max="100000" step="0.01" defaultValue={profile.video_call_rate_coins} required /><span>coins</span></label>
           </div>
           <div className="settings-toggles">
-            <label className="toggle-row"><input name="free_chat_enabled" type="checkbox" defaultChecked={profile.free_chat_enabled} /><span className="toggle-control" /><span><strong>Allow free chat</strong><small>Messages stay free after the first ten.</small></span></label>
+            <label className="toggle-row"><input name="free_chat_enabled" type="checkbox" defaultChecked={profile.free_chat_enabled} /><span className="toggle-control" /><span><strong>Allow free chat</strong><small>Chat stays free after the first ten messages.</small></span></label>
             <label className="toggle-row"><input name="real_meet_available" type="checkbox" defaultChecked={profile.real_meet_available} /><span className="toggle-control" /><span><strong>Available to meet</strong><small>Show this preference on your profile.</small></span></label>
           </div>
         </section>

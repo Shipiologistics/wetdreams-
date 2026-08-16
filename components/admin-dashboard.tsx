@@ -53,7 +53,7 @@ const settingLabels: Record<string, { label: string; helper: string; step: strin
   },
   free_message_limit: {
     label: "Free messages",
-    helper: "Messages allowed before paid chat rules apply.",
+    helper: "Starter messages allowed before per-minute paid chat applies.",
     step: "1",
     min: "0",
     max: "10000",

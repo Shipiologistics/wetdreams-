@@ -195,7 +195,7 @@ export function WalletView({
 function labelForTransaction(type: string) {
   return ({
     topup: "Coin top-up",
-    chat_spend: "Paid message",
+    chat_spend: "Chat time",
     call_spend: "Call time",
     tip_spend: "Tip sent",
     tip_earn: "Tip received",

@@ -296,7 +296,7 @@ export function ChatRoom({
         {paywalled && !blocked && (
           <div className="paywall-banner">
             <Coins size={19} />
-            <span><strong>{Number(profile.chat_rate_coins)} coins</strong> per message</span>
+            <span><strong>{Number(profile.chat_rate_coins)} coins</strong> unlocks 1 min chat</span>
             <span className="wallet-inline">{wallet} left</span>
             <button type="button" onClick={() => setTopupOpen(true)}>Buy coins</button>
           </div>
