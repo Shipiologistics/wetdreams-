@@ -1593,6 +1593,45 @@ body:has(.side-nav) .global-back-button-fixed {
   object-fit: cover;
 }
 
+.chat-opening-shell {
+  animation: chat-opening-in 120ms ease-out both;
+}
+
+.chat-opening-shell .conversation-intro {
+  margin-bottom: 52px;
+}
+
+.chat-opening-shell .icon-button:disabled,
+.chat-opening-shell .send-button:disabled {
+  opacity: 0.45;
+}
+
+.chat-opening-bubble {
+  min-height: 42px;
+  width: min(230px, 64vw);
+  background:
+    linear-gradient(90deg, transparent, rgb(255 255 255 / 58%), transparent),
+    white;
+  background-size: 220% 100%, auto;
+  animation: route-loading-shimmer 900ms linear infinite;
+}
+
+.mine .chat-opening-bubble {
+  background:
+    linear-gradient(90deg, transparent, rgb(255 255 255 / 58%), transparent),
+    #dceeea;
+  background-size: 220% 100%, auto;
+}
+
+.chat-opening-bubble.short {
+  width: 126px;
+}
+
+@keyframes chat-opening-in {
+  from { opacity: 0.7; transform: translateX(6px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 .typing-bubble {
   width: 48px;
   height: 30px;

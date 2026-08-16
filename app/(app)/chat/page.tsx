@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MessageCircleMore, Plus } from "lucide-react";
-import { Avatar } from "@/components/avatar";
+import { ConversationList } from "@/components/conversation-list";
 import { EmptyState } from "@/components/empty-state";
 import { requireViewer } from "@/lib/auth";
-import { formatRelativeTime } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Chats" };
@@ -38,35 +37,13 @@ export default async function ChatsPage() {
       </header>
 
       {(rooms ?? []).length ? (
-        <div className="conversation-list">
-          {(rooms ?? []).map((room) => {
-            const otherId = room.user_a === viewer.id ? room.user_b : room.user_a;
-            const account = (accounts ?? []).find((item) => item.id === otherId);
-            if (!account) return null;
-            const avatar = (media ?? []).find((item) => item.user_id === otherId)?.cloudinary_url;
-            const roomMessages = (messages ?? []).filter((message) => message.room_id === room.id);
-            const last = roomMessages[0];
-            const unread = roomMessages.filter((message) => message.sender_id !== viewer.id && !message.read_at).length;
-            return (
-              <Link href={`/chat/${room.id}`} className="conversation-row" key={room.id}>
-                <span className="avatar-wrap">
-                  <Avatar name={account.display_name} src={avatar} size={54} />
-                  <span className={`status-dot ${account.status === "online" ? "online" : account.status === "busy" || account.status === "in_call" ? "busy" : ""}`} />
-                </span>
-                <span className="conversation-copy">
-                  <span className="conversation-title">
-                    <strong>{account.display_name}</strong>
-                    <time>{formatRelativeTime(room.last_message_at)}</time>
-                  </span>
-                  <span className="conversation-preview">
-                    {last ? (last.message_type === "text" || last.message_type === "emoji" ? last.content : `Sent ${last.message_type}`) : "Start the conversation"}
-                  </span>
-                </span>
-                {unread > 0 && <span className="unread-badge">{unread > 9 ? "9+" : unread}</span>}
-              </Link>
-            );
-          })}
-        </div>
+        <ConversationList
+          viewerId={viewer.id}
+          rooms={rooms ?? []}
+          accounts={accounts ?? []}
+          media={media ?? []}
+          messages={messages ?? []}
+        />
       ) : (
         <EmptyState
           icon={MessageCircleMore}
