@@ -44,7 +44,11 @@ export function ConversationList({ viewerId, rooms, accounts, media, messages }:
         : "loading...";
 
     return { room, account, avatar, last, unread, status, href: `/chat/${room.id}` };
-  }).filter(Boolean), [accounts, media, messages, rooms, viewerId]);
+  }).filter(Boolean).sort((first, second) => {
+    const firstTime = new Date(first?.last?.created_at ?? first?.room.last_message_at ?? 0).getTime();
+    const secondTime = new Date(second?.last?.created_at ?? second?.room.last_message_at ?? 0).getTime();
+    return secondTime - firstTime;
+  }), [accounts, media, messages, rooms, viewerId]);
 
   if (opening && opening.href !== pathname) {
     return <ChatOpeningShell name={opening.name} username={opening.username} avatar={opening.avatar} status={opening.status} />;

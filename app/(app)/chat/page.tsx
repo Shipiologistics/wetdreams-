@@ -14,9 +14,11 @@ export default async function ChatsPage() {
   const { data: rooms } = await supabase
     .from("chat_rooms")
     .select("*")
-    .order("last_message_at", { ascending: false });
+    .or(`user_a.eq.${viewer.id},user_b.eq.${viewer.id}`)
+    .order("last_message_at", { ascending: false })
+    .limit(80);
 
-  const otherIds = (rooms ?? []).map((room) => room.user_a === viewer.id ? room.user_b : room.user_a);
+  const otherIds = Array.from(new Set((rooms ?? []).map((room) => room.user_a === viewer.id ? room.user_b : room.user_a)));
   const roomIds = (rooms ?? []).map((room) => room.id);
   const [{ data: accounts }, { data: media }, { data: messages }] = rooms?.length
     ? await Promise.all([
