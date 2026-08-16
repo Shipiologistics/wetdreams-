@@ -938,7 +938,7 @@ body:has(.side-nav) .global-back-button-fixed {
 
 .profile-gallery {
   position: relative;
-  aspect-ratio: 4 / 4.6;
+  aspect-ratio: 1 / 1;
   display: flex;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
@@ -960,6 +960,12 @@ body:has(.side-nav) .global-back-button-fixed {
   object-fit: cover;
 }
 
+.profile-card-detail-link {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+}
+
 .profile-image-fallback {
   height: 100%;
   display: grid;
@@ -972,7 +978,7 @@ body:has(.side-nav) .global-back-button-fixed {
 
 .profile-card-topline {
   position: absolute;
-  z-index: 3;
+  z-index: 5;
   inset: 12px 12px auto;
   display: flex;
   justify-content: space-between;
@@ -1046,9 +1052,9 @@ body:has(.side-nav) .global-back-button-fixed {
 
 .gallery-count {
   position: absolute;
-  z-index: 3;
+  z-index: 5;
   right: 12px;
-  bottom: 10px;
+  top: 58px;
   background: rgb(24 27 25 / 70%);
   color: white;
   padding: 4px 7px;
@@ -1079,6 +1085,23 @@ body:has(.side-nav) .global-back-button-fixed {
   padding: 16px;
 }
 
+.profile-card-overlay {
+  position: absolute;
+  z-index: 4;
+  inset: auto 0 0;
+  display: grid;
+  gap: 10px;
+  padding: 76px 12px 12px;
+  color: white;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgb(11 13 12 / 0%) 0%, rgb(11 13 12 / 78%) 52%, rgb(11 13 12 / 92%) 100%);
+}
+
+.profile-card-overlay .profile-actions,
+.profile-card-overlay .card-error {
+  pointer-events: auto;
+}
+
 .profile-title-row,
 .profile-title-row > div,
 .rate-row,
@@ -1106,9 +1129,29 @@ body:has(.side-nav) .global-back-button-fixed {
   white-space: nowrap;
 }
 
+.profile-card-overlay .profile-title-row {
+  align-items: flex-end;
+}
+
+.profile-card-overlay .profile-title-row > div {
+  display: grid;
+  align-items: start;
+  gap: 3px;
+}
+
+.profile-card-overlay .profile-title-row h2 {
+  max-width: 100%;
+  color: white;
+  font-size: 17px;
+}
+
 .verified {
   flex: 0 0 auto;
   color: var(--teal);
+}
+
+.profile-card-overlay .verified {
+  color: #87ead0;
 }
 
 .rating {
@@ -1127,6 +1170,15 @@ body:has(.side-nav) .global-back-button-fixed {
   margin: 7px 0 0;
   color: var(--muted);
   font-size: 12px;
+}
+
+.profile-card-overlay .location {
+  max-width: 100%;
+  margin: 0;
+  overflow: hidden;
+  color: rgb(255 255 255 / 82%);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .profile-bio {
@@ -1177,12 +1229,32 @@ body:has(.side-nav) .global-back-button-fixed {
   margin: 0 0 10px;
 }
 
+.profile-card-overlay .card-error {
+  margin: 0;
+  border-color: rgb(255 255 255 / 22%);
+  background: rgb(255 255 255 / 14%);
+  color: white;
+}
+
 .profile-actions {
   gap: 8px;
 }
 
 .profile-actions .button {
   flex: 1;
+}
+
+.profile-card-overlay .profile-actions .button {
+  min-height: 42px;
+}
+
+.profile-card-overlay .profile-actions .icon-button {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-color: rgb(255 255 255 / 42%);
+  background: rgb(255 255 255 / 16%);
+  color: white;
 }
 
 /* Conversations */
@@ -3507,6 +3579,148 @@ body:has(.side-nav) .global-back-button-fixed {
   margin-top: 26px;
 }
 
+.host-profile-actions {
+  width: min(520px, 100%);
+  margin-top: 26px;
+}
+
+.host-profile-actions > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.host-profile-actions .button {
+  flex: 1;
+  margin-top: 0;
+}
+
+.host-profile-actions .icon-button {
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+  border-color: rgb(255 255 255 / 34%);
+  background: rgb(255 255 255 / 14%);
+  color: white;
+}
+
+.host-reviews-section {
+  width: min(1160px, calc(100% - 48px));
+  margin: 0 auto 56px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.host-review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-bottom: 1px solid var(--line);
+  padding: 22px;
+}
+
+.host-review-header h2 {
+  margin: 4px 0 5px;
+  font-size: 26px;
+}
+
+.host-review-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.host-review-header > strong {
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff3cc;
+  color: #7a5400;
+  padding: 8px 11px;
+  font-size: 13px;
+}
+
+.review-form {
+  display: grid;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding: 18px 22px 22px;
+}
+
+.star-input {
+  display: flex;
+  gap: 4px;
+}
+
+.star-input button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: #c2b98d;
+}
+
+.star-input button.active {
+  background: #fff3cc;
+  color: #b27a00;
+}
+
+.review-form textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.review-note {
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+  padding: 14px 22px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.review-list {
+  display: grid;
+}
+
+.review-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px 14px;
+  padding: 18px 22px;
+}
+
+.review-item + .review-item {
+  border-top: 1px solid var(--line);
+}
+
+.review-item strong,
+.review-item span,
+.review-item p {
+  min-width: 0;
+}
+
+.review-item > div span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.review-item p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #4c504c;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 .public-rates {
   width: min(1160px, calc(100% - 48px));
   margin: 0 auto;
@@ -3688,7 +3902,9 @@ body:has(.side-nav) .global-back-button-fixed {
   .page-header h1,
   .profile-identity h1 { font-size: 29px; }
   .profile-grid { grid-template-columns: 1fr; gap: 14px; }
-  .profile-gallery { aspect-ratio: 4 / 4.3; }
+  .profile-gallery { aspect-ratio: 1 / 1; }
+  .profile-card-overlay { padding: 82px 12px 12px; }
+  .profile-card-overlay .profile-title-row h2 { font-size: 18px; }
   .filter-bar { grid-template-columns: 1fr; align-items: stretch; gap: 12px; }
   .result-count { margin-top: 14px; }
   .auth-page { min-height: 100dvh; }
@@ -3852,9 +4068,27 @@ body:has(.side-nav) .global-back-button-fixed {
   .public-profile-copy { width: calc(100% - 32px); padding: 100px 0 44px; }
   .public-profile-copy h1 { font-size: 42px; }
   .public-profile-copy > p { font-size: 14px; }
+  .host-profile-actions > div { gap: 8px; }
+  .host-profile-actions .icon-button {
+    width: 46px;
+    height: 46px;
+    flex-basis: 46px;
+  }
   .public-rates { width: calc(100% - 32px); grid-template-columns: 1fr 1fr; }
   .public-rates > div { min-height: 128px; padding: 14px; }
   .public-gallery { width: calc(100% - 32px); grid-template-columns: 1fr; margin-block: 28px; }
+  .host-reviews-section { width: calc(100% - 32px); margin-bottom: 34px; }
+  .host-review-header {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 18px;
+  }
+  .host-review-header h2 { font-size: 24px; }
+  .review-form,
+  .review-item,
+  .review-note { padding-inline: 18px; }
+  .review-item { grid-template-columns: 1fr; }
+  .review-item .rating { width: fit-content; }
 }
 
 @media (prefers-reduced-motion: reduce) {

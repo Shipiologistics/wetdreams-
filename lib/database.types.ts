@@ -1095,6 +1095,10 @@ export type Database = {
         Args: { p_accept: boolean; p_call_id: string }
         Returns: boolean
       }
+      submit_host_review: {
+        Args: { p_comment?: string | null; p_rated_user: string; p_score: number }
+        Returns: string
+      }
       track_visitor_session: {
         Args: {
           p_device_id?: string | null

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   BadgeCheck,
   Heart,
@@ -206,6 +207,7 @@ function ProfileCard({ profile, viewerId, eagerImage }: { profile: DiscoveryProf
   return (
     <article className="profile-card">
       <div className="profile-gallery">
+        <Link className="profile-card-detail-link" href={`/u/${account.username}`} aria-label={`View ${account.display_name} profile`} />
         {(media.length ? media : [null]).map((item, index) => (
           <div className="profile-slide" key={item?.id ?? "empty"}>
             {item ? (
@@ -229,39 +231,29 @@ function ProfileCard({ profile, viewerId, eagerImage }: { profile: DiscoveryProf
             <Heart size={19} fill={favorite ? "currentColor" : "none"} />
           </button>
         </div>
-        {profile.profile.location && <div className="location-badge"><MapPin size={13} /> {profile.profile.location}</div>}
         {media.length > 1 && <div className="gallery-count">1 / {media.length}</div>}
-      </div>
-
-      <div className="profile-card-body">
-        <div className="profile-title-row">
-          <div>
-            <h2>{account.display_name}{profile.profile.age ? `, ${profile.profile.age}` : ""}</h2>
+        <div className="profile-card-overlay">
+          <div className="profile-title-row">
+            <div>
+              <h2>{account.display_name}{profile.profile.age ? `, ${profile.profile.age}` : ""}</h2>
+              {profile.profile.location && <p className="location"><MapPin size={15} /> {profile.profile.location}</p>}
+            </div>
             {account.is_verified && <BadgeCheck size={18} className="verified" aria-label="Verified" />}
+            {profile.rating && <span className="rating"><Star size={14} fill="currentColor" /> {profile.rating.toFixed(1)}</span>}
           </div>
-          {profile.rating && <span className="rating"><Star size={14} fill="currentColor" /> {profile.rating.toFixed(1)}</span>}
-        </div>
-        {profile.profile.location && <p className="location"><MapPin size={15} /> {profile.profile.location}</p>}
-        <p className="profile-bio">{profile.profile.bio || "Ready for a good conversation."}</p>
-        <div className="tag-row">
-          {profile.profile.tags.slice(0, 3).map((tag) => <span key={tag}>{tag}</span>)}
-        </div>
-        <div className="rate-row">
-          <span><strong>{Number(profile.profile.chat_rate_coins)}</strong> coins / message</span>
-          {profile.profile.free_chat_enabled && <span className="free-label">Free chat</span>}
-        </div>
-        {error && <p className="card-error" role="alert">{error}</p>}
-        <div className="profile-actions">
-          <button className="button primary" type="button" onClick={startChat} disabled={!!pending}>
-            {pending === "chat" ? <LoaderCircle className="spin" size={18} /> : <MessageCircle size={18} />}
-            Message
-          </button>
-          <button className="icon-button bordered" type="button" title={busy ? "Busy" : "Audio call"} onClick={() => startCall("audio")} disabled={!!pending || busy}>
-            {pending === "audio" ? <LoaderCircle className="spin" size={18} /> : <Phone size={18} />}
-          </button>
-          <button className="icon-button bordered" type="button" title={busy ? "Busy" : "Video call"} onClick={() => startCall("video")} disabled={!!pending || busy}>
-            {pending === "video" ? <LoaderCircle className="spin" size={18} /> : <Video size={18} />}
-          </button>
+          {error && <p className="card-error" role="alert">{error}</p>}
+          <div className="profile-actions">
+            <button className="button primary" type="button" onClick={startChat} disabled={!!pending}>
+              {pending === "chat" ? <LoaderCircle className="spin" size={18} /> : <MessageCircle size={18} />}
+              Message
+            </button>
+            <button className="icon-button bordered" type="button" title={busy ? "Busy" : "Audio call"} onClick={() => startCall("audio")} disabled={!!pending || busy}>
+              {pending === "audio" ? <LoaderCircle className="spin" size={18} /> : <Phone size={18} />}
+            </button>
+            <button className="icon-button bordered" type="button" title={busy ? "Busy" : "Video call"} onClick={() => startCall("video")} disabled={!!pending || busy}>
+              {pending === "video" ? <LoaderCircle className="spin" size={18} /> : <Video size={18} />}
+            </button>
+          </div>
         </div>
       </div>
       {authOpen && (
