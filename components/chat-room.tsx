@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
+  ArrowLeft,
   CircleAlert,
   Coins,
   Gift,
@@ -12,10 +13,10 @@ import {
   LoaderCircle,
   MoreVertical,
   Phone,
-  RefreshCcw,
   Send,
   ShieldAlert,
   SmilePlus,
+  Sparkles,
   Video,
   X,
 } from "lucide-react";
@@ -87,6 +88,7 @@ export function ChatRoom({
   const [topupOpen, setTopupOpen] = useState(false);
   const [tipBurst, setTipBurst] = useState<string | null>(null);
   const [randomDisconnecting, setRandomDisconnecting] = useState(false);
+  const [randomEnded, setRandomEnded] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const burstTimerRef = useRef<number | null>(null);
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null);
@@ -140,7 +142,8 @@ export function ChatRoom({
         (payload) => {
           const nextRoom = payload.new as Room;
           if (nextRoom.room_type === "random" && nextRoom.status === "closed") {
-            router.replace("/random?auto=1");
+            setActiveCall(null);
+            setRandomEnded(true);
           }
         },
       )
@@ -289,15 +292,24 @@ export function ChatRoom({
   }
 
   async function disconnectRandom() {
-    if (!isRandomRoom || randomDisconnecting) return;
+    if (!isRandomRoom || randomDisconnecting || randomEnded) return;
+    setRandomEnded(true);
+    setActiveCall(null);
+    setShowEmoji(false);
+    setShowMedia(false);
     setRandomDisconnecting(true);
     setError(null);
     const { error: disconnectError } = await createClient().rpc("disconnect_random_chat", { p_room_id: room.id });
     if (disconnectError) {
       setRandomDisconnecting(false);
+      setRandomEnded(false);
       setError(messageForError(disconnectError.message));
       return;
     }
+    setRandomDisconnecting(false);
+  }
+
+  function startNextRandom() {
     router.replace("/random?auto=1");
   }
 
@@ -307,19 +319,51 @@ export function ChatRoom({
   const canTipOther = !blocked && otherAccount.role === "user" && !otherAccount.is_guest;
   const otherPresence = otherBusy ? "busy" : otherAccount.status === "online" ? "online" : `seen ${formatRelativeTime(otherAccount.last_seen)}`;
 
+  if (isRandomRoom && randomEnded) {
+    return (
+      <div className="chat-screen random-ended-screen">
+        <header className="chat-header">
+          <button className="icon-button global-back-button global-back-button-inline" type="button" onClick={() => router.replace("/random")} title="Back" aria-label="Go back">
+            <ArrowLeft size={21} />
+          </button>
+          <div className="chat-person">
+            <strong>Random chat ended</strong>
+            <span>No history saved</span>
+          </div>
+        </header>
+        <section className="random-ended-panel">
+          <div className="match-visual">
+            <span className="match-ring ring-one" />
+            <span className="match-ring ring-two" />
+            <span className="match-core"><Sparkles size={42} strokeWidth={1.5} /></span>
+          </div>
+          <h2>Chat ended</h2>
+          <p>This random conversation is closed and will not appear in your chats.</p>
+          <button className="button primary large random-start-button" type="button" onClick={startNextRandom}>
+            <Sparkles size={20} /> Start
+          </button>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="chat-screen">
       <header className="chat-header">
-        <GlobalBackButton variant="inline" />
+        {isRandomRoom ? (
+          <button className="icon-button global-back-button global-back-button-inline random-chat-back-button" type="button" onClick={disconnectRandom} title="End random chat" aria-label="End random chat">
+            <ArrowLeft size={21} />
+          </button>
+        ) : <GlobalBackButton variant="inline" />}
         <Avatar name={otherAccount.display_name} src={primaryImage} size={42} />
         <div className="chat-person">
           <strong>{otherAccount.display_name}</strong>
           <span>{typing ? "typing..." : otherPresence}</span>
         </div>
         {isRandomRoom && (
-          <button className="random-next-button" type="button" onClick={disconnectRandom} disabled={randomDisconnecting} title="Disconnect and find next">
-            {randomDisconnecting ? <LoaderCircle className="spin" size={16} /> : <RefreshCcw size={16} />}
-            <span>Next</span>
+          <button className="random-end-button" type="button" onClick={disconnectRandom} disabled={randomDisconnecting} title="End random chat">
+            {randomDisconnecting ? <LoaderCircle className="spin" size={17} /> : <X size={17} />}
+            <span>End</span>
           </button>
         )}
         <button className="icon-button" title={callDisabled ? "Unavailable" : "Audio call"} onClick={() => startCall("audio")} disabled={callDisabled}><Phone size={19} /></button>

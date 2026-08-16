@@ -65,6 +65,11 @@ export function NativeAppBridge() {
 
       const currentPath = pathnameRef.current || window.location.pathname;
       const isHome = currentPath === "/" || currentPath === homePath;
+      const randomChatBackButton = document.querySelector<HTMLButtonElement>(".random-chat-back-button");
+      if (randomChatBackButton) {
+        randomChatBackButton.click();
+        return;
+      }
 
       if (isHome) {
         if (window.confirm("Do you want to exit the app?")) {
