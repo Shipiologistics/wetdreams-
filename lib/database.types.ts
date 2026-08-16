@@ -1095,6 +1095,10 @@ export type Database = {
         Args: { p_accept: boolean; p_call_id: string }
         Returns: boolean
       }
+      send_tip: {
+        Args: { p_amount: number; p_call_id?: string | null; p_room_id: string }
+        Returns: number
+      }
       submit_host_review: {
         Args: { p_comment?: string | null; p_rated_user: string; p_score: number }
         Returns: string

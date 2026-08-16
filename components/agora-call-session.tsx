@@ -20,7 +20,17 @@ type AgoraTokenPayload = {
   expiresAt: number;
 };
 
-export function AgoraCallSession({ call, room, endControl }: { call: Call; room: Room; endControl?: ReactNode }) {
+export function AgoraCallSession({
+  call,
+  room,
+  tipControl,
+  endControl,
+}: {
+  call: Call;
+  room: Room;
+  tipControl?: ReactNode;
+  endControl?: ReactNode;
+}) {
   const localVideoRef = useRef<HTMLDivElement>(null);
   const remoteVideoRef = useRef<HTMLDivElement>(null);
   const [localAudioTrack, setLocalAudioTrack] = useState<IMicrophoneAudioTrack | null>(null);
@@ -184,6 +194,7 @@ export function AgoraCallSession({ call, room, endControl }: { call: Call; room:
             {cameraOn ? <Video size={22} /> : <VideoOff size={22} />}
           </button>
         )}
+        {tipControl}
         {endControl}
       </div>
       <p className="agora-call-status">

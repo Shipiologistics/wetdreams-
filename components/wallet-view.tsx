@@ -197,6 +197,8 @@ function labelForTransaction(type: string) {
     topup: "Coin top-up",
     chat_spend: "Paid message",
     call_spend: "Call time",
+    tip_spend: "Tip sent",
+    tip_earn: "Tip received",
     bean_credit: "Creator earning",
     bean_withdrawal: "Withdrawal request",
     refund: "Refund",

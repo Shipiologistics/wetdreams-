@@ -31,6 +31,7 @@ export function messageForError(message: string) {
     USER_UNAVAILABLE: "This user is no longer available.",
     CERTIFIED_CALL_REQUIRED: "Only callers with a completed call can review this profile.",
     INVALID_RATING: "Choose a rating from 1 to 5 stars.",
+    INVALID_TIP_AMOUNT: "Choose a tip amount of at least 1 coin.",
     INVALID_PRESENCE: "Presence update failed. Please refresh.",
     MATCH_RETRY: "The queue moved quickly. Trying again now.",
     MEDIA_LIMIT_REACHED: "You have reached the media limit for this profile.",

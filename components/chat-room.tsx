@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import {
   CircleAlert,
   Coins,
@@ -19,7 +18,9 @@ import {
 } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { AgoraCallSession } from "@/components/agora-call-session";
+import { CoinTopupModal } from "@/components/coin-topup-modal";
 import { GlobalBackButton } from "@/components/global-back-button";
+import { TipButton } from "@/components/tip-button";
 import { createClient } from "@/lib/supabase/client";
 import { getOrCreateDeviceId } from "@/lib/device-id";
 import { formatRelativeTime, messageForError } from "@/lib/format";
@@ -74,6 +75,7 @@ export function ChatRoom({
   const [activeCall, setActiveCall] = useState(initialCall);
   const [blockState, setBlockState] = useState(initialBlockState);
   const [otherAccount, setOtherAccount] = useState(other);
+  const [topupOpen, setTopupOpen] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null);
 
@@ -296,7 +298,7 @@ export function ChatRoom({
             <Coins size={19} />
             <span><strong>{Number(profile.chat_rate_coins)} coins</strong> per message</span>
             <span className="wallet-inline">{wallet} left</span>
-            <Link href="/wallet">Top up</Link>
+            <button type="button" onClick={() => setTopupOpen(true)}>Buy coins</button>
           </div>
         )}
         {blocked && (
@@ -314,6 +316,15 @@ export function ChatRoom({
         <form className="message-composer" onSubmit={(event) => { event.preventDefault(); if (text.trim()) void sendMessage("text", text); }}>
           <button type="button" className="icon-button" title={blocked ? "Blocked" : "Add media"} onClick={() => setShowMedia(!showMedia)} disabled={blocked}><ImagePlus size={20} /></button>
           <button type="button" className="icon-button" title={blocked ? "Blocked" : "Emoji"} onClick={() => setShowEmoji(!showEmoji)} disabled={blocked}><SmilePlus size={20} /></button>
+          <TipButton
+            roomId={room.id}
+            recipientName={otherAccount.display_name}
+            wallet={wallet}
+            onWalletChange={setWallet}
+            onMessage={setError}
+            disabled={blocked}
+            compact
+          />
           <textarea value={text} onChange={(event) => signalTyping(event.target.value)} placeholder={blocked ? "Blocked" : "Write a message"} rows={1} maxLength={4000} disabled={blocked} />
           <button type="submit" className="send-button" title={blocked ? "Blocked" : "Send"} disabled={pending || blocked || !text.trim()}>
             {pending ? <LoaderCircle className="spin" size={19} /> : <Send size={19} />}
@@ -328,10 +339,21 @@ export function ChatRoom({
           viewerId={viewerId}
           other={otherAccount}
           image={primaryImage}
+          wallet={wallet}
           onChange={setActiveCall}
           onClose={() => setActiveCall(null)}
+          onWalletChange={setWallet}
+          onMessage={setError}
         />
       )}
+      <CoinTopupModal
+        open={topupOpen}
+        onClose={() => setTopupOpen(false)}
+        onComplete={(balance, coins) => {
+          setWallet(balance);
+          setError(`${coins} coins added.`);
+        }}
+      />
     </div>
   );
 }
@@ -416,16 +438,22 @@ function CallOverlay({
   viewerId,
   other,
   image,
+  wallet,
   onChange,
   onClose,
+  onWalletChange,
+  onMessage,
 }: {
   call: Call;
   room: Room;
   viewerId: string;
   other: Account;
   image?: string;
+  wallet: number;
   onChange: (call: Call) => void;
   onClose: () => void;
+  onWalletChange: (balance: number) => void;
+  onMessage: (message: string) => void;
 }) {
   const [pendingAction, setPendingAction] = useState<"accept" | "reject" | "end" | null>(null);
   const isReceiver = call.receiver_id === viewerId;
@@ -481,7 +509,22 @@ function CallOverlay({
         </div>
 
         {call.status === "ongoing" ? (
-          <AgoraCallSession call={call} room={room} endControl={endControl} />
+          <AgoraCallSession
+            call={call}
+            room={room}
+            tipControl={(
+              <TipButton
+                roomId={room.id}
+                callId={call.id}
+                recipientName={other.display_name}
+                wallet={wallet}
+                onWalletChange={onWalletChange}
+                onMessage={onMessage}
+                compact
+              />
+            )}
+            endControl={endControl}
+          />
         ) : (
           <div className="ringing-stage">
             <div className="ringing-avatar-wrap">
