@@ -170,7 +170,7 @@ export function WalletView({
 
       {topupOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setTopupOpen(false)}>
-          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="topup-title" onMouseDown={(event) => event.stopPropagation()}>
+          <div className="modal coin-topup-modal" role="dialog" aria-modal="true" aria-labelledby="topup-title" onMouseDown={(event) => event.stopPropagation()}>
             <div className="modal-header"><div><span className="eyebrow">Offers applied</span><h2 id="topup-title">Add coins</h2></div><button className="icon-button" title="Close" onClick={() => setTopupOpen(false)}><X size={20} /></button></div>
             <p className="coin-offer-note">Lowest recharge: ₹50 gets 45 coins. Bigger packs include bonus coins.</p>
             <div className="coin-packages">

@@ -4237,6 +4237,19 @@ body:has(.side-nav) .global-back-button-fixed {
     min-height: 38px;
     padding-inline: 12px;
   }
+  .modal-backdrop {
+    z-index: 1000;
+    place-items: start center;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: max(16px, env(safe-area-inset-top)) 16px calc(108px + var(--mobile-nav-bottom-gap));
+  }
+  .modal {
+    max-height: none;
+  }
+  .coin-topup-modal {
+    width: min(390px, 100%);
+  }
   .page-header h1,
   .profile-identity h1 { font-size: 29px; }
   .profile-grid { grid-template-columns: 1fr; gap: 14px; }

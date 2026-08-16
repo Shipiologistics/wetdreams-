@@ -46,7 +46,7 @@ export function CoinTopupModal({
 
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
-      <div className="modal compact-modal" role="dialog" aria-modal="true" aria-labelledby="quick-topup-title" onMouseDown={(event) => event.stopPropagation()}>
+      <div className="modal compact-modal coin-topup-modal" role="dialog" aria-modal="true" aria-labelledby="quick-topup-title" onMouseDown={(event) => event.stopPropagation()}>
         <div className="modal-header">
           <div><span className="eyebrow">Wallet</span><h2 id="quick-topup-title">Buy coins</h2></div>
           <button className="icon-button" title="Close" type="button" onClick={onClose}><X size={20} /></button>
