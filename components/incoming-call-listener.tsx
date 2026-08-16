@@ -108,6 +108,22 @@ export function IncomingCallListener() {
     };
   }, [pathname, router]);
 
+  useEffect(() => {
+    if (!incoming) return;
+    document.documentElement.classList.add("call-overlay-open");
+    return () => {
+      document.documentElement.classList.remove("call-overlay-open");
+      window.requestAnimationFrame(() => {
+        const appMain = document.querySelector<HTMLElement>(".app-main");
+        if (appMain) {
+          appMain.scrollTop = 0;
+          appMain.scrollLeft = 0;
+        }
+        window.scrollTo(0, 0);
+      });
+    };
+  }, [incoming]);
+
   async function respond(accept: boolean) {
     if (!incoming) return;
     setPending(accept ? "accept" : "reject");

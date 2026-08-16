@@ -65,6 +65,17 @@ export function AppShell({
     navItems.forEach((item) => router.prefetch(item.href));
   }, [navItems, router]);
 
+  useEffect(() => {
+    window.requestAnimationFrame(() => {
+      const appMain = document.querySelector<HTMLElement>(".app-main");
+      if (appMain) {
+        appMain.scrollTop = 0;
+        appMain.scrollLeft = 0;
+      }
+      window.scrollTo(0, 0);
+    });
+  }, [pathname]);
+
   function startNavigation(href: string) {
     if (href !== pathname) setPendingHref(href);
     router.prefetch(href);

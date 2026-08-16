@@ -16,6 +16,7 @@ export function TipButton({
   disabled,
   onWalletChange,
   onMessage,
+  onTipSent,
   compact = false,
 }: {
   roomId: string;
@@ -25,6 +26,7 @@ export function TipButton({
   disabled?: boolean;
   onWalletChange: (balance: number) => void;
   onMessage?: (message: string) => void;
+  onTipSent?: (amount: number) => void;
   compact?: boolean;
 }) {
   const [tipOpen, setTipOpen] = useState(false);
@@ -51,7 +53,7 @@ export function TipButton({
       return;
     }
     onWalletChange(Number(balance));
-    onMessage?.(`${formatMoney(amount)} coins tipped to ${recipientName}.`);
+    onTipSent?.(amount);
     setTipOpen(false);
   }
 

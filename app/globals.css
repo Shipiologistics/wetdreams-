@@ -32,6 +32,16 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+html.call-overlay-open,
+html.call-overlay-open body {
+  height: 100%;
+  overflow: hidden;
+}
+
+html.call-overlay-open .app-main {
+  overflow: hidden;
+}
+
 button,
 input,
 textarea,
@@ -1827,6 +1837,11 @@ body:has(.side-nav) .global-back-button-fixed {
   z-index: 3;
 }
 
+.call-topbar > div:not(.call-wallet-pills) {
+  min-width: 0;
+  flex: 1;
+}
+
 .call-topbar h2,
 .ringing-stage h2 {
   margin: 0;
@@ -1841,6 +1856,34 @@ body:has(.side-nav) .global-back-button-fixed {
   margin: 0;
   color: rgb(255 255 255 / 70%);
   text-transform: capitalize;
+}
+
+.call-wallet-pills {
+  flex: 0 0 auto;
+  display: grid;
+  gap: 5px;
+  justify-items: end;
+}
+
+.call-wallet-pills span {
+  min-height: 24px;
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgb(255 255 255 / 12%);
+  color: white;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  backdrop-filter: blur(10px);
+}
+
+.call-wallet-pills span:nth-child(2) {
+  color: #dffbf1;
+  background: rgb(37 211 102 / 18%);
 }
 
 .ringing-stage {
@@ -1959,6 +2002,32 @@ body:has(.side-nav) .global-back-button-fixed {
   color: white;
   background: rgb(255 255 255 / 18%);
   box-shadow: 0 14px 30px rgb(0 0 0 / 24%);
+}
+
+.tip-burst {
+  position: fixed;
+  top: max(76px, calc(env(safe-area-inset-top) + 56px));
+  left: 50%;
+  z-index: 130;
+  max-width: min(320px, calc(100vw - 32px));
+  border: 1px solid rgb(255 255 255 / 72%);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: rgb(255 255 255 / 96%);
+  color: var(--ink);
+  box-shadow: 0 22px 50px rgb(31 34 31 / 24%);
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+  transform: translateX(-50%);
+  animation: tipBurst 2600ms ease both;
+}
+
+.tip-burst svg {
+  color: var(--accent);
 }
 
 .call-bottom-controls {
@@ -3985,6 +4054,11 @@ body:has(.side-nav) .global-back-button-fixed {
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes typing { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
 @keyframes pulse { 0% { transform: scale(0.85); opacity: 0.7; } 100% { transform: scale(1.16); opacity: 0; } }
+@keyframes tipBurst {
+  0% { opacity: 0; transform: translate(-50%, 14px) scale(0.92); }
+  12%, 82% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -8px) scale(0.98); }
+}
 
 @media (max-width: 1060px) {
   .profile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -4158,6 +4232,11 @@ body:has(.side-nav) .global-back-button-fixed {
   .call-topbar { min-height: 52px; }
   .call-topbar h2,
   .ringing-stage h2 { font-size: 24px; }
+  .call-wallet-pills span {
+    min-height: 22px;
+    padding: 4px 7px;
+    font-size: 10px;
+  }
   .agora-video-stage { border-radius: 16px; }
   .agora-local-video {
     width: 94px;

@@ -6,6 +6,7 @@ import Image from "next/image";
 import {
   CircleAlert,
   Coins,
+  Gift,
   ImagePlus,
   LoaderCircle,
   MoreVertical,
@@ -28,6 +29,8 @@ import type { Account, ChatRoom as Room, Message, Profile, ProfileMedia } from "
 import type { Database } from "@/lib/database.types";
 
 type Call = Database["public"]["Tables"]["calls"]["Row"];
+type Wallet = Database["public"]["Tables"]["wallets"]["Row"];
+type WalletTransaction = Database["public"]["Tables"]["wallet_transactions"]["Row"];
 const emoji = ["😀", "😂", "❤️", "✨", "👍", "🙌", "🔥", "🤍"];
 
 type ChatMediaUpload = {
@@ -44,7 +47,8 @@ type BlockState = {
 
 export function ChatRoom({
   viewerId,
-  initialWallet,
+  initialCoins,
+  initialBeans,
   room,
   other,
   profile,
@@ -54,7 +58,8 @@ export function ChatRoom({
   initialBlockState,
 }: {
   viewerId: string;
-  initialWallet: number;
+  initialCoins: number;
+  initialBeans: number;
   room: Room;
   other: Account;
   profile: Profile;
@@ -71,12 +76,15 @@ export function ChatRoom({
   const [showMedia, setShowMedia] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [typing, setTyping] = useState(false);
-  const [wallet, setWallet] = useState(initialWallet);
+  const [coinWallet, setCoinWallet] = useState(initialCoins);
+  const [beanWallet, setBeanWallet] = useState(initialBeans);
   const [activeCall, setActiveCall] = useState(initialCall);
   const [blockState, setBlockState] = useState(initialBlockState);
   const [otherAccount, setOtherAccount] = useState(other);
   const [topupOpen, setTopupOpen] = useState(false);
+  const [tipBurst, setTipBurst] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const burstTimerRef = useRef<number | null>(null);
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null);
 
   const primaryImage = media.find((item) => item.is_primary)?.cloudinary_url ?? media[0]?.cloudinary_url;
@@ -126,10 +134,31 @@ export function ChatRoom({
         { event: "UPDATE", schema: "public", table: "users", filter: `id=eq.${other.id}` },
         (payload) => setOtherAccount(payload.new as Account),
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "wallets", filter: `user_id=eq.${viewerId}` },
+        (payload) => {
+          const nextWallet = payload.new as Wallet;
+          setCoinWallet(Number(nextWallet.coins_balance));
+          setBeanWallet(Number(nextWallet.beans_balance));
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "wallet_transactions", filter: `user_id=eq.${viewerId}` },
+        (payload) => {
+          const transaction = payload.new as WalletTransaction;
+          if (transaction.type !== "tip_earn" || transaction.related_chat_id !== room.id) return;
+          showTipBurst(`+${formatTipAmount(transaction.amount)} beans received`);
+        },
+      )
       .subscribe();
     channelRef.current = channel;
     void supabase.rpc("mark_room_read", { p_room_id: room.id });
-    return () => { void supabase.removeChannel(channel); };
+    return () => {
+      if (burstTimerRef.current) window.clearTimeout(burstTimerRef.current);
+      void supabase.removeChannel(channel);
+    };
   }, [other.id, room.id, viewerId]);
 
   useEffect(() => {
@@ -139,6 +168,12 @@ export function ChatRoom({
   function signalTyping(value: string) {
     setText(value);
     void channelRef.current?.httpSend("typing", { userId: viewerId, typing: Boolean(value) });
+  }
+
+  function showTipBurst(message: string) {
+    setTipBurst(message);
+    if (burstTimerRef.current) window.clearTimeout(burstTimerRef.current);
+    burstTimerRef.current = window.setTimeout(() => setTipBurst(null), 2600);
   }
 
   async function sendMessage(messageType: "text" | "emoji" | "image" | "video", content?: string, media?: ChatMediaUpload) {
@@ -171,7 +206,7 @@ export function ChatRoom({
       .order("created_at")
       .limit(200);
     if (latest) setMessages(latest);
-    if (data?.is_paid) setWallet((current) => Math.max(0, current - Number(data.coins_charged)));
+    if (data?.is_paid) setCoinWallet((current) => Math.max(0, current - Number(data.coins_charged)));
     setText("");
     setShowEmoji(false);
     void channelRef.current?.httpSend("typing", { userId: viewerId, typing: false });
@@ -298,7 +333,7 @@ export function ChatRoom({
           <div className="paywall-banner">
             <Coins size={19} />
             <span><strong>{Number(profile.chat_rate_coins)} coins</strong> unlocks 1 min chat</span>
-            <span className="wallet-inline">{wallet} left</span>
+            <span className="wallet-inline">{coinWallet} left</span>
             <button type="button" onClick={() => setTopupOpen(true)}>Buy coins</button>
           </div>
         )}
@@ -321,9 +356,10 @@ export function ChatRoom({
             <TipButton
               roomId={room.id}
               recipientName={otherAccount.display_name}
-              wallet={wallet}
-              onWalletChange={setWallet}
+              wallet={coinWallet}
+              onWalletChange={setCoinWallet}
               onMessage={setError}
+              onTipSent={(amount) => showTipBurst(`${formatTipAmount(amount)} coins sent`)}
               compact
             />
           )}
@@ -341,23 +377,35 @@ export function ChatRoom({
           viewerId={viewerId}
           other={otherAccount}
           image={primaryImage}
-          wallet={wallet}
+          coins={coinWallet}
+          beans={beanWallet}
           onChange={setActiveCall}
           onClose={() => setActiveCall(null)}
-          onWalletChange={setWallet}
+          onWalletChange={setCoinWallet}
           onMessage={setError}
+          onTipSent={(amount) => showTipBurst(`${formatTipAmount(amount)} coins sent`)}
         />
+      )}
+      {tipBurst && (
+        <div className="tip-burst" role="status" aria-live="polite">
+          <Gift size={20} />
+          <span>{tipBurst}</span>
+        </div>
       )}
       <CoinTopupModal
         open={topupOpen}
         onClose={() => setTopupOpen(false)}
         onComplete={(balance, coins) => {
-          setWallet(balance);
+          setCoinWallet(balance);
           setError(`${coins} coins added.`);
         }}
       />
     </div>
   );
+}
+
+function formatTipAmount(amount: number) {
+  return Number(amount).toLocaleString("en-IN", { maximumFractionDigits: 2 });
 }
 
 function MediaComposer({ onClose, onSend }: { onClose: () => void; onSend: (upload: ChatMediaUpload) => void }) {
@@ -440,22 +488,26 @@ function CallOverlay({
   viewerId,
   other,
   image,
-  wallet,
+  coins,
+  beans,
   onChange,
   onClose,
   onWalletChange,
   onMessage,
+  onTipSent,
 }: {
   call: Call;
   room: Room;
   viewerId: string;
   other: Account;
   image?: string;
-  wallet: number;
+  coins: number;
+  beans: number;
   onChange: (call: Call) => void;
   onClose: () => void;
   onWalletChange: (balance: number) => void;
   onMessage: (message: string) => void;
+  onTipSent: (amount: number) => void;
 }) {
   const [pendingAction, setPendingAction] = useState<"accept" | "reject" | "end" | null>(null);
   const isReceiver = call.receiver_id === viewerId;
@@ -466,6 +518,21 @@ function CallOverlay({
       ? `Incoming ${call.call_type} call`
       : "Ringing...";
   const canTipOther = other.role === "user" && !other.is_guest;
+
+  useEffect(() => {
+    document.documentElement.classList.add("call-overlay-open");
+    return () => {
+      document.documentElement.classList.remove("call-overlay-open");
+      window.requestAnimationFrame(() => {
+        const appMain = document.querySelector<HTMLElement>(".app-main");
+        if (appMain) {
+          appMain.scrollTop = 0;
+          appMain.scrollLeft = 0;
+        }
+        window.scrollTo(0, 0);
+      });
+    };
+  }, []);
 
   async function respond(accept: boolean) {
     setPendingAction(accept ? "accept" : "reject");
@@ -509,6 +576,10 @@ function CallOverlay({
             <h2>{other.display_name}</h2>
             <p>{statusText}</p>
           </div>
+          <div className="call-wallet-pills" aria-label="Wallet balance">
+            <span><Coins size={14} /> {formatTipAmount(coins)} coins</span>
+            <span><Gift size={14} /> {formatTipAmount(beans)} beans</span>
+          </div>
         </div>
 
         {call.status === "ongoing" ? (
@@ -521,9 +592,10 @@ function CallOverlay({
                   roomId={room.id}
                   callId={call.id}
                   recipientName={other.display_name}
-                  wallet={wallet}
+                  wallet={coins}
                   onWalletChange={onWalletChange}
                   onMessage={onMessage}
+                  onTipSent={onTipSent}
                   compact
                 />
               ) : null
