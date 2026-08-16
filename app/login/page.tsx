@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { AuthForm } from "@/components/auth-form";
+import { LegalLinks } from "@/components/legal-links";
 import { Logo } from "@/components/logo";
 
 export const metadata: Metadata = { title: "Welcome" };
@@ -26,7 +27,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <h1>Meet people who are here to talk.</h1>
           <p>Ten messages are always on us. Stay when the conversation feels right.</p>
         </div>
-        <AuthForm next={next} />
+        <div className="auth-panel-stack">
+          <AuthForm next={next} />
+          <LegalLinks compact />
+        </div>
       </section>
     </main>
   );

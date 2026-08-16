@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { DiscoverGrid } from "@/components/discover-grid";
+import { LegalLinks } from "@/components/legal-links";
 import { getViewer } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { DiscoveryProfile } from "@/lib/view-models";
@@ -71,6 +72,7 @@ export default async function DiscoverPage() {
         )}
       </header>
       <DiscoverGrid profiles={models} viewerId={viewer?.id ?? null} />
+      {!viewer && <LegalLinks compact />}
     </div>
   );
 

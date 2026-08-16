@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const legalRoutes = ["/privacy", "/terms", "/refund-policy", "/host-policy", "/safety"];
   const supabase = await createClient();
   const { data: users } = await supabase
     .from("users")
@@ -12,6 +13,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .eq("role", "user");
   return [
     { url: base, changeFrequency: "weekly", priority: 1 },
+    ...legalRoutes.map((route) => ({
+      url: `${base}${route}`,
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
     ...(users ?? []).map((user) => ({
       url: `${base}/u/${user.username}`,
       lastModified: user.updated_at,

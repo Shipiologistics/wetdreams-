@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowDownLeft,
@@ -104,6 +105,7 @@ export function WalletView({
       <section className="withdrawal-policy-card" aria-label="Withdrawal processing policy">
         <div><Clock3 size={20} /><span>Processed within 24 hours</span></div>
         <div><CalendarX2 size={20} /><span>No payouts on Sundays or government holidays</span></div>
+        <Link href="/host-policy">Read host payout policy</Link>
       </section>
 
       <section className="wallet-summary">
@@ -180,6 +182,7 @@ export function WalletView({
               <p className="conversion-note">You receive ₹{formatMoney(beanInrValue)} per approved bean.</p>
               <p><Clock3 size={15} /> Processed within 24 hours.</p>
               <p><CalendarX2 size={15} /> No payouts on Sundays or government holidays.</p>
+              <Link href="/host-policy" target="_blank">Read payout rules</Link>
             </div>
             <button className="button primary wide" type="submit" disabled={pending !== null}>{pending === "withdraw" && <LoaderCircle className="spin" size={18} />} Submit request</button>
           </form>
