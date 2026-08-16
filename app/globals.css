@@ -692,6 +692,39 @@ body:has(.side-nav) .global-back-button-fixed {
   gap: 12px;
 }
 
+.auth-guest-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid #dde5e1;
+  border-radius: 8px;
+  background: #f3faf7;
+  padding: 14px;
+  margin-bottom: 6px;
+}
+
+.auth-guest-card > div:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.auth-guest-card span {
+  color: var(--teal);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.auth-guest-card strong {
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.auth-guest-card .location-select-grid {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
 .form-stack label,
 .field {
   position: relative;

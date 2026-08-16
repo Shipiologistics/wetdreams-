@@ -15,7 +15,7 @@ type AuthFormProps = {
 };
 
 export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
-  const [mode, setMode] = useState<"login" | "signup">("signup");
+  const [mode, setMode] = useState<"login" | "signup">("login");
   const [pending, setPending] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -142,27 +142,38 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
       <div className="auth-panel-heading compact">
         <span className="auth-kicker">WetDreams access</span>
         <h2>{mode === "signup" ? "Create account" : "Welcome back"}</h2>
-        <p>{mode === "signup" ? "Register with any email." : "Sign in with your email."}</p>
+        <p>{mode === "signup" ? "Register with any email." : "Continue as guest or login."}</p>
       </div>
 
-      <div className="auth-tabs" role="tablist" aria-label="Email access">
-        <button className={mode === "signup" ? "active" : ""} type="button" onClick={() => { setMode("signup"); setError(null); setNotice(null); }}>
-          Register
+      <div className="auth-guest-card">
+        <div>
+          <span>Fast start</span>
+          <strong>Guest sign in</strong>
+        </div>
+        <LocationSelects state={state} city={city} onStateChange={setState} onCityChange={setCity} />
+        <button className="button primary wide" type="button" onClick={continueAsGuest} disabled={!!pending}>
+          {pending === "guest" ? <LoaderCircle className="spin" size={19} /> : <UserRound size={19} />}
+          Continue as guest
         </button>
+      </div>
+
+      <div className="auth-divider"><span>{mode === "login" ? "or login" : "or register"}</span></div>
+
+      <div className="auth-tabs" role="tablist" aria-label="Email access">
         <button className={mode === "login" ? "active" : ""} type="button" onClick={() => { setMode("login"); setError(null); setNotice(null); }}>
           Login
+        </button>
+        <button className={mode === "signup" ? "active" : ""} type="button" onClick={() => { setMode("signup"); setError(null); setNotice(null); }}>
+          Register
         </button>
       </div>
 
       <form onSubmit={submitEmail} className="form-stack auth-email-form">
         {mode === "signup" && (
-          <>
-            <LocationSelects state={state} city={city} onStateChange={setState} onCityChange={setCity} />
-            <label>
-              Name
-              <input name="displayName" autoComplete="name" minLength={2} maxLength={60} placeholder="Your name" required />
-            </label>
-          </>
+          <label>
+            Name
+            <input name="displayName" autoComplete="name" minLength={2} maxLength={60} placeholder="Your name" required />
+          </label>
         )}
         <label>
           Email
@@ -178,21 +189,11 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
         </button>
       </form>
 
-      <div className="auth-divider"><span>or</span></div>
-
-      <div className="quick-auth-actions">
-        {mode === "login" && <LocationSelects state={state} city={city} onStateChange={setState} onCityChange={setCity} />}
-        <button className="button secondary wide" type="button" onClick={continueAsGuest} disabled={!!pending}>
-          {pending === "guest" ? <LoaderCircle className="spin" size={19} /> : <UserRound size={19} />}
-          Continue as guest
-        </button>
-      </div>
-
       {error && <p className="form-message error" role="alert">{error}</p>}
       {notice && <p className="form-message success" role="status">{notice}</p>}
 
       <button className="auth-switch" type="button" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(null); setNotice(null); }}>
-        {mode === "login" ? "Need an account? Register" : "Already registered? Login"} <ArrowRight size={14} />
+        {mode === "login" ? "New here? Register" : "Already registered? Login"} <ArrowRight size={14} />
       </button>
     </div>
   );
