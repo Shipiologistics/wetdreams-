@@ -67,6 +67,9 @@ export function AppShell({
 
   useEffect(() => {
     window.requestAnimationFrame(() => {
+      if (!document.querySelector(".call-overlay")) {
+        document.documentElement.classList.remove("call-overlay-open");
+      }
       const appMain = document.querySelector<HTMLElement>(".app-main");
       if (appMain) {
         appMain.scrollTop = 0;
