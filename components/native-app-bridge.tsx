@@ -1,14 +1,23 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { App as CapacitorApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { PushNotifications } from "@capacitor/push-notifications";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { getOrCreateDeviceId } from "@/lib/device-id";
 import { createClient } from "@/lib/supabase/client";
 
+const homePath = "/discover";
+
 export function NativeAppBridge() {
   const router = useRouter();
+  const pathname = usePathname();
+  const pathnameRef = useRef(pathname);
+
+  useEffect(() => {
+    pathnameRef.current = pathname;
+  }, [pathname]);
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== "android") return;
@@ -47,6 +56,31 @@ export function NativeAppBridge() {
       if (roomId) router.push(`/chat/${roomId}`);
     });
 
+    const backButton = CapacitorApp.addListener("backButton", async ({ canGoBack }) => {
+      const closeButton = document.querySelector<HTMLButtonElement>(".modal [title='Close']");
+      if (closeButton) {
+        closeButton.click();
+        return;
+      }
+
+      const currentPath = pathnameRef.current || window.location.pathname;
+      const isHome = currentPath === "/" || currentPath === homePath;
+
+      if (isHome) {
+        if (window.confirm("Do you want to exit the app?")) {
+          await CapacitorApp.exitApp();
+        }
+        return;
+      }
+
+      if (canGoBack && window.history.length > 1) {
+        window.history.back();
+        return;
+      }
+
+      router.replace(homePath);
+    });
+
     void registerPushToken().catch((error) => {
       console.warn("Push permission request failed", error);
     });
@@ -62,6 +96,7 @@ export function NativeAppBridge() {
       void registration.then((listener) => listener.remove());
       void registrationError.then((listener) => listener.remove());
       void actionPerformed.then((listener) => listener.remove());
+      void backButton.then((listener) => listener.remove());
       authSubscription.data.subscription.unsubscribe();
     };
   }, [router]);
