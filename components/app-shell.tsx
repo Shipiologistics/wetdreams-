@@ -66,7 +66,8 @@ export function AppShell({
   }, [navItems, router]);
 
   useEffect(() => {
-    window.requestAnimationFrame(() => {
+    const frame = window.requestAnimationFrame(() => {
+      setPendingHref(null);
       if (!document.querySelector(".call-overlay")) {
         document.documentElement.classList.remove("call-overlay-open");
       }
@@ -77,6 +78,7 @@ export function AppShell({
       }
       window.scrollTo(0, 0);
     });
+    return () => window.cancelAnimationFrame(frame);
   }, [pathname]);
 
   function startNavigation(href: string) {

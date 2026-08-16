@@ -12,6 +12,14 @@ export function RandomMatch({ userId }: { userId: string }) {
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mounted = useRef(true);
+  const openingRoom = useRef<string | null>(null);
+
+  const openRoom = useCallback((roomId: string) => {
+    if (openingRoom.current === roomId) return;
+    openingRoom.current = roomId;
+    setState("matched");
+    router.replace(`/chat/${roomId}`);
+  }, [router]);
 
   const match = useCallback(async () => {
     const { data, error: matchError } = await createClient().rpc("match_random_chat");
@@ -23,10 +31,9 @@ export function RandomMatch({ userId }: { userId: string }) {
       return;
     }
     if (data) {
-      setState("matched");
-      router.push(`/chat/${data}`);
+      openRoom(data);
     }
-  }, [router]);
+  }, [openRoom]);
 
   useEffect(() => {
     mounted.current = true;
@@ -40,8 +47,7 @@ export function RandomMatch({ userId }: { userId: string }) {
         (payload) => {
           const row = payload.new as { status: string; matched_room_id: string | null };
           if (row.status === "matched" && row.matched_room_id) {
-            setState("matched");
-            router.push(`/chat/${row.matched_room_id}`);
+            openRoom(row.matched_room_id);
           }
         },
       )
@@ -55,7 +61,7 @@ export function RandomMatch({ userId }: { userId: string }) {
       window.clearInterval(retry);
       void supabase.removeChannel(channel);
     };
-  }, [match, router, state, userId]);
+  }, [match, openRoom, state, userId]);
 
   async function cancel() {
     mounted.current = false;
