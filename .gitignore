@@ -14,3 +14,10 @@ test-artifacts/
 *.log
 *.tsbuildinfo
 .DS_Store
+android/.gradle/
+android/build/
+android/app/build/
+android/app/release/
+android/app/*.jks
+android/app/*.keystore
+android/app/google-services.json

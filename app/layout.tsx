@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { GlobalBackButton } from "@/components/global-back-button";
+import { NativeAppBridge } from "@/components/native-app-bridge";
 import { VisitorTracker } from "@/components/visitor-tracker";
 import "./globals.css";
 
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en">
       <body>
         <GlobalBackButton />
+        <NativeAppBridge />
         <VisitorTracker />
         {children}
       </body>

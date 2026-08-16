@@ -546,6 +546,44 @@ export type Database = {
           },
         ]
       }
+      push_tokens: {
+        Row: {
+          created_at: string
+          device_hash: string | null
+          enabled: boolean
+          last_seen_at: string
+          platform: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_hash?: string | null
+          enabled?: boolean
+          last_seen_at?: string
+          platform?: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_hash?: string | null
+          enabled?: boolean
+          last_seen_at?: string
+          platform?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       random_chat_queue: {
         Row: {
           id: string
@@ -1040,6 +1078,10 @@ export type Database = {
       mark_room_read: { Args: { p_room_id: string }; Returns: number }
       match_random_chat: { Args: never; Returns: string }
       register_device: { Args: { p_device_id: string }; Returns: boolean }
+      register_push_token: {
+        Args: { p_device_id?: string | null; p_platform?: string; p_token: string }
+        Returns: boolean
+      }
       report_user: {
         Args: { p_reason: string; p_reported_user: string; p_room_id: string }
         Returns: string
