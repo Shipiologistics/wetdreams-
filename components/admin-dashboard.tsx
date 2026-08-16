@@ -304,25 +304,30 @@ export function AdminDashboard({
         )}
 
         {section === "withdrawals" && (
-          <div className="admin-list">
-            {withdrawals.map((withdrawal) => (
-              <article className="admin-row compact-row" key={withdrawal.id}>
-                <div className="admin-row-main">
-                  <span className={`status-label ${withdrawal.status}`}>{withdrawal.status}</span>
-                  <h3>{userMap.get(withdrawal.user_id)?.display_name ?? "User"}</h3>
-                  <p>{formatMoney(withdrawal.beans_requested)} beans · ₹{formatMoney(withdrawal.inr_amount)}</p>
-                  <time>{formatRelativeTime(withdrawal.created_at)}</time>
-                </div>
-                {withdrawal.status === "pending" && (
-                  <div className="admin-row-actions">
-                    <button className="button secondary small" onClick={() => reviewWithdrawal(withdrawal, false)}>Reject</button>
-                    <button className="button primary small" onClick={() => reviewWithdrawal(withdrawal, true)}>Mark paid</button>
+          <>
+            <div className="admin-service-note">
+              Payout requests should be processed within 24 hours. Do not process payouts on Sundays or government holidays.
+            </div>
+            <div className="admin-list">
+              {withdrawals.map((withdrawal) => (
+                <article className="admin-row compact-row" key={withdrawal.id}>
+                  <div className="admin-row-main">
+                    <span className={`status-label ${withdrawal.status}`}>{withdrawal.status}</span>
+                    <h3>{userMap.get(withdrawal.user_id)?.display_name ?? "User"}</h3>
+                    <p>{formatMoney(withdrawal.beans_requested)} beans · ₹{formatMoney(withdrawal.inr_amount)}</p>
+                    <time>{formatRelativeTime(withdrawal.created_at)}</time>
                   </div>
-                )}
-              </article>
-            ))}
-            {!withdrawals.length && <div className="inline-empty">No withdrawal requests.</div>}
-          </div>
+                  {withdrawal.status === "pending" && (
+                    <div className="admin-row-actions">
+                      <button className="button secondary small" onClick={() => reviewWithdrawal(withdrawal, false)}>Reject</button>
+                      <button className="button primary small" onClick={() => reviewWithdrawal(withdrawal, true)}>Mark paid</button>
+                    </div>
+                  )}
+                </article>
+              ))}
+              {!withdrawals.length && <div className="inline-empty">No withdrawal requests.</div>}
+            </div>
+          </>
         )}
 
         {section === "settings" && (

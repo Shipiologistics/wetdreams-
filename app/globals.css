@@ -1850,6 +1850,36 @@ body:has(.side-nav) .global-back-button-fixed {
   font-size: 18px;
 }
 
+.withdrawal-policy-card {
+  min-height: 70px;
+  margin: -18px 0 26px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  background: #fff;
+  overflow: hidden;
+}
+
+.withdrawal-policy-card > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.withdrawal-policy-card > div + div {
+  border-left: 1px solid var(--line);
+}
+
+.withdrawal-policy-card svg {
+  flex: 0 0 auto;
+  color: var(--teal);
+}
+
 .page-notice {
   margin: 14px 0;
   border-radius: 6px;
@@ -2085,6 +2115,27 @@ body:has(.side-nav) .global-back-button-fixed {
   margin: 10px 0 20px;
   color: var(--muted);
   font-size: 12px;
+}
+
+.withdrawal-modal-policy {
+  margin-bottom: 20px;
+}
+
+.withdrawal-modal-policy .conversion-note {
+  margin-bottom: 10px;
+}
+
+.withdrawal-modal-policy p:not(.conversion-note) {
+  margin: 7px 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.withdrawal-modal-policy svg {
+  color: var(--teal);
 }
 
 /* Profile settings */
@@ -2851,6 +2902,18 @@ body:has(.side-nav) .global-back-button-fixed {
   gap: 7px;
 }
 
+.admin-service-note {
+  margin: 18px 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff8de;
+  padding: 13px 15px;
+  color: #65531c;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
 .admin-facts {
   display: flex;
   flex-wrap: wrap;
@@ -3298,6 +3361,8 @@ body:has(.side-nav) .global-back-button-fixed {
   .match-visual { width: 190px; height: 190px; }
   .balance-grid { grid-template-columns: 1fr; }
   .balance-card { min-height: 225px; }
+  .withdrawal-policy-card { grid-template-columns: 1fr; }
+  .withdrawal-policy-card > div + div { border-left: 0; border-top: 1px solid var(--line); }
   .wallet-summary { grid-template-columns: 1fr; }
   .wallet-summary > div { min-height: 62px; }
   .wallet-summary > div + div { border-left: 0; border-top: 1px solid var(--line); }

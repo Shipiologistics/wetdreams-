@@ -6,6 +6,8 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Bean,
+  CalendarX2,
+  Clock3,
   Coins,
   History,
   LoaderCircle,
@@ -21,8 +23,19 @@ type Wallet = Database["public"]["Tables"]["wallets"]["Row"];
 type Transaction = Database["public"]["Tables"]["wallet_transactions"]["Row"];
 type Withdrawal = Database["public"]["Tables"]["withdrawal_requests"]["Row"];
 const packages = [100, 250, 500, 1000];
+const withdrawalPolicy = "Withdrawals are processed within 24 hours, except Sundays and government holidays.";
 
-export function WalletView({ wallet, transactions, withdrawals }: { wallet: Wallet; transactions: Transaction[]; withdrawals: Withdrawal[] }) {
+export function WalletView({
+  wallet,
+  transactions,
+  withdrawals,
+  beanInrValue,
+}: {
+  wallet: Wallet;
+  transactions: Transaction[];
+  withdrawals: Withdrawal[];
+  beanInrValue: number;
+}) {
   const router = useRouter();
   const [topupOpen, setTopupOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
@@ -56,7 +69,7 @@ export function WalletView({ wallet, transactions, withdrawals }: { wallet: Wall
     setPending(null);
     if (error) return setMessage(messageForError(error.message));
     setWithdrawOpen(false);
-    setMessage("Withdrawal request submitted.");
+    setMessage(`Withdrawal request submitted. ${withdrawalPolicy}`);
     router.refresh();
   }
 
@@ -81,11 +94,16 @@ export function WalletView({ wallet, transactions, withdrawals }: { wallet: Wall
           <div className="balance-icon"><Bean size={24} /></div>
           <span>Beans</span>
           <strong>{formatMoney(wallet.beans_balance)}</strong>
-          <p>₹0.80 per bean</p>
+          <p>₹{formatMoney(beanInrValue)} per bean</p>
           <button className="button dark" type="button" onClick={() => setWithdrawOpen(true)} disabled={Number(wallet.beans_balance) < 1}>
             <ArrowUpRight size={18} /> Withdraw
           </button>
         </article>
+      </section>
+
+      <section className="withdrawal-policy-card" aria-label="Withdrawal processing policy">
+        <div><Clock3 size={20} /><span>Processed within 24 hours</span></div>
+        <div><CalendarX2 size={20} /><span>No payouts on Sundays or government holidays</span></div>
       </section>
 
       <section className="wallet-summary">
@@ -123,7 +141,7 @@ export function WalletView({ wallet, transactions, withdrawals }: { wallet: Wall
 
       {withdrawals.length > 0 && (
         <section className="withdrawal-section">
-          <div className="section-heading"><h2>Withdrawals</h2></div>
+          <div className="section-heading"><div><Clock3 size={20} /><h2>Withdrawals</h2></div><span>{withdrawalPolicy}</span></div>
           <div className="simple-table">
             {withdrawals.map((withdrawal) => (
               <div key={withdrawal.id}>
@@ -158,7 +176,11 @@ export function WalletView({ wallet, transactions, withdrawals }: { wallet: Wall
           <form className="modal" role="dialog" aria-modal="true" aria-labelledby="withdraw-title" onSubmit={withdraw} onMouseDown={(event) => event.stopPropagation()}>
             <div className="modal-header"><div><span className="eyebrow">Manual payout</span><h2 id="withdraw-title">Withdraw beans</h2></div><button className="icon-button" type="button" title="Close" onClick={() => setWithdrawOpen(false)}><X size={20} /></button></div>
             <label className="field">Beans<input name="beans" type="number" min="1" max={Number(wallet.beans_balance)} step="0.01" required /></label>
-            <p className="conversion-note">You receive ₹0.80 per approved bean.</p>
+            <div className="withdrawal-modal-policy">
+              <p className="conversion-note">You receive ₹{formatMoney(beanInrValue)} per approved bean.</p>
+              <p><Clock3 size={15} /> Processed within 24 hours.</p>
+              <p><CalendarX2 size={15} /> No payouts on Sundays or government holidays.</p>
+            </div>
             <button className="button primary wide" type="submit" disabled={pending !== null}>{pending === "withdraw" && <LoaderCircle className="spin" size={18} />} Submit request</button>
           </form>
         </div>
