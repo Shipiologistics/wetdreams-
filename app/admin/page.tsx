@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Admin" };
+export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   await requireAdmin();
