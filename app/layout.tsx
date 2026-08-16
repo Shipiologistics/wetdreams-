@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { GlobalBackButton } from "@/components/global-back-button";
+import { VisitorTracker } from "@/components/visitor-tracker";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en">
       <body>
         <GlobalBackButton />
+        <VisitorTracker />
         {children}
       </body>
     </html>

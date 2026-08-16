@@ -779,6 +779,44 @@ export type Database = {
           },
         ]
       }
+      visitor_sessions: {
+        Row: {
+          device_hash: string | null
+          first_seen_at: string
+          last_seen_at: string
+          path: string
+          session_id: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          device_hash?: string | null
+          first_seen_at?: string
+          last_seen_at?: string
+          path?: string
+          session_id: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          device_hash?: string | null
+          first_seen_at?: string
+          last_seen_at?: string
+          path?: string
+          session_id?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visitor_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wallet_transactions: {
         Row: {
           amount: number
@@ -968,6 +1006,10 @@ export type Database = {
         Args: { p_banned: boolean; p_notes: string; p_target_user: string }
         Returns: undefined
       }
+      admin_update_platform_config: {
+        Args: { p_key: string; p_notes?: string; p_value: number }
+        Returns: undefined
+      }
       cancel_random_chat: { Args: never; Returns: undefined }
       charge_call_minute: { Args: { p_call_id: string }; Returns: boolean }
       block_user: {
@@ -1005,6 +1047,15 @@ export type Database = {
       request_withdrawal: { Args: { p_beans: number }; Returns: string }
       respond_to_call: {
         Args: { p_accept: boolean; p_call_id: string }
+        Returns: boolean
+      }
+      track_visitor_session: {
+        Args: {
+          p_device_id?: string | null
+          p_path?: string
+          p_session_id: string
+          p_user_agent?: string | null
+        }
         Returns: boolean
       }
       unblock_user: { Args: { p_blocked_user: string }; Returns: undefined }
