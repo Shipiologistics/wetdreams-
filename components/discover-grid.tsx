@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   BadgeCheck,
-  Coins,
   Heart,
   LoaderCircle,
   MapPin,
@@ -241,10 +240,9 @@ function ProfileCard({ profile, viewerId, eagerImage }: { profile: DiscoveryProf
             </div>
             {account.is_verified && <BadgeCheck size={18} className="verified" aria-label="Verified" />}
           </div>
-          <div className="profile-card-badges">
-            {profile.rating && <span className="rating"><Star size={14} fill="currentColor" /> {profile.rating.toFixed(1)}</span>}
-            <span className="earned-badge"><Coins size={14} /> {profile.earnedBadge}</span>
-          </div>
+        <div className="profile-card-badges">
+          {profile.rating && <span className="rating"><Star size={14} fill="currentColor" /> {profile.rating.toFixed(1)}</span>}
+        </div>
           {error && <p className="card-error" role="alert">{error}</p>}
           <div className="profile-actions">
             <button className="button primary" type="button" onClick={startChat} disabled={!!pending}>

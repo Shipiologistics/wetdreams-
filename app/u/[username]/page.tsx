@@ -6,7 +6,6 @@ import { HostProfileActions } from "@/components/host-profile-actions";
 import { HostReviewWidget, type HostReview } from "@/components/host-review-widget";
 import { Logo } from "@/components/logo";
 import { getViewer } from "@/lib/auth";
-import { getHostEarnedBadge } from "@/lib/host-display-metrics";
 import { createClient } from "@/lib/supabase/server";
 
 type Params = { params: Promise<{ username: string }> };
@@ -81,7 +80,6 @@ export default async function PublicProfilePage({ params }: Params) {
   const canReview = Boolean(viewer && viewer.id !== account.id && completedCall?.length);
   const existingReview = viewer ? reviews.find((item) => item.rater_id === viewer.id) ?? null : null;
   const busy = account.status === "busy" || account.status === "in_call";
-  const earnedBadge = getHostEarnedBadge(account.id);
 
   return (
     <main className="public-profile">
@@ -99,7 +97,6 @@ export default async function PublicProfilePage({ params }: Params) {
             {account.is_verified && <span><BadgeCheck size={17} /> Verified</span>}
             {profile.location && <span><MapPin size={17} /> {profile.location}</span>}
             {rating && <span><Star size={16} fill="currentColor" /> {rating.toFixed(1)}</span>}
-            <span><Coins size={16} /> {earnedBadge}</span>
             {profile.languages.length > 0 && <span><Languages size={16} /> {profile.languages.slice(0, 2).join(", ")}</span>}
           </div>
           <p>{profile.bio}</p>
