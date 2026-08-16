@@ -29,7 +29,7 @@ export default async function ChatsPage() {
 
   return (
     <div className="page-shell narrow-page">
-      <header className="page-header">
+      <header className="page-header app-page-header">
         <div>
           <span className="eyebrow">Your conversations</span>
           <h1>Chats</h1>

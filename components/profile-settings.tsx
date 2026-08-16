@@ -19,6 +19,7 @@ import {
   Plus,
   RotateCcw,
   Save,
+  Settings,
   Star,
   Trash2,
   X,
@@ -28,7 +29,6 @@ import { createClient } from "@/lib/supabase/client";
 import { formatLocation, parseLocation } from "@/lib/location-options";
 import { messageForError } from "@/lib/format";
 import { LocationSelects } from "@/components/location-selects";
-import { SignOutButton } from "@/components/sign-out-button";
 
 type CropState = { zoom: number; x: number; y: number };
 type SelectedMedia = { id: string; file: File; previewUrl: string; crop: CropState };
@@ -268,7 +268,15 @@ export function ProfileSettings({ account, profile, media }: { account: Account;
 
   return (
     <div className="page-shell profile-page">
-      <header className="profile-hero">
+      <header className="page-header app-page-header">
+        <div>
+          <span className="eyebrow">Your public card</span>
+          <h1>Profile</h1>
+        </div>
+        <Link className="button secondary" href="/settings"><Settings size={18} /> Settings</Link>
+      </header>
+
+      <section className="profile-hero">
         <div className="profile-hero-media">
           {primary ? (
             primary.media_type === "image"
@@ -291,7 +299,7 @@ export function ProfileSettings({ account, profile, media }: { account: Account;
             <button className="icon-button bordered" type="button" title="Copy public link" onClick={copyProfileLink}><Copy size={18} /></button>
           </div>
         </div>
-      </header>
+      </section>
 
       <section className="profile-dashboard" aria-label="Profile summary">
         <div>
@@ -359,7 +367,7 @@ export function ProfileSettings({ account, profile, media }: { account: Account;
 
         {message && <div className="page-notice" role="status">{message}<button type="button" onClick={() => setMessage(null)} title="Dismiss"><X size={15} /></button></div>}
         <div className="settings-actions">
-          <SignOutButton />
+          <Link className="button secondary" href="/settings">Account settings</Link>
           <button className="button primary" type="submit" disabled={pending}>{pending ? <LoaderCircle className="spin" size={18} /> : <Save size={18} />} Save profile</button>
         </div>
       </form>

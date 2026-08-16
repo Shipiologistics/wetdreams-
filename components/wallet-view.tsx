@@ -76,7 +76,7 @@ export function WalletView({
 
   return (
     <div className="page-shell wallet-page">
-      <header className="page-header">
+      <header className="page-header app-page-header">
         <div>
           <span className="eyebrow">Balances and earnings</span>
           <h1>Wallet</h1>

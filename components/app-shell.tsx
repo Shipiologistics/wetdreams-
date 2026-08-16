@@ -8,6 +8,7 @@ import {
   Compass,
   HeartHandshake,
   MessagesSquare,
+  Settings,
   ShieldCheck,
   UserRound,
 } from "lucide-react";
@@ -24,6 +25,7 @@ const items = [
   { href: "/random", label: "Random", icon: HeartHandshake },
   { href: "/wallet", label: "Wallet", icon: BadgeIndianRupee },
   { href: "/profile", label: "Profile", icon: UserRound },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function AppShell({
@@ -99,7 +101,7 @@ export function AppShell({
       </main>
 
       <nav className="bottom-nav" aria-label="Primary navigation">
-        {navItems.slice(0, 5).map(({ href, label, icon: Icon }) => (
+        {navItems.filter((item) => item.href !== "/settings").slice(0, 5).map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
             href={href}

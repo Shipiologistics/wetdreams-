@@ -73,7 +73,7 @@ The product scope intentionally defers production Agora and payment-provider int
 
 The frontend is ready for a standard Vercel Next.js deployment. Add the required public and server-only environment variables from `.env.example`, set `NEXT_PUBLIC_APP_URL` to the production origin, and add the production auth callback URL in Supabase before deployment. The included `vercel.json` runs the chat cleanup route once per day.
 
-Vercel should use the default Next.js framework settings, not static export. A successful `npm run build` should list all app routes, including `/discover`, `/login`, `/profile`, `/chat`, `/chat/[roomId]`, `/random`, `/wallet`, `/admin`, `/u/[username]`, `/api/agora/token`, and `/api/maintenance/purge-expired-chats`.
+Vercel should use the default Next.js framework settings, not static export. A successful `npm run build` should list all app routes, including `/discover`, `/login`, `/profile`, `/settings`, `/chat`, `/chat/[roomId]`, `/random`, `/wallet`, `/admin`, `/u/[username]`, `/api/agora/token`, and `/api/maintenance/purge-expired-chats`.
 
 Required Vercel environment variables:
 

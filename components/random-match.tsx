@@ -65,7 +65,7 @@ export function RandomMatch({ userId }: { userId: string }) {
 
   return (
     <div className="random-page">
-      <header className="page-header random-header">
+      <header className="page-header app-page-header random-header">
         <div>
           <span className="eyebrow">A little serendipity</span>
           <h1>Random chat</h1>

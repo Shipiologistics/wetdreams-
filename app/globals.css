@@ -412,6 +412,15 @@ body:has(.side-nav) .global-back-button-fixed {
   margin-bottom: 26px;
 }
 
+.app-page-header {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 16px;
+}
+
+.app-page-header .button {
+  flex: 0 0 auto;
+}
+
 .page-header h1,
 .profile-identity h1 {
   margin: 0;
@@ -668,6 +677,28 @@ body:has(.side-nav) .global-back-button-fixed {
 .form-message.success {
   background: #e9f5ef;
   color: #23684d;
+}
+
+.form-message:has(button) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.form-message button {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: inherit;
+}
+
+.form-message button:hover {
+  background: rgb(0 0 0 / 6%);
 }
 
 .auth-divider {
@@ -2151,6 +2182,137 @@ body:has(.side-nav) .global-back-button-fixed {
   color: #8f3440;
 }
 
+.settings-page {
+  display: grid;
+  gap: 18px;
+}
+
+.settings-page > .page-header,
+.settings-page > .form-message {
+  margin-bottom: 0;
+}
+
+.account-summary-panel {
+  min-height: 112px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface);
+  padding: 18px;
+}
+
+.account-avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #dcebe8;
+  color: var(--teal);
+  font-weight: 800;
+}
+
+.account-summary-panel strong,
+.account-summary-panel span,
+.account-summary-panel small {
+  display: block;
+  min-width: 0;
+}
+
+.account-summary-panel strong {
+  overflow: hidden;
+  font-size: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-summary-panel div span {
+  margin-top: 3px;
+  color: var(--teal);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.account-summary-panel small {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.settings-panel-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.account-panel {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.settings-helper {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.form-grid.single {
+  grid-template-columns: 1fr;
+  padding-top: 0;
+}
+
+.policy-link-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.policy-link-grid a {
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fbfbf8;
+  padding: 12px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.policy-link-grid a:hover {
+  border-color: #bfd5d0;
+  background: #f0f8f6;
+}
+
+.policy-link-grid svg {
+  flex: 0 0 auto;
+  color: var(--teal);
+}
+
+.danger-zone {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.danger-zone h2 {
+  margin: 0 0 5px;
+  font-size: 18px;
+}
+
+.danger-zone p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -3485,6 +3647,17 @@ body:has(.side-nav) .global-back-button-fixed {
   .route-loading-grid { grid-template-columns: 1fr; gap: 10px; }
   .route-loading-grid span { min-height: 104px; }
   .page-header { min-height: 62px; margin-bottom: 20px; }
+  .app-page-header {
+    align-items: center;
+    padding: 10px 0 14px;
+  }
+  .settings-page > .app-page-header {
+    padding-left: 56px;
+  }
+  .app-page-header .button {
+    min-height: 38px;
+    padding-inline: 12px;
+  }
   .page-header h1,
   .profile-identity h1 { font-size: 29px; }
   .profile-grid { grid-template-columns: 1fr; gap: 14px; }
@@ -3563,6 +3736,24 @@ body:has(.side-nav) .global-back-button-fixed {
   .form-grid { grid-template-columns: 1fr; }
   .field.full { grid-column: auto; }
   .location-select-grid { grid-template-columns: 1fr; }
+  .settings-panel-grid,
+  .policy-link-grid { grid-template-columns: 1fr; }
+  .account-summary-panel {
+    grid-template-columns: 48px minmax(0, 1fr);
+    align-items: start;
+  }
+  .account-avatar {
+    width: 48px;
+    height: 48px;
+  }
+  .account-summary-panel > .presence-label {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .danger-zone {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
   .settings-actions { align-items: stretch; flex-direction: column-reverse; padding: 16px 0; }
   .admin-console {
     min-height: calc(100dvh - 78px);
