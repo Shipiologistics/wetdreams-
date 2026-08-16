@@ -115,7 +115,7 @@ export function AccountSettings({
       <div className="settings-panel-grid">
         <form className="settings-section account-panel" onSubmit={updatePassword}>
           <div className="section-heading"><div><KeyRound size={20} /><h2>Password</h2></div></div>
-          <p className="settings-helper">Use at least 8 characters. If you signed in with Google, keep Google login as your main access method.</p>
+          <p className="settings-helper">Use at least 8 characters for your email login.</p>
           <div className="form-grid single">
             <label className="field">New password<input name="password" type="password" minLength={8} autoComplete="new-password" required /></label>
             <label className="field">Confirm password<input name="confirm_password" type="password" minLength={8} autoComplete="new-password" required /></label>

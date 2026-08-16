@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { AuthForm } from "@/components/auth-form";
+import { GlobalBackButton } from "@/components/global-back-button";
 import { LegalLinks } from "@/components/legal-links";
 import { Logo } from "@/components/logo";
 
@@ -20,7 +21,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         className="auth-background"
       />
       <div className="auth-scrim" />
-      <header className="auth-header"><Logo /></header>
+      <header className="auth-header auth-header-with-back">
+        <GlobalBackButton variant="inline" />
+        <Logo />
+      </header>
       <section className="auth-content">
         <div className="auth-message">
           <span className="eyebrow">Good conversations are worth something</span>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { ArrowRight, Globe2, LoaderCircle, Mail, UserRound } from "lucide-react";
+import { ArrowRight, LoaderCircle, Mail, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getOrCreateDeviceId, registerCurrentDevice } from "@/lib/device-id";
 import { formatLocation } from "@/lib/location-options";
@@ -15,7 +15,7 @@ type AuthFormProps = {
 };
 
 export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup">("signup");
   const [pending, setPending] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -125,26 +125,6 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
     await finish();
   }
 
-  async function continueWithGoogle() {
-    const cleanLocation = formatLocation(city, state);
-    setPending("google");
-    setError(null);
-    getOrCreateDeviceId();
-    if (cleanLocation) {
-      window.localStorage.setItem("p2c_pending_location", cleanLocation);
-    } else {
-      window.localStorage.removeItem("p2c_pending_location");
-    }
-    const { error: oauthError } = await createClient().auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
-    });
-    if (oauthError) {
-      setError(messageForError(oauthError.message));
-      setPending(null);
-    }
-  }
-
   async function saveLocation(value: string) {
     window.localStorage.removeItem("p2c_pending_location");
     const supabase = createClient();
@@ -158,55 +138,61 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
   }
 
   return (
-    <div className="auth-panel">
+    <div className="auth-panel modern-auth-panel">
       <div className="auth-panel-heading compact">
-        <h2>Start chat</h2>
-        <p>Choose one.</p>
+        <span className="auth-kicker">WetDreams access</span>
+        <h2>{mode === "signup" ? "Create account" : "Welcome back"}</h2>
+        <p>{mode === "signup" ? "Register with any email." : "Sign in with your email."}</p>
       </div>
 
-      <div className="quick-auth-actions">
-        <LocationSelects state={state} city={city} onStateChange={setState} onCityChange={setCity} />
-        <button className="button primary wide" type="button" onClick={continueAsGuest} disabled={!!pending}>
-          {pending === "guest" ? <LoaderCircle className="spin" size={19} /> : <UserRound size={19} />}
-          Guest
+      <div className="auth-tabs" role="tablist" aria-label="Email access">
+        <button className={mode === "signup" ? "active" : ""} type="button" onClick={() => { setMode("signup"); setError(null); setNotice(null); }}>
+          Register
         </button>
-        <button className="button secondary wide" type="button" onClick={continueWithGoogle} disabled={!!pending}>
-          {pending === "google" ? <LoaderCircle className="spin" size={18} /> : <Globe2 size={18} />}
-          Google
+        <button className={mode === "login" ? "active" : ""} type="button" onClick={() => { setMode("login"); setError(null); setNotice(null); }}>
+          Login
         </button>
       </div>
 
-      <div className="auth-divider"><span>Email</span></div>
-
-      <form onSubmit={submitEmail} className="form-stack">
+      <form onSubmit={submitEmail} className="form-stack auth-email-form">
         {mode === "signup" && (
           <>
             <LocationSelects state={state} city={city} onStateChange={setState} onCityChange={setCity} />
             <label>
               Name
-              <input name="displayName" autoComplete="name" minLength={2} maxLength={60} required />
+              <input name="displayName" autoComplete="name" minLength={2} maxLength={60} placeholder="Your name" required />
             </label>
           </>
         )}
         <label>
           Email
-          <input name="email" type="email" autoComplete="email" required />
+          <input name="email" type="email" autoComplete="email" placeholder="you@example.com" required />
         </label>
         <label>
           Password
-          <input name="password" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} minLength={8} required />
+          <input name="password" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} minLength={8} placeholder="At least 8 characters" required />
         </label>
         <button className="button primary wide" disabled={!!pending} type="submit">
           {pending === "email" ? <LoaderCircle className="spin" size={19} /> : <Mail size={19} />}
-          {mode === "login" ? "Sign in" : "Join"}
+          {mode === "login" ? "Login" : "Register"}
         </button>
       </form>
+
+      <div className="auth-divider"><span>or</span></div>
+
+      <div className="quick-auth-actions">
+        {mode === "login" && <LocationSelects state={state} city={city} onStateChange={setState} onCityChange={setCity} />}
+        <button className="button secondary wide" type="button" onClick={continueAsGuest} disabled={!!pending}>
+          {pending === "guest" ? <LoaderCircle className="spin" size={19} /> : <UserRound size={19} />}
+          Continue as guest
+        </button>
+      </div>
 
       {error && <p className="form-message error" role="alert">{error}</p>}
       {notice && <p className="form-message success" role="status">{notice}</p>}
 
       <button className="auth-switch" type="button" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(null); setNotice(null); }}>
-        {mode === "login" ? "New? Join" : "Have account? Sign in"} <ArrowRight size={14} />
+        {mode === "login" ? "Need an account? Register" : "Already registered? Login"} <ArrowRight size={14} />
       </button>
     </div>
   );

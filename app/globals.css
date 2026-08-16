@@ -529,7 +529,9 @@ body:has(.side-nav) .global-back-button-fixed {
 .auth-scrim {
   position: absolute;
   inset: 0;
-  background: rgb(10 15 14 / 62%);
+  background:
+    linear-gradient(120deg, rgb(5 10 9 / 82%) 0%, rgb(5 10 9 / 48%) 48%, rgb(5 10 9 / 70%) 100%),
+    rgb(10 15 14 / 44%);
 }
 
 .auth-header {
@@ -538,6 +540,23 @@ body:has(.side-nav) .global-back-button-fixed {
   width: min(1200px, calc(100% - 48px));
   margin: 0 auto;
   padding-top: 24px;
+}
+
+.auth-header-with-back {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.auth-header-with-back .global-back-button-inline {
+  border: 1px solid rgb(255 255 255 / 46%);
+  background: rgb(255 255 255 / 14%);
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.auth-header-with-back .global-back-button-inline:hover {
+  background: rgb(255 255 255 / 22%);
 }
 
 .auth-content {
@@ -586,6 +605,14 @@ body:has(.side-nav) .global-back-button-fixed {
   padding: 24px;
 }
 
+.modern-auth-panel {
+  border: 1px solid rgb(255 255 255 / 72%);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 98%), rgb(251 251 248 / 96%));
+  box-shadow: 0 28px 70px rgb(0 0 0 / 34%);
+  padding: 26px;
+}
+
 .auth-panel-stack {
   width: min(410px, 100%);
   display: grid;
@@ -597,16 +624,20 @@ body:has(.side-nav) .global-back-button-fixed {
 }
 
 .auth-tabs {
-  height: 42px;
+  height: 46px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  overflow: hidden;
+  gap: 5px;
+  border: 1px solid #e2e4df;
+  border-radius: 8px;
+  background: #f1f1ed;
+  padding: 5px;
+  margin-bottom: 16px;
 }
 
 .auth-tabs button {
   border: 0;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -618,8 +649,9 @@ body:has(.side-nav) .global-back-button-fixed {
 }
 
 .auth-tabs button.active {
-  background: var(--ink);
-  color: white;
+  background: white;
+  color: var(--ink);
+  box-shadow: 0 7px 18px rgb(31 34 31 / 10%);
 }
 
 .auth-panel-heading {
@@ -630,9 +662,19 @@ body:has(.side-nav) .global-back-button-fixed {
   margin: 0 0 16px;
 }
 
+.auth-kicker {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--teal);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .auth-panel-heading h2 {
   margin: 0 0 5px;
-  font-size: 24px;
+  font-size: 30px;
+  line-height: 1.05;
 }
 
 .auth-panel-heading p {
@@ -646,6 +688,10 @@ body:has(.side-nav) .global-back-button-fixed {
   gap: 14px;
 }
 
+.auth-email-form {
+  gap: 12px;
+}
+
 .form-stack label,
 .field {
   position: relative;
@@ -654,6 +700,13 @@ body:has(.side-nav) .global-back-button-fixed {
   color: #404440;
   font-size: 12px;
   font-weight: 700;
+}
+
+.modern-auth-panel input,
+.modern-auth-panel select {
+  min-height: 46px;
+  border-radius: 8px;
+  background: white;
 }
 
 .form-stack .button {
@@ -706,7 +759,7 @@ body:has(.side-nav) .global-back-button-fixed {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 10px 0;
+  margin: 14px 0 10px;
   color: #999d99;
   font-size: 11px;
 }
@@ -735,7 +788,7 @@ body:has(.side-nav) .global-back-button-fixed {
 
 .quick-auth-actions {
   display: grid;
-  gap: 10px;
+  gap: 9px;
 }
 
 .location-select-grid {

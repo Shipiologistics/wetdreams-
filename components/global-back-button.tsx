@@ -10,7 +10,7 @@ export function GlobalBackButton({ variant = "fixed" }: { variant?: "fixed" | "i
   const isChatRoom = /^\/chat\/[^/]+/.test(pathname);
   const isAuthPage = pathname === "/login";
 
-  if (variant === "fixed" && (mainPages.has(pathname) || isChatRoom)) return null;
+  if (variant === "fixed" && (mainPages.has(pathname) || isChatRoom || isAuthPage)) return null;
 
   function goBack() {
     if (window.history.length > 1) window.history.back();
