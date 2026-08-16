@@ -8,10 +8,12 @@ export async function POST(request: NextRequest) {
     sessionId?: unknown;
     deviceId?: unknown;
     path?: unknown;
+    presence?: unknown;
   } | null;
   const sessionId = typeof payload?.sessionId === "string" ? payload.sessionId.trim() : "";
   const deviceId = typeof payload?.deviceId === "string" ? payload.deviceId.trim() : "";
   const path = typeof payload?.path === "string" ? payload.path.trim() : "/";
+  const presence = payload?.presence === "offline" ? "offline" : "online";
 
   if (sessionId.length < 16 || sessionId.length > 120) {
     return NextResponse.json({ error: "INVALID_VISITOR_SESSION" }, { status: 400 });
@@ -23,6 +25,7 @@ export async function POST(request: NextRequest) {
     p_device_id: deviceId || null,
     p_path: path || "/",
     p_user_agent: request.headers.get("user-agent"),
+    p_presence: presence,
   });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

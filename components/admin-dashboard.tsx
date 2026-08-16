@@ -104,7 +104,7 @@ export function AdminDashboard({
   const userMap = useMemo(() => new Map(users.map((user) => [user.id, user])), [users]);
   const walletMap = useMemo(() => new Map(wallets.map((wallet) => [wallet.user_id, wallet])), [wallets]);
   const liveCutoff = now - 5 * 60 * 1000;
-  const liveVisitors = visitors.filter((visitor) => new Date(visitor.last_seen_at).getTime() >= liveCutoff);
+  const liveVisitors = visitors.filter((visitor) => visitor.presence === "online" && new Date(visitor.last_seen_at).getTime() >= liveCutoff);
   const openReports = reports.filter((report) => ["open", "reviewing"].includes(report.status)).length;
   const pendingWithdrawals = withdrawals.filter((withdrawal) => withdrawal.status === "pending").length;
   const bannedUsers = users.filter((user) => user.is_banned).length;

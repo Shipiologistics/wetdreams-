@@ -73,6 +73,7 @@ export function ChatRoom({
   const [wallet, setWallet] = useState(initialWallet);
   const [activeCall, setActiveCall] = useState(initialCall);
   const [blockState, setBlockState] = useState(initialBlockState);
+  const [otherAccount, setOtherAccount] = useState(other);
   const endRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null);
 
@@ -118,11 +119,16 @@ export function ChatRoom({
         { event: "INSERT", schema: "public", table: "calls", filter: `room_id=eq.${room.id}` },
         (payload) => setActiveCall(payload.new as Call),
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "users", filter: `id=eq.${other.id}` },
+        (payload) => setOtherAccount(payload.new as Account),
+      )
       .subscribe();
     channelRef.current = channel;
     void supabase.rpc("mark_room_read", { p_room_id: room.id });
     return () => { void supabase.removeChannel(channel); };
-  }, [room.id, viewerId]);
+  }, [other.id, room.id, viewerId]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -227,18 +233,21 @@ export function ChatRoom({
   }
 
   const grouped = useMemo(() => messages, [messages]);
+  const otherBusy = otherAccount.status === "busy" || otherAccount.status === "in_call";
+  const callDisabled = blocked || otherBusy;
+  const otherPresence = otherBusy ? "busy" : otherAccount.status === "online" ? "online" : `seen ${formatRelativeTime(otherAccount.last_seen)}`;
 
   return (
     <div className="chat-screen">
       <header className="chat-header">
         <GlobalBackButton variant="inline" />
-        <Avatar name={other.display_name} src={primaryImage} size={42} />
+        <Avatar name={otherAccount.display_name} src={primaryImage} size={42} />
         <div className="chat-person">
-          <strong>{other.display_name}</strong>
-          <span>{typing ? "typing..." : other.status === "online" ? "online" : `seen ${formatRelativeTime(other.last_seen)}`}</span>
+          <strong>{otherAccount.display_name}</strong>
+          <span>{typing ? "typing..." : otherPresence}</span>
         </div>
-        <button className="icon-button" title={blocked ? "Blocked" : "Audio call"} onClick={() => startCall("audio")} disabled={blocked}><Phone size={19} /></button>
-        <button className="icon-button" title={blocked ? "Blocked" : "Video call"} onClick={() => startCall("video")} disabled={blocked}><Video size={19} /></button>
+        <button className="icon-button" title={callDisabled ? "Unavailable" : "Audio call"} onClick={() => startCall("audio")} disabled={callDisabled}><Phone size={19} /></button>
+        <button className="icon-button" title={callDisabled ? "Unavailable" : "Video call"} onClick={() => startCall("video")} disabled={callDisabled}><Video size={19} /></button>
         <div className="relative">
           <button className="icon-button" title="Conversation options" onClick={() => setShowMenu(!showMenu)}><MoreVertical size={19} /></button>
           {showMenu && (
@@ -254,9 +263,9 @@ export function ChatRoom({
 
       <div className="message-list">
         <div className="conversation-intro">
-          <Avatar name={other.display_name} src={primaryImage} size={72} />
-          <strong>{other.display_name}</strong>
-          <span>@{other.username}</span>
+          <Avatar name={otherAccount.display_name} src={primaryImage} size={72} />
+          <strong>{otherAccount.display_name}</strong>
+          <span>@{otherAccount.username}</span>
           <p>{profile.bio}</p>
         </div>
         {grouped.map((message) => (
@@ -317,7 +326,7 @@ export function ChatRoom({
           call={activeCall}
           room={room}
           viewerId={viewerId}
-          other={other}
+          other={otherAccount}
           image={primaryImage}
           onChange={setActiveCall}
           onClose={() => setActiveCall(null)}

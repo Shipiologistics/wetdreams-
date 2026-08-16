@@ -55,7 +55,10 @@ export default async function PublicProfilePage({ params }: Params) {
         <div className="public-profile-scrim" />
         <div className="public-brand"><Logo /></div>
         <div className="public-profile-copy">
-          <div className="public-status"><span className={account.status === "online" ? "online" : ""} /> {account.status === "online" ? "Online now" : "Away"}</div>
+          <div className="public-status">
+            <span className={account.status === "online" ? "online" : account.status === "busy" || account.status === "in_call" ? "busy" : ""} />
+            {account.status === "online" ? "Online now" : account.status === "busy" || account.status === "in_call" ? "Busy" : "Away"}
+          </div>
           <h1>{account.display_name}{profile.age ? `, ${profile.age}` : ""}</h1>
           <div className="public-profile-meta">
             {account.is_verified && <span><BadgeCheck size={17} /> Verified</span>}

@@ -21,11 +21,12 @@ describe("monetization math", () => {
     expect(beanCredit(10, 0.75)).toBe(7.5);
   });
 
-  it("bills calls in started minutes", () => {
+  it("bills calls by seconds as a fraction of the minute rate", () => {
     expect(billedCallMinutes(0)).toBe(0);
-    expect(billedCallMinutes(1)).toBe(1);
+    expect(billedCallMinutes(1)).toBe(0.0167);
+    expect(billedCallMinutes(30)).toBe(0.5);
     expect(billedCallMinutes(60)).toBe(1);
-    expect(billedCallMinutes(61)).toBe(2);
+    expect(billedCallMinutes(90)).toBe(1.5);
   });
 });
 

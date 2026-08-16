@@ -53,7 +53,7 @@ export function DiscoverGrid({ profiles, viewerId }: { profiles: DiscoveryProfil
       && (gender === "all" || account.gender === gender)
       && (stateFilter === "all" || state === stateFilter)
       && (cityFilter === "all" || city === cityFilter)
-      && (!onlineOnly || account.status === "online")
+      && (!onlineOnly || account.status !== "offline")
       && Number(profile.chat_rate_coins) <= activeMaxRate;
   }), [profiles, search, gender, stateFilter, cityFilter, onlineOnly, activeMaxRate]);
 
@@ -138,6 +138,7 @@ function ProfileCard({ profile, viewerId, eagerImage }: { profile: DiscoveryProf
   const [error, setError] = useState<string | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
   const { account, media } = profile;
+  const busy = account.status === "busy" || account.status === "in_call";
 
   async function getRoom() {
     const { data, error: roomError } = await createClient().rpc("create_or_get_direct_room", {
@@ -221,8 +222,8 @@ function ProfileCard({ profile, viewerId, eagerImage }: { profile: DiscoveryProf
           </div>
         ))}
         <div className="profile-card-topline">
-          <span className={clsx("presence-badge", account.status === "online" && "online")}>
-            <span /> {account.status === "online" ? "Online" : "Away"}
+          <span className={clsx("presence-badge", account.status === "online" && "online", busy && "busy")}>
+            <span /> {busy ? "Busy" : account.status === "online" ? "Online" : "Away"}
           </span>
           <button className={clsx("floating-icon", favorite && "selected")} type="button" onClick={toggleFavorite} title={favorite ? "Remove favorite" : "Add favorite"}>
             <Heart size={19} fill={favorite ? "currentColor" : "none"} />
@@ -255,10 +256,10 @@ function ProfileCard({ profile, viewerId, eagerImage }: { profile: DiscoveryProf
             {pending === "chat" ? <LoaderCircle className="spin" size={18} /> : <MessageCircle size={18} />}
             Message
           </button>
-          <button className="icon-button bordered" type="button" title="Audio call" onClick={() => startCall("audio")} disabled={!!pending}>
+          <button className="icon-button bordered" type="button" title={busy ? "Busy" : "Audio call"} onClick={() => startCall("audio")} disabled={!!pending || busy}>
             {pending === "audio" ? <LoaderCircle className="spin" size={18} /> : <Phone size={18} />}
           </button>
-          <button className="icon-button bordered" type="button" title="Video call" onClick={() => startCall("video")} disabled={!!pending}>
+          <button className="icon-button bordered" type="button" title={busy ? "Busy" : "Video call"} onClick={() => startCall("video")} disabled={!!pending || busy}>
             {pending === "video" ? <LoaderCircle className="spin" size={18} /> : <Video size={18} />}
           </button>
         </div>

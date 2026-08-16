@@ -10,5 +10,5 @@ export function beanCredit(coinsCharged: number, payoutRatio = 0.8) {
 
 export function billedCallMinutes(durationSeconds: number) {
   if (durationSeconds <= 0) return 0;
-  return Math.ceil(durationSeconds / 60);
+  return Math.round((durationSeconds / 60) * 10000) / 10000;
 }

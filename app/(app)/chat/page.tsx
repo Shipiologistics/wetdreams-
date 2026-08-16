@@ -51,7 +51,7 @@ export default async function ChatsPage() {
               <Link href={`/chat/${room.id}`} className="conversation-row" key={room.id}>
                 <span className="avatar-wrap">
                   <Avatar name={account.display_name} src={avatar} size={54} />
-                  <span className={`status-dot ${account.status === "online" ? "online" : ""}`} />
+                  <span className={`status-dot ${account.status === "online" ? "online" : account.status === "busy" || account.status === "in_call" ? "busy" : ""}`} />
                 </span>
                 <span className="conversation-copy">
                   <span className="conversation-title">

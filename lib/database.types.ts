@@ -823,6 +823,7 @@ export type Database = {
           first_seen_at: string
           last_seen_at: string
           path: string
+          presence: string
           session_id: string
           user_agent: string | null
           user_id: string | null
@@ -832,6 +833,7 @@ export type Database = {
           first_seen_at?: string
           last_seen_at?: string
           path?: string
+          presence?: string
           session_id: string
           user_agent?: string | null
           user_id?: string | null
@@ -841,6 +843,7 @@ export type Database = {
           first_seen_at?: string
           last_seen_at?: string
           path?: string
+          presence?: string
           session_id?: string
           user_agent?: string | null
           user_id?: string | null
@@ -1095,6 +1098,7 @@ export type Database = {
         Args: {
           p_device_id?: string | null
           p_path?: string
+          p_presence?: string
           p_session_id: string
           p_user_agent?: string | null
         }

@@ -14,6 +14,7 @@ export default async function DiscoverPage() {
   const viewer = await getViewer();
   const supabase = await createClient();
 
+  const activeStatuses = ["ringing", "ongoing"];
   let query = supabase
     .from("users")
     .select("*")
@@ -21,7 +22,6 @@ export default async function DiscoverPage() {
     .eq("is_guest", false)
     .eq("role", "user")
     .eq("gender", "female")
-    .order("status", { ascending: false })
     .order("created_at", { ascending: false });
 
   if (viewer) query = query.neq("id", viewer.id);
@@ -29,30 +29,36 @@ export default async function DiscoverPage() {
   const { data: accounts } = await query;
   const uniqueAccounts = Array.from(new Map((accounts ?? []).map((account) => [account.id, account])).values());
   const ids = uniqueAccounts.map((account) => account.id);
-  const [{ data: profiles }, { data: media }, { data: ratings }, favoritesResult] = ids.length
+  const [{ data: profiles }, { data: media }, { data: ratings }, { data: activeCalls }, favoritesResult] = ids.length
     ? await Promise.all([
         supabase.from("profiles").select("*").in("user_id", ids),
         supabase.from("profile_media").select("*").in("user_id", ids).order("position"),
         supabase.from("ratings").select("rated_user_id, score").in("rated_user_id", ids),
+        supabase.from("calls").select("caller_id, receiver_id, status").in("status", activeStatuses).or(`caller_id.in.(${ids.join(",")}),receiver_id.in.(${ids.join(",")})`),
         viewer
           ? supabase.from("favorites").select("favorite_user_id").eq("user_id", viewer.id)
           : Promise.resolve({ data: [] }),
       ])
-    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }];
+    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: [] }];
 
   const profileMap = new Map((profiles ?? []).map((profile) => [profile.user_id, profile]));
   const favoriteIds = new Set((favoritesResult.data ?? []).map((favorite) => favorite.favorite_user_id));
+  const busyIds = new Set((activeCalls ?? []).flatMap((call) => [call.caller_id, call.receiver_id]).filter((id): id is string => ids.includes(id ?? "")));
   const models: DiscoveryProfile[] = uniqueAccounts.flatMap((account) => {
     const profile = profileMap.get(account.id);
     if (!profile) return [];
     const scores = (ratings ?? []).filter((rating) => rating.rated_user_id === account.id).map((rating) => rating.score);
     return [{
-      account,
+      account: busyIds.has(account.id) ? { ...account, status: "busy" } : account,
       profile,
       media: (media ?? []).filter((item) => item.user_id === account.id),
       rating: scores.length ? scores.reduce((sum, score) => sum + score, 0) / scores.length : null,
       favorite: favoriteIds.has(account.id),
     }];
+  }).sort((first, second) => {
+    const statusRank = { online: 0, busy: 1, in_call: 1, offline: 2 } as Record<string, number>;
+    return (statusRank[first.account.status] ?? 2) - (statusRank[second.account.status] ?? 2)
+      || new Date(second.account.created_at).getTime() - new Date(first.account.created_at).getTime();
   });
 
   const content = (
