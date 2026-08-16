@@ -92,3 +92,4 @@ Required Vercel environment variables:
 - `AGORA_PROJECT_NAME`
 - `AGORA_APP_ID`
 - `AGORA_APP_CERTIFICATE`
+- `NEXT_PUBLIC_ANDROID_PUSH_ENABLED` (`false` until `android/app/google-services.json` is added and Firebase push is configured)

@@ -9,6 +9,10 @@ import { createClient } from "@/lib/supabase/client";
 export function NativeAppBridge() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== "android") return;
+    if (process.env.NEXT_PUBLIC_ANDROID_PUSH_ENABLED !== "true") {
+      console.info("Android push registration is disabled until Firebase is configured.");
+      return;
+    }
 
     let mounted = true;
     const supabase = createClient();
