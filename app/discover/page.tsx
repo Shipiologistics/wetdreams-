@@ -5,6 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { DiscoverGrid } from "@/components/discover-grid";
 import { LegalLinks } from "@/components/legal-links";
 import { getViewer } from "@/lib/auth";
+import { getHostEarnedBadge } from "@/lib/host-display-metrics";
 import { createClient } from "@/lib/supabase/server";
 import type { DiscoveryProfile } from "@/lib/view-models";
 
@@ -64,6 +65,7 @@ export default async function DiscoverPage() {
       profile,
       media: (media ?? []).filter((item) => item.user_id === account.id),
       rating: scores.length ? scores.reduce((sum, score) => sum + score, 0) / scores.length : null,
+      earnedBadge: getHostEarnedBadge(account.id),
       favorite: favoriteIds.has(account.id),
     }];
   }).sort((first, second) => {

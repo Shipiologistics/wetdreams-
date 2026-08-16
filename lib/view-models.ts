@@ -12,5 +12,6 @@ export type DiscoveryProfile = {
   profile: Profile;
   media: ProfileMedia[];
   rating: number | null;
+  earnedBadge: string;
   favorite: boolean;
 };

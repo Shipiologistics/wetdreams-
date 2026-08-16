@@ -9,6 +9,7 @@ import {
   BadgeCheck,
   Camera,
   Check,
+  Coins,
   Copy,
   Crop,
   ImagePlus,
@@ -29,6 +30,7 @@ import { createClient } from "@/lib/supabase/client";
 import { formatLocation, parseLocation } from "@/lib/location-options";
 import { messageForError } from "@/lib/format";
 import { LocationSelects } from "@/components/location-selects";
+import { getHostEarnedBadge } from "@/lib/host-display-metrics";
 
 type CropState = { zoom: number; x: number; y: number };
 type SelectedMedia = { id: string; file: File; previewUrl: string; crop: CropState };
@@ -47,6 +49,7 @@ export function ProfileSettings({ account, profile, media }: { account: Account;
   const initialLocation = parseLocation(profile.location);
   const [locationState, setLocationState] = useState(initialLocation.state);
   const [locationCity, setLocationCity] = useState(initialLocation.city);
+  const earnedBadge = getHostEarnedBadge(account.id);
 
   useEffect(() => {
     return () => {
@@ -292,6 +295,7 @@ export function ProfileSettings({ account, profile, media }: { account: Account;
           <div className="identity-badges">
             {account.is_verified && <span><BadgeCheck size={16} /> Verified</span>}
             <span className={`presence-label ${account.status}`}>{account.status}</span>
+            {!isGuest && <span className="earned-badge"><Coins size={15} /> {earnedBadge}</span>}
             {profile.location && <span><MapPin size={15} /> {profile.location}</span>}
           </div>
           <p>{profile.bio || "Tell people what makes a conversation with you worth staying for."}</p>
