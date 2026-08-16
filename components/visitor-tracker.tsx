@@ -64,7 +64,7 @@ export function VisitorTracker() {
 
     function visibilityChanged() {
       if (document.visibilityState === "hidden") {
-        void heartbeat("offline", true);
+        if (!isNativeApp) void heartbeat("offline", true);
         return;
       }
       lastActivityAt = Date.now();
@@ -77,7 +77,7 @@ export function VisitorTracker() {
     });
     document.addEventListener("visibilitychange", visibilityChanged);
     function pageHidden() {
-      void heartbeat("offline", true);
+      if (!isNativeApp) void heartbeat("offline", true);
     }
 
     window.addEventListener("pagehide", pageHidden);
@@ -85,7 +85,7 @@ export function VisitorTracker() {
     void heartbeat();
     scheduleIdleOffline();
     const id = window.setInterval(() => {
-      if (document.visibilityState === "hidden") return;
+      if (document.visibilityState === "hidden" && !isNativeApp) return;
       if (isNativeApp || Date.now() - lastActivityAt < idleOfflineMs) {
         void heartbeat("online");
       } else {

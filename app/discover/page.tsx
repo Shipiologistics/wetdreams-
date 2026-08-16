@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { DiscoverGrid } from "@/components/discover-grid";
@@ -13,6 +14,15 @@ export const dynamic = "force-dynamic";
 export default async function DiscoverPage() {
   const viewer = await getViewer();
   const supabase = await createClient();
+  const requestHeaders = await headers();
+  const discoverySeed = viewer?.id
+    ?? [
+      requestHeaders.get("x-forwarded-for"),
+      requestHeaders.get("user-agent"),
+      requestHeaders.get("accept-language"),
+    ].join("|");
+
+  await supabase.rpc("refresh_stale_presence");
 
   const activeStatuses = ["ringing", "ongoing"];
   let query = supabase
@@ -44,6 +54,7 @@ export default async function DiscoverPage() {
   const profileMap = new Map((profiles ?? []).map((profile) => [profile.user_id, profile]));
   const favoriteIds = new Set((favoritesResult.data ?? []).map((favorite) => favorite.favorite_user_id));
   const busyIds = new Set((activeCalls ?? []).flatMap((call) => [call.caller_id, call.receiver_id]).filter((id): id is string => ids.includes(id ?? "")));
+  const randomRank = new Map(ids.map((id) => [id, seededRank(`${discoverySeed}:${id}`)]));
   const models: DiscoveryProfile[] = uniqueAccounts.flatMap((account) => {
     const profile = profileMap.get(account.id);
     if (!profile) return [];
@@ -58,7 +69,7 @@ export default async function DiscoverPage() {
   }).sort((first, second) => {
     const statusRank = { online: 0, busy: 1, in_call: 1, offline: 2 } as Record<string, number>;
     return (statusRank[first.account.status] ?? 2) - (statusRank[second.account.status] ?? 2)
-      || new Date(second.account.created_at).getTime() - new Date(first.account.created_at).getTime();
+      || (randomRank.get(first.account.id) ?? 0) - (randomRank.get(second.account.id) ?? 0);
   });
 
   const content = (
@@ -105,4 +116,13 @@ export default async function DiscoverPage() {
       {content}
     </AppShell>
   );
+}
+
+function seededRank(value: string) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0) / 4294967295;
 }

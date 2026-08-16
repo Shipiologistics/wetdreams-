@@ -1599,6 +1599,10 @@ body:has(.side-nav) .global-back-button-fixed {
   color: white;
 }
 
+.incoming-call-overlay {
+  z-index: 95;
+}
+
 .call-backdrop {
   position: absolute;
   inset: 0;

@@ -1089,6 +1089,7 @@ export type Database = {
         Args: { p_reason: string; p_reported_user: string; p_room_id: string }
         Returns: string
       }
+      refresh_stale_presence: { Args: never; Returns: number }
       request_withdrawal: { Args: { p_beans: number }; Returns: string }
       respond_to_call: {
         Args: { p_accept: boolean; p_call_id: string }
