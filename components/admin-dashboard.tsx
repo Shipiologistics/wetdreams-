@@ -36,6 +36,11 @@ type VisitorSession = Database["public"]["Tables"]["visitor_sessions"]["Row"];
 type Wallet = Database["public"]["Tables"]["wallets"]["Row"];
 type Section = "overview" | "visitors" | "reports" | "users" | "blocks" | "withdrawals" | "settings" | "audit";
 
+function withdrawalStatusLabel(status: string) {
+  if (status === "paid" || status === "approved") return "complete";
+  return status;
+}
+
 const settingLabels: Record<string, { label: string; helper: string; step: string; min: string; max: string }> = {
   bean_inr_value: {
     label: "Bean to rupee",
@@ -324,7 +329,9 @@ export function AdminDashboard({
               {withdrawals.map((withdrawal) => (
                 <article className="admin-row compact-row" key={withdrawal.id}>
                   <div className="admin-row-main">
-                    <span className={`status-label ${withdrawal.status}`}>{withdrawal.status}</span>
+                    <span className={`status-label ${withdrawalStatusLabel(withdrawal.status)}`}>
+                      {withdrawalStatusLabel(withdrawal.status)}
+                    </span>
                     <h3>{userMap.get(withdrawal.user_id)?.display_name ?? "User"}</h3>
                     <p>{formatMoney(withdrawal.beans_requested)} beans · ₹{formatMoney(withdrawal.inr_amount)}</p>
                     <time>{formatRelativeTime(withdrawal.created_at)}</time>
@@ -332,7 +339,7 @@ export function AdminDashboard({
                   {withdrawal.status === "pending" && (
                     <div className="admin-row-actions">
                       <button className="button secondary small" onClick={() => reviewWithdrawal(withdrawal, false)}>Reject</button>
-                      <button className="button primary small" onClick={() => reviewWithdrawal(withdrawal, true)}>Mark paid</button>
+                      <button className="button primary small" onClick={() => reviewWithdrawal(withdrawal, true)}>Mark complete</button>
                     </div>
                   )}
                 </article>

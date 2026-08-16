@@ -26,6 +26,11 @@ type Transaction = Database["public"]["Tables"]["wallet_transactions"]["Row"];
 type Withdrawal = Database["public"]["Tables"]["withdrawal_requests"]["Row"];
 const withdrawalPolicy = "Withdrawals are processed within 24 hours, except Sundays and government holidays.";
 
+function withdrawalStatusLabel(status: string) {
+  if (status === "paid" || status === "approved") return "complete";
+  return status;
+}
+
 export function WalletView({
   wallet,
   transactions,
@@ -154,7 +159,9 @@ export function WalletView({
                 <span>{formatRelativeTime(withdrawal.created_at)}</span>
                 <strong>{formatMoney(withdrawal.beans_requested)} beans</strong>
                 <span>₹{formatMoney(withdrawal.inr_amount)}</span>
-                <span className={`status-label ${withdrawal.status}`}>{withdrawal.status}</span>
+                <span className={`status-label ${withdrawalStatusLabel(withdrawal.status)}`}>
+                  {withdrawalStatusLabel(withdrawal.status)}
+                </span>
               </div>
             ))}
           </div>
