@@ -392,7 +392,7 @@ body:has(.side-nav) .global-back-button-fixed {
   font-weight: 800;
 }
 
-.mobile-notifications {
+.mobile-header-notifications {
   display: none;
 }
 
@@ -5156,19 +5156,18 @@ body:has(.side-nav) .global-back-button-fixed {
     padding: 0 4px;
     font-size: 8px;
   }
-  .mobile-notifications {
-    position: fixed;
-    top: max(40px, calc(env(safe-area-inset-top) + 38px));
-    right: 14px;
-    z-index: 70;
+  .mobile-header-notifications {
+    flex: 0 0 auto;
+    align-self: flex-end;
     display: block;
+    margin-left: 2px;
   }
-  .mobile-notifications .notification-button {
+  .mobile-header-notifications .notification-button {
     width: 34px;
     height: 34px;
     background: rgb(255 255 255 / 92%);
   }
-  .mobile-notifications .notifications-panel {
+  .mobile-header-notifications .notifications-panel {
     top: calc(100% + 8px);
     right: 0;
     left: auto;
@@ -5187,7 +5186,7 @@ body:has(.side-nav) .global-back-button-fixed {
     border-bottom: 1px solid var(--line);
     background: rgb(247 246 242 / 96%);
     backdrop-filter: blur(12px);
-    padding: max(18px, env(safe-area-inset-top)) 84px 14px 16px;
+    padding: max(18px, env(safe-area-inset-top)) 16px 14px;
     gap: 12px;
   }
   .app-frame .page-header .eyebrow {
