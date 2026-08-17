@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Avatar } from "@/components/avatar";
 import { ChatOpeningShell } from "@/components/chat-opening-shell";
 import { formatRelativeTime } from "@/lib/format";
+import { createClient } from "@/lib/supabase/client";
 import type { Account, ChatRoom, Message, ProfileMedia } from "@/lib/view-models";
 
 type ConversationListProps = {
@@ -28,6 +29,18 @@ export function ConversationList({ viewerId, rooms, accounts, media, messages }:
   const router = useRouter();
   const pathname = usePathname();
   const [opening, setOpening] = useState<OpeningChat | null>(null);
+
+  useEffect(() => {
+    const roomIds = rooms
+      .filter((room) => messages.some((message) => (
+        message.room_id === room.id && message.sender_id !== viewerId && !message.delivered_at
+      )))
+      .map((room) => room.id);
+
+    if (!roomIds.length) return;
+    const supabase = createClient();
+    void Promise.all(roomIds.map((roomId) => supabase.rpc("mark_room_delivered", { p_room_id: roomId })));
+  }, [messages, rooms, viewerId]);
 
   const conversations = useMemo(() => rooms.map((room) => {
     const otherId = room.user_a === viewerId ? room.user_b : room.user_a;

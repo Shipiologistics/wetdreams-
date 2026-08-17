@@ -1922,6 +1922,17 @@ body:has(.side-nav) .global-back-button-fixed {
   white-space: nowrap;
 }
 
+.receipt-icon {
+  width: 14px;
+  height: 14px;
+  color: #858b86;
+  stroke-width: 2.4;
+}
+
+.receipt-icon.read {
+  color: #2f80ed;
+}
+
 .message-media {
   display: block;
 }

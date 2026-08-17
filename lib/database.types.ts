@@ -335,6 +335,7 @@ export type Database = {
           coins_charged: number
           content: string | null
           created_at: string
+          delivered_at: string | null
           expires_at: string
           id: string
           is_paid: boolean
@@ -350,6 +351,7 @@ export type Database = {
           coins_charged?: number
           content?: string | null
           created_at?: string
+          delivered_at?: string | null
           expires_at?: string
           id?: string
           is_paid?: boolean
@@ -365,6 +367,7 @@ export type Database = {
           coins_charged?: number
           content?: string | null
           created_at?: string
+          delivered_at?: string | null
           expires_at?: string
           id?: string
           is_paid?: boolean
@@ -1159,6 +1162,7 @@ export type Database = {
       hash_device_id: { Args: { p_device_id: string }; Returns: string }
       is_admin: { Args: never; Returns: boolean }
       is_device_banned: { Args: { p_device_id: string }; Returns: boolean }
+      mark_room_delivered: { Args: { p_room_id: string }; Returns: number }
       mark_room_read: { Args: { p_room_id: string }; Returns: number }
       match_random_chat: { Args: { p_reset?: boolean }; Returns: string | null }
       register_device: { Args: { p_device_id: string }; Returns: boolean }
@@ -1225,6 +1229,7 @@ export type Database = {
           coins_charged: number
           content: string | null
           created_at: string
+          delivered_at: string | null
           expires_at: string
           id: string
           is_paid: boolean

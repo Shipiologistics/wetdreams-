@@ -6,6 +6,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  Check,
+  CheckCheck,
   CircleAlert,
   Coins,
   Gift,
@@ -111,6 +113,14 @@ export function ChatRoom({
           const message = payload.new as Message;
           setMessages((current) => current.some((item) => item.id === message.id) ? current : [...current, message]);
           if (message.sender_id !== viewerId) void supabase.rpc("mark_room_read", { p_room_id: room.id });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages", filter: `room_id=eq.${room.id}` },
+        (payload) => {
+          const message = payload.new as Message;
+          setMessages((current) => current.map((item) => item.id === message.id ? message : item));
         },
       )
       .on(
@@ -403,7 +413,7 @@ export function ChatRoom({
               <span className="message-meta">
                 {new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 {message.is_paid && <Coins size={11} />}
-                {message.sender_id === viewerId && message.read_at && "Read"}
+                {message.sender_id === viewerId && <MessageReceipt message={message} />}
               </span>
             </div>
           </div>
@@ -486,6 +496,12 @@ export function ChatRoom({
       />
     </div>
   );
+}
+
+function MessageReceipt({ message }: { message: Message }) {
+  if (message.read_at) return <CheckCheck className="receipt-icon read" size={14} aria-label="Seen" />;
+  if (message.delivered_at) return <CheckCheck className="receipt-icon delivered" size={14} aria-label="Delivered" />;
+  return <Check className="receipt-icon sent" size={14} aria-label="Sent" />;
 }
 
 function formatTipAmount(amount: number) {
