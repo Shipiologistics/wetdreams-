@@ -66,7 +66,7 @@ export async function POST(request: Request) {
         body: bodyText,
         channelId: "messages",
         collapseKey: `room:${room.id}`,
-        notification: false,
+        clickAction: "OPEN_CHAT",
         data: {
           type: "chat_message",
           messageId: message.id,
@@ -91,7 +91,15 @@ export async function POST(request: Request) {
     await admin.from("push_tokens").update({ enabled: false }).in("token", deadTokens);
   }
 
-  return Response.json({ sent, disabled: deadTokens.length });
+  if (sent > 0) {
+    await admin
+      .from("messages")
+      .update({ delivered_at: new Date().toISOString() })
+      .eq("id", message.id)
+      .is("delivered_at", null);
+  }
+
+  return Response.json({ sent, disabled: deadTokens.length, delivered: sent > 0 });
 }
 
 function messageBody(messageType: string, content: string | null) {

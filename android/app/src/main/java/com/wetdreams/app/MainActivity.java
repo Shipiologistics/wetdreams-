@@ -57,6 +57,18 @@ public class MainActivity extends BridgeActivity {
         if (targetUrl == null) {
             targetUrl = intent.getDataString();
         }
+        if (targetUrl == null) {
+            String relativeUrl = intent.getStringExtra("url");
+            if (relativeUrl != null && relativeUrl.startsWith("/")) {
+                targetUrl = "https://wetdreams.vercel.app" + relativeUrl;
+            }
+        }
+        if (targetUrl == null) {
+            String roomId = intent.getStringExtra("roomId");
+            if (roomId != null && !roomId.isEmpty()) {
+                targetUrl = "https://wetdreams.vercel.app/chat/" + roomId;
+            }
+        }
         if (targetUrl == null || !targetUrl.startsWith("https://wetdreams.vercel.app/")) {
             return;
         }

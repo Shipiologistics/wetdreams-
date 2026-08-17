@@ -14,6 +14,7 @@ type FcmPayload = {
   channelId?: string;
   collapseKey?: string;
   notification?: boolean;
+  clickAction?: string;
 };
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
@@ -47,6 +48,7 @@ export async function sendFcmMessage(payload: FcmPayload) {
       notification: payload.notification === false ? undefined : {
         channel_id: payload.channelId ?? "incoming_calls",
         sound: "default",
+        click_action: payload.clickAction,
         tag: payload.data.callId ? `call:${payload.data.callId}` : payload.data.messageId ? `message:${payload.data.messageId}` : undefined,
       },
     },
