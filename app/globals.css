@@ -19,17 +19,21 @@
 }
 
 html {
+  min-height: 100%;
   background: var(--canvas);
+  overscroll-behavior-y: none;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--canvas);
   color: var(--ink);
   font-family: Arial, Helvetica, sans-serif;
   letter-spacing: 0;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 html.call-overlay-open,
@@ -5745,18 +5749,31 @@ select,
   }
 
   .side-nav { display: none; }
+  html:has(.app-frame),
+  body:has(.app-frame) {
+    height: 100%;
+    overflow: hidden;
+  }
   .app-frame {
-    min-height: 100svh;
-    overflow: visible;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
   }
   .app-main {
-    min-height: 100svh;
+    height: 100dvh;
+    min-height: 0;
     margin-left: 0;
-    overflow: visible;
-    padding-bottom: calc(82px + var(--mobile-nav-bottom-gap));
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-bottom: 0;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
   }
   .app-main:has(.chat-screen) {
-    height: 100svh;
+    height: 100dvh;
     overflow: hidden;
     padding-bottom: 0;
   }
@@ -5832,7 +5849,10 @@ select,
   .side-nav-head .notifications-widget {
     display: none;
   }
-  .page-shell { padding: 22px 16px 42px; }
+  .page-shell {
+    min-height: 100svh;
+    padding: 22px 16px calc(94px + var(--mobile-nav-bottom-gap));
+  }
   .app-frame .page-header {
     position: sticky;
     top: 0;
@@ -5876,10 +5896,10 @@ select,
   }
   .profile-page,
   .settings-page {
-    padding-bottom: calc(142px + var(--mobile-nav-bottom-gap));
+    padding-bottom: calc(94px + var(--mobile-nav-bottom-gap));
   }
   .discover-page {
-    padding-bottom: 12px;
+    padding-bottom: calc(94px + var(--mobile-nav-bottom-gap));
   }
   .app-page-header .button {
     min-height: 38px;
