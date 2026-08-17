@@ -19,8 +19,12 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
   const [pending, setPending] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [state, setState] = useState("");
-  const [city, setCity] = useState("");
+  const [guestState, setGuestState] = useState("");
+  const [guestCity, setGuestCity] = useState("");
+  const [signupState, setSignupState] = useState("");
+  const [signupCity, setSignupCity] = useState("");
+  const [signupGender, setSignupGender] = useState<"male" | "female" | "">("");
+  const [requiredScope, setRequiredScope] = useState<"guest" | "signup" | null>(null);
 
   async function finish() {
     if (onSuccess) {
@@ -31,10 +35,11 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
   }
 
   async function continueAsGuest() {
-    const cleanLocation = formatLocation(city, state);
+    const cleanLocation = formatLocation(guestCity, guestState);
     setPending("guest");
     setError(null);
     setNotice(null);
+    setRequiredScope(null);
     const supabase = createClient();
     const response = await fetch("/api/auth/guest", {
       method: "POST",
@@ -44,7 +49,12 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
     const guest = await response.json().catch(() => null) as { email?: string; password?: string; error?: string } | null;
 
     if (!response.ok || !guest?.email || !guest.password) {
-      setError(messageForError(guest?.error ?? "Guest sign in failed."));
+      if (guest?.error === "LOCATION_REQUIRED") {
+        setRequiredScope("guest");
+        setError("Location is required for guest sign in.");
+      } else {
+        setError(messageForError(guest?.error ?? "Guest sign in failed."));
+      }
       setPending(null);
       return;
     }
@@ -77,12 +87,19 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
     setPending("email");
     setError(null);
     setNotice(null);
+    setRequiredScope(null);
     const form = new FormData(event.currentTarget);
     const email = String(form.get("email") ?? "").trim();
     const password = String(form.get("password") ?? "");
     const displayName = String(form.get("displayName") ?? "").trim();
-    const cleanLocation = formatLocation(city, state);
+    const cleanLocation = formatLocation(signupCity, signupState);
+    if (mode === "signup" && !signupGender) {
+      setRequiredScope("signup");
+      setPending(null);
+      return setError("Gender is required.");
+    }
     if (mode === "signup" && !cleanLocation) {
+      setRequiredScope("signup");
       setPending(null);
       return setError("Location is required.");
     }
@@ -95,7 +112,7 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-            data: { display_name: displayName, gender: "male" },
+            data: { display_name: displayName, gender: signupGender },
           },
         });
 
@@ -150,7 +167,10 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
           <span>Fast start</span>
           <strong>Guest sign in</strong>
         </div>
-        <LocationSelects state={state} city={city} onStateChange={setState} onCityChange={setCity} />
+        <div className={requiredScope === "guest" ? "field-error" : undefined}>
+          <LocationSelects state={guestState} city={guestCity} onStateChange={setGuestState} onCityChange={setGuestCity} required={false} />
+        </div>
+        {requiredScope === "guest" && <p className="field-required-message">Location required</p>}
         <button className="button primary wide" type="button" onClick={continueAsGuest} disabled={!!pending}>
           {pending === "guest" ? <LoaderCircle className="spin" size={19} /> : <UserRound size={19} />}
           Continue as guest
@@ -160,20 +180,60 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
       <div className="auth-divider"><span>{mode === "login" ? "or login" : "or register"}</span></div>
 
       <div className="auth-tabs" role="tablist" aria-label="Email access">
-        <button className={mode === "login" ? "active" : ""} type="button" onClick={() => { setMode("login"); setError(null); setNotice(null); }}>
+        <button className={mode === "login" ? "active" : ""} type="button" onClick={() => { setMode("login"); setError(null); setNotice(null); setRequiredScope(null); }}>
           Login
         </button>
-        <button className={mode === "signup" ? "active" : ""} type="button" onClick={() => { setMode("signup"); setError(null); setNotice(null); }}>
+        <button className={mode === "signup" ? "active" : ""} type="button" onClick={() => { setMode("signup"); setError(null); setNotice(null); setRequiredScope(null); }}>
           Register
         </button>
       </div>
 
-      <form onSubmit={submitEmail} className="form-stack auth-email-form">
+      <form
+        onSubmit={submitEmail}
+        onInvalid={(event) => {
+          event.preventDefault();
+          setRequiredScope(mode === "signup" ? "signup" : null);
+          setError("Please fill required fields.");
+        }}
+        className="form-stack auth-email-form"
+      >
         {mode === "signup" && (
-          <label>
-            Name
-            <input name="displayName" autoComplete="name" minLength={2} maxLength={60} placeholder="Your name" required />
-          </label>
+          <>
+            <label>
+              Name
+              <input name="displayName" autoComplete="name" minLength={2} maxLength={60} placeholder="Your name" required />
+            </label>
+            <fieldset className={`gender-choice ${requiredScope === "signup" && !signupGender ? "field-error" : ""}`}>
+              <legend>I am</legend>
+              <label>
+                <input
+                  type="radio"
+                  name="gender"
+                  value="male"
+                  checked={signupGender === "male"}
+                  onChange={() => setSignupGender("male")}
+                  required
+                />
+                <span>Male</span>
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="gender"
+                  value="female"
+                  checked={signupGender === "female"}
+                  onChange={() => setSignupGender("female")}
+                  required
+                />
+                <span>Female</span>
+              </label>
+            </fieldset>
+            {requiredScope === "signup" && !signupGender && <p className="field-required-message">Gender required</p>}
+            <div className={requiredScope === "signup" && !formatLocation(signupCity, signupState) ? "field-error" : undefined}>
+              <LocationSelects state={signupState} city={signupCity} onStateChange={setSignupState} onCityChange={setSignupCity} />
+            </div>
+            {requiredScope === "signup" && !formatLocation(signupCity, signupState) && <p className="field-required-message">Location required</p>}
+          </>
         )}
         <label>
           Email
@@ -192,7 +252,7 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
       {error && <p className="form-message error" role="alert">{error}</p>}
       {notice && <p className="form-message success" role="status">{notice}</p>}
 
-      <button className="auth-switch" type="button" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(null); setNotice(null); }}>
+      <button className="auth-switch" type="button" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(null); setNotice(null); setRequiredScope(null); }}>
         {mode === "login" ? "New here? Register" : "Already registered? Login"} <ArrowRight size={14} />
       </button>
     </div>

@@ -755,6 +755,64 @@ body:has(.side-nav) .global-back-button-fixed {
   background: white;
 }
 
+.gender-choice {
+  border: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+}
+
+.gender-choice legend {
+  grid-column: 1 / -1;
+  color: #404440;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0;
+}
+
+.gender-choice label {
+  min-height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.gender-choice input {
+  width: 17px;
+  min-height: 17px;
+  accent-color: var(--accent);
+}
+
+.gender-choice label:has(input:checked) {
+  border-color: var(--teal);
+  background: #edf8f5;
+  color: var(--teal);
+}
+
+.field-error select,
+.field-error input,
+.field-error .gender-choice label,
+.gender-choice.field-error label {
+  border-color: #d92d42;
+  background: #fff5f6;
+}
+
+.field-required-message {
+  margin: -3px 0 0;
+  color: #b42335;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .form-stack .button {
   margin-top: 4px;
 }
