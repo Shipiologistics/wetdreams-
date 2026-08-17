@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { CSSProperties, FormEvent } from "react";
+import type { FormEvent } from "react";
 import { ImagePlus, LoaderCircle, RotateCw, ShieldAlert } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -97,7 +97,7 @@ export function ProfileImageGate({ required }: { required: boolean }) {
         <label className="profile-image-picker">
           {previewUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={previewUrl} alt="Selected profile preview" style={{ "--profile-image-rotation": `${rotation}deg` } as CSSProperties} />
+            <img src={previewUrl} alt="Selected profile preview" style={{ transform: `rotate(${rotation}deg)` }} />
           ) : (
             <span><ImagePlus size={28} /> Choose image</span>
           )}

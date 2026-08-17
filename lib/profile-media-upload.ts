@@ -54,14 +54,20 @@ export async function cropSquareImage(file: File, crop: { zoom: number; x: numbe
   const dx = (size - drawWidth) / 2 + (crop.x / 50) * maxOffsetX;
   const dy = (size - drawHeight) / 2 + (crop.y / 50) * maxOffsetY;
 
-  context.drawImage(source, dx, dy, drawWidth, drawHeight);
+  context.drawImage(source.element, dx, dy, drawWidth, drawHeight);
 
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
   if (!blob) throw new Error("Could not prepare image.");
   return new File([blob], `${file.name.replace(/\.[^.]+$/, "") || "profile"}-square.jpg`, { type: "image/jpeg" });
 }
 
-function rotateImage(image: CanvasImageSource & { width: number; height: number }, rotation: number) {
+type LoadedImage = {
+  element: CanvasImageSource;
+  width: number;
+  height: number;
+};
+
+function rotateImage(image: LoadedImage, rotation: number): LoadedImage {
   const normalized = ((Math.round(rotation / 90) * 90) % 360 + 360) % 360;
   if (normalized === 0) return image;
 
@@ -74,17 +80,21 @@ function rotateImage(image: CanvasImageSource & { width: number; height: number 
 
   context.translate(canvas.width / 2, canvas.height / 2);
   context.rotate((normalized * Math.PI) / 180);
-  context.drawImage(image, -image.width / 2, -image.height / 2, image.width, image.height);
-  return canvas;
+  context.drawImage(image.element, -image.width / 2, -image.height / 2, image.width, image.height);
+  return { element: canvas, width: canvas.width, height: canvas.height };
 }
 
 function loadImageBitmap(file: File) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
+  return new Promise<LoadedImage>((resolve, reject) => {
     const image = new window.Image();
     const url = URL.createObjectURL(file);
     image.onload = () => {
       URL.revokeObjectURL(url);
-      resolve(image);
+      resolve({
+        element: image,
+        width: image.naturalWidth || image.width,
+        height: image.naturalHeight || image.height,
+      });
     };
     image.onerror = () => {
       URL.revokeObjectURL(url);

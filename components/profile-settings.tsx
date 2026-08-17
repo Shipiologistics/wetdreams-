@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent } from "react";
+import type { FormEvent, PointerEvent as ReactPointerEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -55,6 +55,8 @@ export function ProfileSettings({
   const [message, setMessage] = useState<string | null>(null);
   const [selectedMedia, setSelectedMedia] = useState<SelectedMedia[]>([]);
   const [activeMediaId, setActiveMediaId] = useState<string | null>(null);
+  const [editingMedia, setEditingMedia] = useState<ProfileMedia | null>(null);
+  const [loadingEditor, setLoadingEditor] = useState<string | null>(null);
   const [cropMode, setCropMode] = useState(false);
   const mediaPreviewUrlsRef = useRef<string[]>([]);
   const cropDragRef = useRef<{ pointerId: number; startX: number; startY: number; cropX: number; cropY: number; size: number } | null>(null);
@@ -136,6 +138,33 @@ export function ProfileSettings({
     router.refresh();
   }
 
+  async function updateMedia(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editingMedia || !activeMedia?.file.type.startsWith("image/")) return setMessage("Choose an image to edit.");
+    setPending(true);
+    setMessage(null);
+
+    try {
+      const squareFile = await cropSquareImage(activeMedia.file, activeMedia.crop);
+      const uploaded = await uploadProfileMedia(squareFile);
+      const { error } = await createClient().from("profile_media").update({
+        media_type: uploaded.type,
+        cloudinary_url: uploaded.url,
+        cloudinary_public_id: uploaded.publicId,
+      }).eq("id", editingMedia.id);
+      if (error) throw error;
+    } catch (caught) {
+      setPending(false);
+      setMessage(caught instanceof Error ? messageForError(caught.message) : "Image update failed.");
+      return;
+    }
+
+    setPending(false);
+    closeMediaModal();
+    setMessage("Image updated.");
+    router.refresh();
+  }
+
   async function removeMedia(id: string) {
     if (!window.confirm("Remove this media from your profile?")) return;
     const { error } = await createClient().from("profile_media").delete().eq("id", id);
@@ -191,6 +220,39 @@ export function ProfileSettings({
 
   function chooseMedia(files: FileList | File[] | null) {
     addSelectedMedia(files, true);
+  }
+
+  function openAddMediaModal() {
+    setEditingMedia(null);
+    clearSelectedMedia();
+    setMediaOpen(true);
+  }
+
+  async function openMediaEditor(item: ProfileMedia) {
+    if (item.media_type !== "image") return setMessage("Only photos can be cropped or rotated.");
+    setLoadingEditor(item.id);
+    setMessage(null);
+    try {
+      const file = await fileFromUrl(item.cloudinary_url, `${item.id}.jpg`);
+      clearSelectedMedia();
+      const previewUrl = URL.createObjectURL(file);
+      mediaPreviewUrlsRef.current.push(previewUrl);
+      const selected = {
+        id: `edit-${item.id}`,
+        file,
+        previewUrl,
+        crop: { zoom: 1, x: 0, y: 0, rotation: 0 },
+      };
+      setEditingMedia(item);
+      setSelectedMedia([selected]);
+      setActiveMediaId(selected.id);
+      setCropMode(true);
+      setMediaOpen(true);
+    } catch (caught) {
+      setMessage(caught instanceof Error ? messageForError(caught.message) : "Could not open this image for editing.");
+    } finally {
+      setLoadingEditor(null);
+    }
   }
 
   function addSelectedMedia(files: FileList | File[] | null, replace: boolean) {
@@ -250,6 +312,7 @@ export function ProfileSettings({
 
   function closeMediaModal() {
     setMediaOpen(false);
+    setEditingMedia(null);
     clearSelectedMedia();
   }
 
@@ -324,7 +387,15 @@ export function ProfileSettings({
               ? <Image src={primary.cloudinary_url} alt="" fill priority sizes="(max-width: 800px) 100vw, 400px" />
               : <video src={primary.cloudinary_url} muted playsInline />
           ) : <span>{account.display_name.slice(0, 1)}</span>}
-          <button className="button light" type="button" onClick={() => setMediaOpen(true)}><Camera size={18} /> Add media</button>
+          <div className="profile-hero-media-actions">
+            {primary?.media_type === "image" && (
+              <button className="button light" type="button" onClick={() => openMediaEditor(primary)} disabled={loadingEditor === primary.id}>
+                {loadingEditor === primary.id ? <LoaderCircle className="spin" size={18} /> : <Crop size={18} />}
+                Edit image
+              </button>
+            )}
+            <button className="button light" type="button" onClick={openAddMediaModal}><Camera size={18} /> Add media</button>
+          </div>
         </div>
         <div className="profile-identity">
           <span className="eyebrow">@{account.username}</span>
@@ -382,12 +453,17 @@ export function ProfileSettings({
             {item.media_type === "image" ? <Image src={item.cloudinary_url} alt="" fill sizes="140px" /> : <video src={item.cloudinary_url} muted />}
             {item.is_primary && <span className="primary-badge"><Star size={12} fill="currentColor" /> Primary</span>}
             <div className="media-actions">
+              {item.media_type === "image" && (
+                <button title="Edit crop or rotate" type="button" onClick={() => openMediaEditor(item)} disabled={loadingEditor === item.id}>
+                  {loadingEditor === item.id ? <LoaderCircle className="spin" size={15} /> : <Crop size={15} />}
+                </button>
+              )}
               {!item.is_primary && <button title="Make primary" type="button" onClick={() => makePrimary(item.id)}><Check size={15} /></button>}
               <button title="Remove" type="button" onClick={() => removeMedia(item.id)}><Trash2 size={15} /></button>
             </div>
           </div>
         ))}
-        {media.length < 12 && <button className="add-media-tile" type="button" onClick={() => setMediaOpen(true)}><ImagePlus size={24} /><span>Add</span></button>}
+        {media.length < 12 && <button className="add-media-tile" type="button" onClick={openAddMediaModal}><ImagePlus size={24} /><span>Add</span></button>}
       </section>
 
       <form className="settings-form" onSubmit={save}>
@@ -429,36 +505,38 @@ export function ProfileSettings({
 
       {mediaOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={closeMediaModal}>
-          <form className="modal" role="dialog" aria-modal="true" aria-labelledby="media-title" onSubmit={addMedia} onMouseDown={(event) => event.stopPropagation()}>
-            <div className="modal-header"><div><span className="eyebrow">Profile gallery</span><h2 id="media-title">Add media</h2></div><button className="icon-button" type="button" title="Close" onClick={closeMediaModal}><X size={20} /></button></div>
+          <form className="modal" role="dialog" aria-modal="true" aria-labelledby="media-title" onSubmit={editingMedia ? updateMedia : addMedia} onMouseDown={(event) => event.stopPropagation()}>
+            <div className="modal-header"><div><span className="eyebrow">Profile gallery</span><h2 id="media-title">{editingMedia ? "Edit image" : "Add media"}</h2></div><button className="icon-button" type="button" title="Close" onClick={closeMediaModal}><X size={20} /></button></div>
             {activeMedia ? (
               <div className="upload-preview-card">
                 <div
                   className={`square-media-preview ${activeMedia.file.type.startsWith("image/") && cropMode ? "is-draggable is-adjusting" : ""}`}
-                  style={{
-                    "--crop-zoom": activeMedia.crop.zoom,
-                    "--crop-x": activeMedia.crop.x,
-                    "--crop-y": activeMedia.crop.y,
-                    "--crop-object-x": `${50 - activeMedia.crop.x}%`,
-                    "--crop-object-y": `${50 - activeMedia.crop.y}%`,
-                    "--crop-rotation": `${activeMedia.crop.rotation}deg`,
-                  } as CSSProperties}
                   onPointerDown={startCropDrag}
                   onPointerMove={moveCropDrag}
                   onPointerUp={endCropDrag}
                   onPointerCancel={endCropDrag}
                 >
                   {activeMedia.file.type.startsWith("image/")
-                    // eslint-disable-next-line @next/next/no-img-element
-                    ? <img src={activeMedia.previewUrl} alt="Selected media preview" draggable={false} />
+                    ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={activeMedia.previewUrl}
+                        alt="Selected media preview"
+                        draggable={false}
+                        style={{
+                          objectPosition: `${50 - activeMedia.crop.x}% ${50 - activeMedia.crop.y}%`,
+                          transform: `scale(${activeMedia.crop.zoom}) rotate(${activeMedia.crop.rotation}deg)`,
+                        }}
+                      />
+                    )
                     : <video src={activeMedia.previewUrl} muted playsInline controls />}
                   {activeMedia.file.type.startsWith("image/") && cropMode && <span className="crop-frame" aria-hidden="true" />}
                 </div>
                 <div className="upload-preview-meta">
-                  <strong>{activeMedia.file.name}</strong>
+                  <strong>{editingMedia ? "Adjust crop and rotation" : activeMedia.file.name}</strong>
                   {selectedMedia.length > 1 && <span>{activeMediaIndex + 1}/{selectedMedia.length}</span>}
                 </div>
-                {selectedMedia.length > 1 && (
+                {!editingMedia && selectedMedia.length > 1 && (
                   <div className="selected-media-strip" aria-label="Selected media">
                     {selectedMedia.map((item, index) => (
                       <div className="selected-media-thumb" key={item.id}>
@@ -498,10 +576,12 @@ export function ProfileSettings({
                         <Crop size={16} /> Adjust
                       </button>
                     )}
-                    <label className="button secondary small file-change-button">
-                      <ImagePlus size={16} /> Add more
-                      <input type="file" accept="image/*,video/*" multiple onChange={(event) => addSelectedMedia(event.target.files, false)} />
-                    </label>
+                    {!editingMedia && (
+                      <label className="button secondary small file-change-button">
+                        <ImagePlus size={16} /> Add more
+                        <input type="file" accept="image/*,video/*" multiple onChange={(event) => addSelectedMedia(event.target.files, false)} />
+                      </label>
+                    )}
                   </div>
                 )}
               </div>
@@ -513,7 +593,10 @@ export function ProfileSettings({
                 <input type="file" accept="image/*,video/*" multiple onChange={(event) => chooseMedia(event.target.files)} required />
               </label>
             )}
-            <button className="button primary wide" type="submit" disabled={pending || !selectedMedia.length}>{pending && <LoaderCircle className="spin" size={18} />} {selectedMedia.length > 1 ? `Add ${selectedMedia.length} to profile` : "Add to profile"}</button>
+            <button className="button primary wide" type="submit" disabled={pending || !selectedMedia.length}>
+              {pending && <LoaderCircle className="spin" size={18} />}
+              {editingMedia ? "Save image" : selectedMedia.length > 1 ? `Add ${selectedMedia.length} to profile` : "Add to profile"}
+            </button>
           </form>
         </div>
       )}
@@ -545,4 +628,11 @@ function splitList(value: string) {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+async function fileFromUrl(url: string, name: string) {
+  const response = await fetch(url, { mode: "cors" });
+  if (!response.ok) throw new Error("Could not load this image for editing.");
+  const blob = await response.blob();
+  return new File([blob], name, { type: blob.type || "image/jpeg" });
 }
