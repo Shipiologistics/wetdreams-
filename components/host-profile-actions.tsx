@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LoaderCircle, MessageCircle, Phone, Video } from "lucide-react";
 import { CoinTopupModal } from "@/components/coin-topup-modal";
+import { notifyIncomingCall } from "@/lib/call-notifications";
 import { createClient } from "@/lib/supabase/client";
 import { messageForError } from "@/lib/format";
 
@@ -59,8 +60,9 @@ export function HostProfileActions({
     setError(null);
     try {
       const room = await getRoom();
-      const { error: callError } = await createClient().rpc("start_call", { p_room_id: room, p_call_type: type });
+      const { data: callId, error: callError } = await createClient().rpc("start_call", { p_room_id: room, p_call_type: type });
       if (callError) throw callError;
+      if (callId) void notifyIncomingCall(callId);
       router.push(`/chat/${room}?call=${type}`);
     } catch (caught) {
       const message = errorMessage(caught, "Could not start call.");

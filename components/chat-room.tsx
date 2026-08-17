@@ -25,6 +25,7 @@ import { AgoraCallSession } from "@/components/agora-call-session";
 import { CoinTopupModal } from "@/components/coin-topup-modal";
 import { GlobalBackButton } from "@/components/global-back-button";
 import { TipButton } from "@/components/tip-button";
+import { notifyIncomingCall } from "@/lib/call-notifications";
 import { createClient } from "@/lib/supabase/client";
 import { getOrCreateDeviceId } from "@/lib/device-id";
 import { formatRelativeTime, messageForError } from "@/lib/format";
@@ -246,6 +247,7 @@ export function ChatRoom({
       return setError(messageForError(callError.message));
     }
     if (data) {
+      void notifyIncomingCall(data);
       const { data: call } = await createClient().from("calls").select("*").eq("id", data).single();
       if (call) setActiveCall(call);
     }

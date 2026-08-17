@@ -21,6 +21,7 @@ import Image from "next/image";
 import { AuthForm } from "@/components/auth-form";
 import { CoinTopupModal } from "@/components/coin-topup-modal";
 import type { DiscoveryProfile } from "@/lib/view-models";
+import { notifyIncomingCall } from "@/lib/call-notifications";
 import { createClient } from "@/lib/supabase/client";
 import { messageForError } from "@/lib/format";
 import { getCitiesForState, indianLocations, parseLocation } from "@/lib/location-options";
@@ -180,8 +181,9 @@ function ProfileCard({ profile, viewerId, eagerImage }: { profile: DiscoveryProf
     setError(null);
     try {
       const room = await getRoom();
-      const { error: callError } = await createClient().rpc("start_call", { p_room_id: room, p_call_type: type });
+      const { data: callId, error: callError } = await createClient().rpc("start_call", { p_room_id: room, p_call_type: type });
       if (callError) throw callError;
+      if (callId) void notifyIncomingCall(callId);
       router.push(`/chat/${room}?call=${type}`);
     } catch (caught) {
       const message = errorMessage(caught, "Could not start call.");

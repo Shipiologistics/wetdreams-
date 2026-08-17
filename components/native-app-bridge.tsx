@@ -24,15 +24,19 @@ export function NativeAppBridge() {
 
     let mounted = true;
     const supabase = createClient();
-    const pushEnabled = process.env.NEXT_PUBLIC_ANDROID_PUSH_ENABLED === "true";
 
     async function registerPushToken() {
       const permission = await PushNotifications.requestPermissions();
       if (permission.receive !== "granted") return;
-      if (!pushEnabled) {
-        console.info("Android notification permission is granted. Push token registration is disabled until the push provider is configured.");
-        return;
-      }
+      await PushNotifications.createChannel({
+        id: "incoming_calls",
+        name: "Incoming calls",
+        description: "WetDreams incoming call alerts",
+        importance: 5,
+        visibility: 1,
+        sound: "default",
+        vibration: true,
+      });
       await PushNotifications.register();
     }
 
