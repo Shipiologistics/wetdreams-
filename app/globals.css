@@ -2381,7 +2381,7 @@ a.header-balance:active {
   height: 100vh;
   display: grid;
   grid-template-rows: 68px minmax(0, 1fr) auto;
-  background: #f1f1ed;
+  background: var(--canvas);
 }
 
 .chat-header {
@@ -2530,7 +2530,7 @@ a.header-balance:active {
 
 .conversation-intro p {
   margin: 11px 0 0;
-  color: #555a56;
+  color: var(--muted);
   font-size: 13px;
   line-height: 1.45;
 }
@@ -2549,8 +2549,10 @@ a.header-balance:active {
   min-width: 104px;
   max-width: min(78%, 560px);
   border-radius: 8px 8px 8px 2px;
-  background: white;
-  box-shadow: 0 2px 5px rgb(31 34 31 / 6%);
+  border: 1px solid var(--line);
+  background: #171e27;
+  color: var(--ink);
+  box-shadow: 0 8px 18px rgb(0 0 0 / 16%);
   padding: 10px 12px 23px;
   font-size: 14px;
   line-height: 1.45;
@@ -2559,7 +2561,8 @@ a.header-balance:active {
 
 .mine .message-bubble {
   border-radius: 8px 8px 2px 8px;
-  background: #dceeea;
+  border-color: rgb(64 215 204 / 22%);
+  background: #143233;
 }
 
 .message-bubble.emoji {
@@ -2577,7 +2580,7 @@ a.header-balance:active {
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #858b86;
+  color: var(--muted);
   font-size: 10px;
   line-height: 1;
   white-space: nowrap;
@@ -2586,7 +2589,7 @@ a.header-balance:active {
 .receipt-icon {
   width: 14px;
   height: 14px;
-  color: #858b86;
+  color: var(--muted);
   stroke-width: 2.4;
 }
 
@@ -2613,14 +2616,14 @@ a.header-balance:active {
   align-items: center;
   justify-content: center;
   gap: 3px;
-  background: white;
+  background: #171e27;
 }
 
 .typing-bubble span {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #8e938f;
+  background: var(--muted);
   animation: typing 1s infinite ease-in-out;
 }
 
@@ -2720,7 +2723,7 @@ a.header-balance:active {
 .media-composer input {
   height: 40px;
   min-width: 0;
-  background: #f4f4f0;
+  background: #0c1117;
   padding: 9px;
 }
 
@@ -2743,7 +2746,7 @@ a.header-balance:active {
   max-height: 112px;
   resize: none;
   flex: 1;
-  background: #f4f4f0;
+  background: #0c1117;
   padding: 11px 12px;
 }
 
@@ -6131,11 +6134,15 @@ select,
   .media-composer .button { grid-column: 1 / 2; }
   .random-page { min-height: calc(100dvh - 66px); padding: 22px 16px; }
   .match-visual { width: 190px; height: 190px; }
-  .balance-grid { grid-template-columns: 1fr; }
-  .balance-card { min-height: 225px; }
-  .withdrawal-policy-card { grid-template-columns: 1fr; }
+  .balance-grid { grid-template-columns: 1fr; gap: 12px; }
+  .balance-card { min-height: 0; padding: 16px; }
+  .balance-icon { width: 34px; height: 34px; margin-bottom: 10px; }
+  .balance-card > strong { font-size: 30px; }
+  .balance-card > p { margin-bottom: 10px; }
+  .balance-card .button { min-height: 38px; padding-inline: 14px; }
+  .withdrawal-policy-card { grid-template-columns: 1fr; margin: 12px 0 22px; }
   .withdrawal-policy-card > * + * { border-left: 0; border-top: 1px solid var(--line); }
-  .wallet-summary { grid-template-columns: 1fr; }
+  .wallet-summary { grid-template-columns: 1fr; margin-bottom: calc(108px + var(--mobile-nav-bottom-gap)); }
   .wallet-summary > div { min-height: 62px; }
   .wallet-summary > div + div { border-left: 0; border-top: 1px solid var(--line); }
   .simple-table > div { grid-template-columns: 1fr auto; padding: 10px 0; }
