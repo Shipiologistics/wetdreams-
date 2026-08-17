@@ -46,6 +46,7 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ roomI
   return (
     <ChatRoom
       viewerId={viewer.id}
+      viewerGender={viewer.account.gender}
       initialCoins={Number(viewer.wallet.coins_balance)}
       initialBeans={Number(viewer.wallet.beans_balance)}
       room={room}

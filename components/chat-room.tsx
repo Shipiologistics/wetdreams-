@@ -54,6 +54,7 @@ type BlockState = {
 
 export function ChatRoom({
   viewerId,
+  viewerGender,
   initialCoins,
   initialBeans,
   room,
@@ -65,6 +66,7 @@ export function ChatRoom({
   initialBlockState,
 }: {
   viewerId: string;
+  viewerGender: string | null;
   initialCoins: number;
   initialBeans: number;
   room: Room;
@@ -101,7 +103,8 @@ export function ChatRoom({
   const count = Math.max(room.message_count, messages.length);
   const blocked = blockState.viewerBlockedOther || blockState.otherBlockedViewer;
   const isRandomRoom = room.room_type === "random";
-  const paywalled = !isRandomRoom && count >= 10 && !profile.free_chat_enabled && Number(profile.chat_rate_coins) > 0;
+  const messageBillingApplies = viewerGender === "male";
+  const paywalled = messageBillingApplies && !isRandomRoom && count >= 10 && !profile.free_chat_enabled && Number(profile.chat_rate_coins) > 0;
 
   const markRoomRead = useCallback(async () => {
     const { error: readError } = await createClient().rpc("mark_room_read", { p_room_id: room.id });
