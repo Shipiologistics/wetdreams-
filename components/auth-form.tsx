@@ -32,12 +32,12 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
 
-  async function finish() {
+  async function finish(destination = next) {
     if (onSuccess) {
       await onSuccess();
       return;
     }
-    window.location.assign(next);
+    window.location.replace(destination);
   }
 
   async function continueAsGuest() {
@@ -83,7 +83,7 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
       return;
     }
 
-    await finish();
+    await finish("/discover");
   }
 
   async function submitLogin(event: FormEvent<HTMLFormElement>) {

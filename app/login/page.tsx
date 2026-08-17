@@ -8,7 +8,10 @@ import { Logo } from "@/components/logo";
 export const metadata: Metadata = { title: "Welcome" };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
-  const next = (await searchParams).next ?? "/discover";
+  const requestedNext = (await searchParams).next;
+  const next = requestedNext?.startsWith("/") && !requestedNext.startsWith("//")
+    ? requestedNext
+    : "/discover";
 
   return (
     <main className="auth-page">

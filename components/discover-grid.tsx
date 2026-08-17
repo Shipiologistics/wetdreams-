@@ -6,10 +6,12 @@ import Link from "next/link";
 import {
   BadgeCheck,
   Heart,
+  LayoutGrid,
   LoaderCircle,
   MapPin,
   MessageCircle,
   Phone,
+  Rows3,
   Search,
   SlidersHorizontal,
   Star,
@@ -34,6 +36,7 @@ export function DiscoverGrid({ profiles, viewerId }: { profiles: DiscoveryProfil
   const [onlineOnly, setOnlineOnly] = useState(false);
   const [maxRate, setMaxRate] = useState(100000);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "single">("grid");
   const maxAvailableRate = useMemo(() => Math.max(1, ...profiles.map(({ profile }) => Number(profile.chat_rate_coins))), [profiles]);
   const activeMaxRate = Math.min(maxRate, maxAvailableRate);
   const cityOptions = useMemo(() => {
@@ -79,6 +82,28 @@ export function DiscoverGrid({ profiles, viewerId }: { profiles: DiscoveryProfil
         <button className={clsx("icon-button", filtersOpen && "active")} type="button" onClick={() => setFiltersOpen(!filtersOpen)} title="Filters">
           <SlidersHorizontal size={19} />
         </button>
+        <div className="discover-view-toggle" role="group" aria-label="Profile layout">
+          <button
+            className={clsx(viewMode === "grid" && "active")}
+            type="button"
+            onClick={() => setViewMode("grid")}
+            title="Two-column grid"
+            aria-label="Two-column grid"
+            aria-pressed={viewMode === "grid"}
+          >
+            <LayoutGrid size={18} />
+          </button>
+          <button
+            className={clsx(viewMode === "single" && "active")}
+            type="button"
+            onClick={() => setViewMode("single")}
+            title="Single-column cards"
+            aria-label="Single-column cards"
+            aria-pressed={viewMode === "single"}
+          >
+            <Rows3 size={18} />
+          </button>
+        </div>
       </div>
 
       {filtersOpen && (
@@ -125,8 +150,11 @@ export function DiscoverGrid({ profiles, viewerId }: { profiles: DiscoveryProfil
         </div>
       )}
 
-      <p className="result-count">{filtered.length} {filtered.length === 1 ? "person" : "people"}</p>
-      <div className="profile-grid">
+      <div className="discover-results-heading">
+        <h2>Recommended for you</h2>
+        <span>{filtered.length} {filtered.length === 1 ? "profile" : "profiles"}</span>
+      </div>
+      <div className={clsx("profile-grid", viewMode === "single" && "single-view")}>
         {filtered.map((profile, index) => <ProfileCard key={profile.account.id} profile={profile} viewerId={viewerId} eagerImage={index === 0} />)}
       </div>
       {!filtered.length && <div className="inline-empty">No profiles match these filters.</div>}
@@ -242,30 +270,30 @@ function ProfileCard({ profile, viewerId, eagerImage }: { profile: DiscoveryProf
           </button>
         </div>
         {media.length > 1 && <div className="gallery-count">1 / {media.length}</div>}
-        <div className="profile-card-overlay">
+      </div>
+      <div className="profile-card-body">
+        <Link className="profile-card-copy" href={`/u/${account.username}`}>
           <div className="profile-title-row">
-            <div>
-              <h2>{account.display_name}{profile.profile.age ? `, ${profile.profile.age}` : ""}</h2>
-              {profile.profile.location && <p className="location"><MapPin size={15} /> {profile.profile.location}</p>}
-            </div>
+            <h2>{account.display_name}{profile.profile.age ? `, ${profile.profile.age}` : ""}</h2>
             {account.is_verified && <BadgeCheck size={18} className="verified" aria-label="Verified" />}
           </div>
+          {profile.profile.location && <p className="location"><MapPin size={15} /> {profile.profile.location}</p>}
+        </Link>
         <div className="profile-card-badges">
           {profile.rating && <span className="rating"><Star size={14} fill="currentColor" /> {profile.rating.toFixed(1)}</span>}
         </div>
-          {error && <p className="card-error" role="alert">{error}</p>}
-          <div className="profile-actions">
-            <button className="button primary" type="button" onClick={startChat} disabled={!!pending}>
-              {pending === "chat" ? <LoaderCircle className="spin" size={18} /> : <MessageCircle size={18} />}
-              Message
-            </button>
-            <button className="icon-button bordered" type="button" title={busy ? "Busy" : "Audio call"} onClick={() => startCall("audio")} disabled={!!pending || busy}>
-              {pending === "audio" ? <LoaderCircle className="spin" size={18} /> : <Phone size={18} />}
-            </button>
-            <button className="icon-button bordered" type="button" title={busy ? "Busy" : "Video call"} onClick={() => startCall("video")} disabled={!!pending || busy}>
-              {pending === "video" ? <LoaderCircle className="spin" size={18} /> : <Video size={18} />}
-            </button>
-          </div>
+        {error && <p className="card-error" role="alert">{error}</p>}
+        <div className="profile-actions">
+          <button className="button primary" type="button" onClick={startChat} disabled={!!pending} aria-label="Message" title="Message">
+            {pending === "chat" ? <LoaderCircle className="spin" size={18} /> : <MessageCircle size={18} />}
+            <span>Message</span>
+          </button>
+          <button className="icon-button bordered" type="button" title={busy ? "Busy" : "Audio call"} onClick={() => startCall("audio")} disabled={!!pending || busy}>
+            {pending === "audio" ? <LoaderCircle className="spin" size={18} /> : <Phone size={18} />}
+          </button>
+          <button className="icon-button bordered" type="button" title={busy ? "Busy" : "Video call"} onClick={() => startCall("video")} disabled={!!pending || busy}>
+            {pending === "video" ? <LoaderCircle className="spin" size={18} /> : <Video size={18} />}
+          </button>
         </div>
       </div>
       <CoinTopupModal
