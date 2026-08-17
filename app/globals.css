@@ -513,7 +513,8 @@ textarea {
   left: 16px;
   z-index: 60;
   border: 1px solid var(--line);
-  background: rgb(255 255 255 / 94%);
+  background: rgb(17 22 29 / 92%);
+  color: var(--ink);
   backdrop-filter: blur(10px);
 }
 
@@ -5194,7 +5195,7 @@ a.header-balance:active {
 
 .public-profile-loading-top {
   border-bottom: 1px solid var(--line);
-  background: rgb(247 246 242 / 96%);
+  background: rgb(17 22 29 / 96%);
   padding: max(18px, env(safe-area-inset-top)) 20px 16px;
 }
 
@@ -5256,8 +5257,10 @@ a.header-balance:active {
 
 .public-status {
   width: fit-content;
-  background: #e5f1ee;
+  background: rgb(64 215 204 / 14%);
   color: var(--teal);
+  border: 1px solid rgb(64 215 204 / 26%);
+  border-radius: 999px;
   padding: 7px 10px;
   font-size: 11px;
   font-weight: 800;
@@ -5277,7 +5280,9 @@ a.header-balance:active {
 }
 
 .public-profile-meta span {
-  background: #e5f1ee;
+  background: rgb(64 215 204 / 14%);
+  border: 1px solid rgb(64 215 204 / 24%);
+  border-radius: 999px;
   color: var(--teal);
   padding: 6px 9px;
   font-size: 11px;
@@ -5437,7 +5442,7 @@ a.header-balance:active {
 .review-item p {
   grid-column: 1 / -1;
   margin: 0;
-  color: #4c504c;
+  color: var(--muted);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -5447,6 +5452,7 @@ a.header-balance:active {
   margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
 
@@ -5455,6 +5461,7 @@ a.header-balance:active {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  background: var(--surface);
   padding: 22px;
 }
 
@@ -5513,6 +5520,7 @@ a.header-balance:active {
 .avatar,
 .empty-state .empty-icon,
 .profile-image-fallback,
+.profile-hero-media,
 .account-avatar,
 .account-photo,
 .profile-avatar-fallback {
@@ -5581,10 +5589,16 @@ a.header-balance:active {
 .admin-stat-card,
 .admin-panel,
 .admin-table,
+.admin-console,
+.admin-sidebar,
 .coin-package,
 .withdrawal-card,
+.withdrawal-policy-card,
 .policy-section,
-.legal-card {
+.legal-card,
+.host-feature-cta,
+.admin-profile-media-preview,
+.admin-profile-thumb {
   background: var(--surface);
   border-color: var(--line);
   color: var(--ink);
@@ -5626,9 +5640,49 @@ select,
   color: var(--ink);
 }
 
-.discover-view-toggle button.active {
+.discover-view-toggle button.active,
+.admin-sidebar button.active,
+.admin-segmented button.active {
   background: #f6f8fb;
   color: #11161d;
+}
+
+.coin-packages button,
+.tip-packages button,
+.admin-segmented,
+.profile-image-picker,
+.location-gate-icon {
+  background: #171e27;
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.coin-packages button:hover,
+.tip-packages button:hover,
+.policy-link-grid a:hover {
+  background: #1e2530;
+  border-color: var(--accent);
+}
+
+.coin-packages .discount-code,
+.admin-profile-chip-list span {
+  background: rgb(64 215 204 / 14%);
+  border-color: rgb(64 215 204 / 28%);
+  color: var(--teal);
+}
+
+.host-feature-cta p,
+.host-request-note,
+.media-error {
+  color: var(--muted);
+}
+
+.host-request-note,
+.admin-service-note,
+.profile-image-warning {
+  background: #2f2614;
+  border-color: rgb(244 196 95 / 34%);
+  color: #f8d777;
 }
 
 .profile-gallery,
@@ -5843,10 +5897,11 @@ select,
     font-size: 8px;
   }
   .mobile-header-notifications {
-    flex: 0 0 auto;
-    align-self: flex-end;
+    position: fixed;
+    top: max(22px, calc(env(safe-area-inset-top) + 14px));
+    right: 16px;
+    z-index: 48;
     display: block;
-    margin-left: 2px;
   }
   .mobile-header-notifications .notification-button {
     width: 34px;
@@ -5875,7 +5930,7 @@ select,
     border-bottom: 1px solid var(--line);
     background: rgb(7 9 13 / 94%);
     backdrop-filter: blur(12px);
-    padding: max(18px, env(safe-area-inset-top)) 16px 14px;
+    padding: max(18px, env(safe-area-inset-top)) 68px 14px 16px;
     gap: 12px;
   }
   .app-frame .page-header .eyebrow {
@@ -6233,18 +6288,29 @@ select,
   .audit-list time { grid-column: 2; }
   .public-profile-hero {
     grid-template-columns: 1fr;
-    gap: 18px;
+    gap: 14px;
     min-height: auto;
-    padding: 82px 16px 24px;
+    padding: 72px 16px 18px;
   }
   .public-profile-photo {
     width: 100%;
+    max-width: 340px;
+    margin-inline: auto;
   }
-  .public-brand { top: 16px; left: 16px; }
+  .public-brand { top: 16px; left: 82px; }
   .public-profile-copy { width: 100%; padding: 0; }
-  .public-profile-copy h1 { font-size: 42px; }
+  .public-profile-copy h1 {
+    margin-top: 12px;
+    font-size: 36px;
+  }
   .public-profile-copy > p { font-size: 14px; }
+  .host-profile-actions {
+    padding-bottom: max(72px, env(safe-area-inset-bottom));
+  }
   .host-profile-actions > div { gap: 8px; }
+  .host-profile-actions .button {
+    min-width: 0;
+  }
   .host-profile-actions .icon-button {
     width: 46px;
     height: 46px;
@@ -6253,7 +6319,10 @@ select,
   .public-rates { width: calc(100% - 32px); grid-template-columns: 1fr 1fr; }
   .public-rates > div { min-height: 128px; padding: 14px; }
   .public-gallery { width: calc(100% - 32px); grid-template-columns: 1fr; margin-block: 28px; }
-  .host-reviews-section { width: calc(100% - 32px); margin-bottom: 34px; }
+  .host-reviews-section {
+    width: calc(100% - 32px);
+    margin-bottom: max(90px, calc(34px + env(safe-area-inset-bottom)));
+  }
   .host-review-header {
     align-items: flex-start;
     flex-direction: column;

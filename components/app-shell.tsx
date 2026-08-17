@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -298,30 +297,16 @@ export function AppShell({
 function MobileHeaderNotifications({
   viewerId,
   notifications,
-  pathname,
-  pendingHref,
 }: {
   viewerId: string;
   notifications: AppNotification[];
   pathname: string;
   pendingHref: string | null;
 }) {
-  const [target, setTarget] = useState<HTMLElement | null>(null);
-
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
-      setTarget(document.querySelector<HTMLElement>(".app-main .page-header"));
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [pathname, pendingHref]);
-
-  if (!target) return null;
-
-  return createPortal(
+  return (
     <div className="mobile-header-notifications">
       <NotificationsBell viewerId={viewerId} initialNotifications={notifications} />
-    </div>,
-    target,
+    </div>
   );
 }
 
