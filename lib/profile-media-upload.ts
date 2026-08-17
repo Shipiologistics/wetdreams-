@@ -32,8 +32,9 @@ export async function uploadProfileMedia(file: File) {
   };
 }
 
-export async function cropSquareImage(file: File, crop: { zoom: number; x: number; y: number }) {
+export async function cropSquareImage(file: File, crop: { zoom: number; x: number; y: number; rotation?: number }) {
   const bitmap = await loadImageBitmap(file);
+  const source = rotateImage(bitmap, crop.rotation ?? 0);
   const size = 1080;
   const canvas = document.createElement("canvas");
   canvas.width = size;
@@ -44,20 +45,37 @@ export async function cropSquareImage(file: File, crop: { zoom: number; x: numbe
   context.fillStyle = "#ffffff";
   context.fillRect(0, 0, size, size);
 
-  const baseScale = Math.max(size / bitmap.width, size / bitmap.height);
+  const baseScale = Math.max(size / source.width, size / source.height);
   const scale = baseScale * crop.zoom;
-  const drawWidth = bitmap.width * scale;
-  const drawHeight = bitmap.height * scale;
+  const drawWidth = source.width * scale;
+  const drawHeight = source.height * scale;
   const maxOffsetX = Math.max(0, (drawWidth - size) / 2);
   const maxOffsetY = Math.max(0, (drawHeight - size) / 2);
   const dx = (size - drawWidth) / 2 + (crop.x / 50) * maxOffsetX;
   const dy = (size - drawHeight) / 2 + (crop.y / 50) * maxOffsetY;
 
-  context.drawImage(bitmap, dx, dy, drawWidth, drawHeight);
+  context.drawImage(source, dx, dy, drawWidth, drawHeight);
 
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
   if (!blob) throw new Error("Could not prepare image.");
   return new File([blob], `${file.name.replace(/\.[^.]+$/, "") || "profile"}-square.jpg`, { type: "image/jpeg" });
+}
+
+function rotateImage(image: CanvasImageSource & { width: number; height: number }, rotation: number) {
+  const normalized = ((Math.round(rotation / 90) * 90) % 360 + 360) % 360;
+  if (normalized === 0) return image;
+
+  const quarterTurn = normalized === 90 || normalized === 270;
+  const canvas = document.createElement("canvas");
+  canvas.width = quarterTurn ? image.height : image.width;
+  canvas.height = quarterTurn ? image.width : image.height;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Image editor is not available.");
+
+  context.translate(canvas.width / 2, canvas.height / 2);
+  context.rotate((normalized * Math.PI) / 180);
+  context.drawImage(image, -image.width / 2, -image.height / 2, image.width, image.height);
+  return canvas;
 }
 
 function loadImageBitmap(file: File) {

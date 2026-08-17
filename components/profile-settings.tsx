@@ -19,6 +19,7 @@ import {
   Minus,
   Plus,
   RotateCcw,
+  RotateCw,
   Save,
   Send,
   Settings,
@@ -33,7 +34,7 @@ import { messageForError } from "@/lib/format";
 import { cropSquareImage, uploadProfileMedia } from "@/lib/profile-media-upload";
 import { LocationSelects } from "@/components/location-selects";
 
-type CropState = { zoom: number; x: number; y: number };
+type CropState = { zoom: number; x: number; y: number; rotation: number };
 type SelectedMedia = { id: string; file: File; previewUrl: string; crop: CropState };
 
 export function ProfileSettings({
@@ -211,7 +212,7 @@ export function ProfileSettings({
         id: `${file.name}-${file.lastModified}-${index}-${Math.random().toString(36).slice(2)}`,
         file,
         previewUrl,
-        crop: { zoom: 1, x: 0, y: 0 },
+        crop: { zoom: 1, x: 0, y: 0, rotation: 0 },
       });
     });
 
@@ -263,6 +264,15 @@ export function ProfileSettings({
     updateActiveCrop((current) => ({
       ...current,
       zoom: Math.min(2.6, Math.max(1, Number((current.zoom + amount).toFixed(2)))),
+    }));
+  }
+
+  function rotateActiveCrop() {
+    updateActiveCrop((current) => ({
+      ...current,
+      x: 0,
+      y: 0,
+      rotation: (current.rotation + 90) % 360,
     }));
   }
 
@@ -431,6 +441,7 @@ export function ProfileSettings({
                     "--crop-y": activeMedia.crop.y,
                     "--crop-object-x": `${50 - activeMedia.crop.x}%`,
                     "--crop-object-y": `${50 - activeMedia.crop.y}%`,
+                    "--crop-rotation": `${activeMedia.crop.rotation}deg`,
                   } as CSSProperties}
                   onPointerDown={startCropDrag}
                   onPointerMove={moveCropDrag}
@@ -470,7 +481,10 @@ export function ProfileSettings({
                     <button className="icon-button bordered" type="button" title="Zoom in" onClick={() => changeCropZoom(0.1)} disabled={activeMedia.crop.zoom >= 2.6}>
                       <Plus size={17} />
                     </button>
-                    <button className="icon-button bordered" type="button" title="Reset" onClick={() => updateActiveCrop(() => ({ zoom: 1, x: 0, y: 0 }))}>
+                    <button className="icon-button bordered" type="button" title="Rotate image" onClick={rotateActiveCrop}>
+                      <RotateCw size={17} />
+                    </button>
+                    <button className="icon-button bordered" type="button" title="Reset" onClick={() => updateActiveCrop(() => ({ zoom: 1, x: 0, y: 0, rotation: 0 }))}>
                       <RotateCcw size={17} />
                     </button>
                     <button className="button dark small" type="button" onClick={() => setCropMode(false)}>

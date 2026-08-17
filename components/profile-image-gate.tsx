@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { FormEvent } from "react";
-import { ImagePlus, LoaderCircle, ShieldAlert } from "lucide-react";
+import type { CSSProperties, FormEvent } from "react";
+import { ImagePlus, LoaderCircle, RotateCw, ShieldAlert } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { messageForError } from "@/lib/format";
@@ -12,6 +12,7 @@ export function ProfileImageGate({ required }: { required: boolean }) {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [rotation, setRotation] = useState(0);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const previewRef = useRef<string | null>(null);
@@ -29,11 +30,13 @@ export function ProfileImageGate({ required }: { required: boolean }) {
     if (!nextFile) {
       previewRef.current = null;
       setPreviewUrl(null);
+      setRotation(0);
       return;
     }
     const nextPreview = URL.createObjectURL(nextFile);
     previewRef.current = nextPreview;
     setPreviewUrl(nextPreview);
+    setRotation(0);
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -52,7 +55,7 @@ export function ProfileImageGate({ required }: { required: boolean }) {
     try {
       const [{ data: existingMedia }, squareFile] = await Promise.all([
         supabase.from("profile_media").select("position").eq("user_id", data.user.id),
-        cropSquareImage(file, { zoom: 1, x: 0, y: 0 }),
+        cropSquareImage(file, { zoom: 1, x: 0, y: 0, rotation }),
       ]);
       const positions = (existingMedia ?? []).map((item) => item.position);
       if (positions.length >= 12) throw new Error("Profile media limit reached. Remove one image from Profile first.");
@@ -94,12 +97,18 @@ export function ProfileImageGate({ required }: { required: boolean }) {
         <label className="profile-image-picker">
           {previewUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={previewUrl} alt="Selected profile preview" />
+            <img src={previewUrl} alt="Selected profile preview" style={{ "--profile-image-rotation": `${rotation}deg` } as CSSProperties} />
           ) : (
             <span><ImagePlus size={28} /> Choose image</span>
           )}
           <input type="file" accept="image/*" onChange={(event) => chooseFile(event.target.files?.[0] ?? null)} required />
         </label>
+        {previewUrl && (
+          <button className="button secondary wide" type="button" onClick={() => setRotation((current) => (current + 90) % 360)}>
+            <RotateCw size={18} />
+            Rotate image
+          </button>
+        )}
         {error && <p className="form-message error" role="alert">{error}</p>}
         <button className="button primary wide" type="submit" disabled={pending || !file}>
           {pending ? <LoaderCircle className="spin" size={18} /> : <ImagePlus size={18} />}

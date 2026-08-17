@@ -3046,6 +3046,8 @@ body:has(.side-nav) .global-back-button-fixed {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transform: rotate(var(--profile-image-rotation, 0deg));
+  transform-origin: center;
 }
 
 .profile-image-picker span {
@@ -3644,7 +3646,7 @@ body:has(.side-nav) .global-back-button-fixed {
 
 .square-media-preview img {
   object-position: var(--crop-object-x) var(--crop-object-y);
-  transform: scale(var(--crop-zoom));
+  transform: scale(var(--crop-zoom)) rotate(var(--crop-rotation, 0deg));
   transform-origin: center;
 }
 
@@ -3677,7 +3679,7 @@ body:has(.side-nav) .global-back-button-fixed {
 
 .crop-inline-toolbar {
   display: grid;
-  grid-template-columns: repeat(3, 42px) minmax(0, 1fr);
+  grid-template-columns: repeat(4, 42px) minmax(0, 1fr);
   gap: 8px;
 }
 
