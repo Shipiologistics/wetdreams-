@@ -22,13 +22,23 @@ export default async function ChatsPage() {
 
   const otherIds = Array.from(new Set((rooms ?? []).map((room) => room.user_a === viewer.id ? room.user_b : room.user_a)));
   const roomIds = (rooms ?? []).map((room) => room.id);
-  const [{ data: accounts }, { data: media }, { data: messages }] = rooms?.length
+  const now = new Date().toISOString();
+  const [{ data: accounts }, { data: media }, { data: messages }, unreadResult] = rooms?.length
     ? await Promise.all([
         supabase.from("users").select("*").in("id", otherIds),
         supabase.from("profile_media").select("*").in("user_id", otherIds).eq("is_primary", true),
-        supabase.from("messages").select("*").in("room_id", roomIds).gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }).limit(250),
+        supabase.from("messages").select("*").in("room_id", roomIds).gt("expires_at", now).order("created_at", { ascending: false }).limit(250),
+        supabase
+          .from("messages")
+          .select("id", { count: "exact", head: true })
+          .in("room_id", roomIds)
+          .neq("sender_id", viewer.id)
+          .is("read_at", null)
+          .gt("expires_at", now),
       ])
-    : [{ data: [] }, { data: [] }, { data: [] }];
+    : [{ data: [] }, { data: [] }, { data: [] }, { count: 0 }];
+
+  const unreadTotal = unreadResult.count ?? 0;
 
   return (
     <div className="page-shell narrow-page">
@@ -37,7 +47,14 @@ export default async function ChatsPage() {
           <span className="eyebrow">Your conversations</span>
           <h1>Chats</h1>
         </div>
-        <Link href="/discover" className="icon-button bordered" title="Start a conversation"><Plus size={20} /></Link>
+        <div className="chat-header-actions">
+          {unreadTotal > 0 && (
+            <span className="chat-unread-pill" aria-label={`${unreadTotal} unread messages`}>
+              {unreadTotal > 99 ? "99+" : unreadTotal} unread
+            </span>
+          )}
+          <Link href="/discover" className="icon-button bordered" title="Start a conversation"><Plus size={20} /></Link>
+        </div>
       </header>
 
       {(rooms ?? []).length ? (
