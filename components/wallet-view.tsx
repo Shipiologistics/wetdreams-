@@ -24,6 +24,7 @@ import { createClient } from "@/lib/supabase/client";
 type Wallet = Database["public"]["Tables"]["wallets"]["Row"];
 type Transaction = Database["public"]["Tables"]["wallet_transactions"]["Row"];
 type Withdrawal = Database["public"]["Tables"]["withdrawal_requests"]["Row"];
+type PayoutMethod = "upi" | "bank";
 const withdrawalPolicy = "Withdrawals are processed within 24 hours, except Sundays and government holidays.";
 
 function withdrawalStatusLabel(status: string) {
@@ -45,6 +46,7 @@ export function WalletView({
   const router = useRouter();
   const [topupOpen, setTopupOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [payoutMethod, setPayoutMethod] = useState<PayoutMethod>("upi");
   const [pending, setPending] = useState<number | "withdraw" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -74,8 +76,17 @@ export function WalletView({
     event.preventDefault();
     setPending("withdraw");
     setMessage(null);
-    const amount = Number(new FormData(event.currentTarget).get("beans"));
-    const { error } = await createClient().rpc("request_withdrawal", { p_beans: amount });
+    const form = new FormData(event.currentTarget);
+    const amount = Number(form.get("beans"));
+    const method = String(form.get("payout_method") ?? "upi") as PayoutMethod;
+    const { error } = await createClient().rpc("request_withdrawal", {
+      p_beans: amount,
+      p_payout_method: method,
+      p_upi_id: method === "upi" ? String(form.get("upi_id") ?? "") : null,
+      p_account_holder: method === "bank" ? String(form.get("account_holder") ?? "") : null,
+      p_bank_account: method === "bank" ? String(form.get("bank_account") ?? "") : null,
+      p_ifsc: method === "bank" ? String(form.get("ifsc") ?? "") : null,
+    });
     setPending(null);
     if (error) return setMessage(messageForError(error.message));
     setWithdrawOpen(false);
@@ -159,6 +170,7 @@ export function WalletView({
                 <span>{formatRelativeTime(withdrawal.created_at)}</span>
                 <strong>{formatMoney(withdrawal.beans_requested)} beans</strong>
                 <span>₹{formatMoney(withdrawal.inr_amount)}</span>
+                <span>{payoutLabel(withdrawal)}</span>
                 <span className={`status-label ${withdrawalStatusLabel(withdrawal.status)}`}>
                   {withdrawalStatusLabel(withdrawal.status)}
                 </span>
@@ -201,6 +213,26 @@ export function WalletView({
           <form className="modal" role="dialog" aria-modal="true" aria-labelledby="withdraw-title" onSubmit={withdraw} onMouseDown={(event) => event.stopPropagation()}>
             <div className="modal-header"><div><span className="eyebrow">Manual payout</span><h2 id="withdraw-title">Withdraw beans</h2></div><button className="icon-button" type="button" title="Close" onClick={() => setWithdrawOpen(false)}><X size={20} /></button></div>
             <label className="field">Beans<input name="beans" type="number" min="1" max={Number(wallet.beans_balance)} step="0.01" required /></label>
+            <fieldset className="payout-method-choice">
+              <legend>Receive money by</legend>
+              <label>
+                <input type="radio" name="payout_method" value="upi" checked={payoutMethod === "upi"} onChange={() => setPayoutMethod("upi")} />
+                UPI
+              </label>
+              <label>
+                <input type="radio" name="payout_method" value="bank" checked={payoutMethod === "bank"} onChange={() => setPayoutMethod("bank")} />
+                Bank account
+              </label>
+            </fieldset>
+            {payoutMethod === "upi" ? (
+              <label className="field">UPI ID<input name="upi_id" inputMode="email" autoComplete="off" placeholder="name@upi" minLength={5} maxLength={120} required /></label>
+            ) : (
+              <div className="bank-detail-grid">
+                <label className="field">Account holder<input name="account_holder" autoComplete="name" minLength={2} maxLength={120} required /></label>
+                <label className="field">Bank account number<input name="bank_account" inputMode="numeric" autoComplete="off" minLength={6} maxLength={34} required /></label>
+                <label className="field">IFSC code<input name="ifsc" autoCapitalize="characters" autoComplete="off" minLength={4} maxLength={20} required /></label>
+              </div>
+            )}
             <div className="withdrawal-modal-policy">
               <p className="conversion-note">You receive ₹{formatMoney(beanInrValue)} per approved bean.</p>
               <p><Clock3 size={15} /> Processed within 24 hours.</p>
@@ -227,4 +259,11 @@ function labelForTransaction(type: string) {
     refund: "Refund",
     admin_adjustment: "Balance adjustment",
   } as Record<string, string>)[type] ?? type;
+}
+
+function payoutLabel(withdrawal: Withdrawal) {
+  if (withdrawal.payout_method === "bank") {
+    return `Bank ${withdrawal.payout_ifsc ?? ""}`.trim();
+  }
+  return withdrawal.payout_upi_id ? `UPI ${withdrawal.payout_upi_id}` : "UPI";
 }

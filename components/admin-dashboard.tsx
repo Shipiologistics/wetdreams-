@@ -457,6 +457,18 @@ export function AdminDashboard({
                     </span>
                     <h3>{userMap.get(withdrawal.user_id)?.display_name ?? "User"}</h3>
                     <p>{formatMoney(withdrawal.beans_requested)} beans · ₹{formatMoney(withdrawal.inr_amount)}</p>
+                    <dl className="admin-facts">
+                      <div><dt>Method</dt><dd>{withdrawal.payout_method === "bank" ? "Bank" : "UPI"}</dd></div>
+                      {withdrawal.payout_method === "bank" ? (
+                        <>
+                          <div><dt>Holder</dt><dd>{withdrawal.payout_account_holder ?? "missing"}</dd></div>
+                          <div><dt>Account</dt><dd>{withdrawal.payout_bank_account ?? "missing"}</dd></div>
+                          <div><dt>IFSC</dt><dd>{withdrawal.payout_ifsc ?? "missing"}</dd></div>
+                        </>
+                      ) : (
+                        <div><dt>UPI ID</dt><dd>{withdrawal.payout_upi_id ?? "missing"}</dd></div>
+                      )}
+                    </dl>
                     <time>{formatRelativeTime(withdrawal.created_at)}</time>
                   </div>
                   {withdrawal.status === "pending" && (

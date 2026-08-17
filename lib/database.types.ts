@@ -1034,6 +1034,11 @@ export type Database = {
           created_at: string
           id: string
           inr_amount: number
+          payout_account_holder: string | null
+          payout_bank_account: string | null
+          payout_ifsc: string | null
+          payout_method: string
+          payout_upi_id: string | null
           processed_at: string | null
           status: string
           user_id: string
@@ -1044,6 +1049,11 @@ export type Database = {
           created_at?: string
           id?: string
           inr_amount: number
+          payout_account_holder?: string | null
+          payout_bank_account?: string | null
+          payout_ifsc?: string | null
+          payout_method?: string
+          payout_upi_id?: string | null
           processed_at?: string | null
           status?: string
           user_id: string
@@ -1054,6 +1064,11 @@ export type Database = {
           created_at?: string
           id?: string
           inr_amount?: number
+          payout_account_holder?: string | null
+          payout_bank_account?: string | null
+          payout_ifsc?: string | null
+          payout_method?: string
+          payout_upi_id?: string | null
           processed_at?: string | null
           status?: string
           user_id?: string
@@ -1156,7 +1171,17 @@ export type Database = {
         Returns: string
       }
       refresh_stale_presence: { Args: never; Returns: number }
-      request_withdrawal: { Args: { p_beans: number }; Returns: string }
+      request_withdrawal: {
+        Args: {
+          p_account_holder?: string | null
+          p_bank_account?: string | null
+          p_beans: number
+          p_ifsc?: string | null
+          p_payout_method?: string
+          p_upi_id?: string | null
+        }
+        Returns: string
+      }
       respond_to_call: {
         Args: { p_accept: boolean; p_call_id: string }
         Returns: boolean

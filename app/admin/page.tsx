@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { AdminDashboard } from "@/components/admin-dashboard";
 import { requireAdmin } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 
 export const metadata: Metadata = { title: "Admin" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   await requireAdmin();
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const [
     { data: reports },
     { data: users },
