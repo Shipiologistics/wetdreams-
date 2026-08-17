@@ -5229,6 +5229,9 @@ body:has(.side-nav) .global-back-button-fixed {
     min-height: 38px;
     padding-inline: 12px;
   }
+  .app-page-header .settings-header-button {
+    transform: translateY(4px);
+  }
   .modal-backdrop {
     z-index: 1000;
     place-items: start center;

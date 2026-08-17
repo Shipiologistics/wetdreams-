@@ -345,7 +345,7 @@ export function ProfileSettings({
           <span className="eyebrow">Your public card</span>
           <h1>Profile</h1>
         </div>
-        <Link className="button secondary" href="/settings"><Settings size={18} /> Settings</Link>
+        <Link className="button secondary settings-header-button" href="/settings"><Settings size={18} /> Settings</Link>
       </header>
 
       <section className="profile-hero">
