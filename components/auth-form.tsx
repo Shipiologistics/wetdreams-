@@ -16,6 +16,7 @@ type AuthFormProps = {
 
 type SignupStep = 1 | 2 | 3;
 type SignupFieldError = "basic" | "location" | "account" | null;
+const inlineAuthEvent = "wetdreams:inline-auth-started";
 
 export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
   const [pending, setPending] = useState<string | null>(null);
@@ -46,6 +47,7 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
       setError("Nickname required.");
       return;
     }
+    announceInlineAuth();
     setPending("guest");
     setError(null);
     setNotice(null);
@@ -88,6 +90,7 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
 
   async function submitLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    announceInlineAuth();
     setPending("login");
     setError(null);
     setNotice(null);
@@ -118,6 +121,7 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
   async function submitSignup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!validateSignupStep(3)) return;
+    announceInlineAuth();
     const cleanLocation = formatLocation(signupCity, signupState);
     setPending("signup");
     setError(null);
@@ -169,6 +173,10 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
       .update({ location: value })
       .eq("user_id", data.user.id);
     if (locationError) throw locationError;
+  }
+
+  function announceInlineAuth() {
+    if (onSuccess) window.dispatchEvent(new Event(inlineAuthEvent));
   }
 
   function openSignup() {

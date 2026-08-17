@@ -3,6 +3,32 @@ import { expect, test } from "@playwright/test";
 const email = process.env.E2E_EMAIL;
 const password = process.env.E2E_PASSWORD;
 
+test("guest Quick Start stays signed in after returning from chat", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "Stateful guest journey runs once.");
+
+  await page.addInitScript(() => {
+    window.localStorage.setItem("p2c_device_id", "00000000-0000-4000-8000-000000000817");
+  });
+  await page.goto("/discover");
+  await page.getByRole("button", { name: "Message" }).first().click();
+  await page.getByLabel("Nickname").fill("Web Flow Test");
+  await page.getByRole("button", { name: "Quick Start" }).click();
+
+  await expect(page).toHaveURL(/\/chat\/[0-9a-f-]+$/);
+  await expect(page.getByPlaceholder("Write a message")).toBeVisible();
+  await page.getByRole("button", { name: "Go back" }).click();
+
+  await expect(page).toHaveURL(/\/discover$/);
+  await expect(page.getByRole("navigation", { name: "Primary navigation" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Sign in" })).toHaveCount(0);
+
+  await page.getByRole("link", { name: "Chats", exact: true }).click();
+  await expect(page).toHaveURL(/\/chat$/);
+  await page.getByRole("link", { name: "Discover", exact: true }).click();
+  await expect(page).toHaveURL(/\/discover$/);
+  await expect(page.getByRole("link", { name: "Sign in" })).toHaveCount(0);
+});
+
 test("signed-in wallet and paid bot chat journey", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "chromium", "Stateful journey runs once.");
   test.skip(!email || !password, "Set E2E_EMAIL and E2E_PASSWORD to run authenticated checks.");

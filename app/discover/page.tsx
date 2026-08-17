@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
+import { DiscoverSessionRecovery } from "@/components/discover-session-recovery";
 import { DiscoverGrid } from "@/components/discover-grid";
 import { LegalLinks } from "@/components/legal-links";
 import { getViewer } from "@/lib/auth";
@@ -94,7 +95,14 @@ export default async function DiscoverPage() {
     </div>
   );
 
-  if (!viewer) return content;
+  if (!viewer) {
+    return (
+      <>
+        <DiscoverSessionRecovery />
+        {content}
+      </>
+    );
+  }
 
   const [{ data: avatar }, { data: rooms }, { data: notifications }] = await Promise.all([
     supabase

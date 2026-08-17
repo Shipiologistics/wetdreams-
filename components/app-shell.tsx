@@ -77,6 +77,10 @@ export function AppShell({
   );
 
   useEffect(() => {
+    window.sessionStorage.removeItem("wetdreams:discover-session-recovery");
+  }, []);
+
+  useEffect(() => {
     navItems.forEach((item) => router.prefetch(item.href));
   }, [navItems, router]);
 
@@ -258,7 +262,13 @@ export function AppShell({
       </aside>
 
       <main className="app-main">
-        <MobileHeaderNotifications viewerId={viewer.id} notifications={viewer.notifications} pathname={pathname} pendingHref={visiblePendingHref} />
+        <MobileHeaderNotifications
+          key={`${pathname}:${visiblePendingHref ?? "ready"}`}
+          viewerId={viewer.id}
+          notifications={viewer.notifications}
+          pathname={pathname}
+          pendingHref={visiblePendingHref}
+        />
         {visiblePendingHref ? <AppRouteLoading label={routeLabel} /> : children}
       </main>
 
