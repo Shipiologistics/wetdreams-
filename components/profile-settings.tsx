@@ -35,7 +35,6 @@ type SelectedMedia = { id: string; file: File; previewUrl: string; crop: CropSta
 
 export function ProfileSettings({ account, profile, media }: { account: Account; profile: Profile; media: ProfileMedia[] }) {
   const router = useRouter();
-  const isGuest = account.is_guest;
   const [pending, setPending] = useState(false);
   const [mediaOpen, setMediaOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -274,7 +273,7 @@ export function ProfileSettings({ account, profile, media }: { account: Account;
           <span className="eyebrow">Your public card</span>
           <h1>Profile</h1>
         </div>
-        {!isGuest && <Link className="button secondary" href="/settings"><Settings size={18} /> Settings</Link>}
+        <Link className="button secondary" href="/settings"><Settings size={18} /> Settings</Link>
       </header>
 
       <section className="profile-hero">
@@ -368,7 +367,7 @@ export function ProfileSettings({ account, profile, media }: { account: Account;
 
         {message && <div className="page-notice" role="status">{message}<button type="button" onClick={() => setMessage(null)} title="Dismiss"><X size={15} /></button></div>}
         <div className="settings-actions">
-          {!isGuest && <Link className="button secondary" href="/settings">Account settings</Link>}
+          <Link className="button secondary" href="/settings">Account settings</Link>
           <button className="button primary" type="submit" disabled={pending}>{pending ? <LoaderCircle className="spin" size={18} /> : <Save size={18} />} Save profile</button>
         </div>
       </form>
