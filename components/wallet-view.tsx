@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -44,11 +44,17 @@ export function WalletView({
   beanInrValue: number;
 }) {
   const router = useRouter();
-  const [topupOpen, setTopupOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const [topupOpen, setTopupOpen] = useState(() => searchParams.get("buy") === "coins");
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [payoutMethod, setPayoutMethod] = useState<PayoutMethod>("upi");
   const [pending, setPending] = useState<number | "withdraw" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  function closeTopup() {
+    setTopupOpen(false);
+    if (searchParams.get("buy") === "coins") router.replace("/wallet", { scroll: false });
+  }
 
   async function topup(packageIndex: number) {
     const packageItem = coinPackages[packageIndex];
@@ -67,7 +73,7 @@ export function WalletView({
     const { error } = await supabase.rpc("complete_dummy_payment", { p_intent_id: intent });
     setPending(null);
     if (error) return setMessage(messageForError(error.message));
-    setTopupOpen(false);
+    closeTopup();
     setMessage(`${formatMoney(packageItem.coins)} coins added.`);
     router.refresh();
   }
@@ -181,9 +187,9 @@ export function WalletView({
       )}
 
       {topupOpen && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={() => setTopupOpen(false)}>
+        <div className="modal-backdrop" role="presentation" onMouseDown={closeTopup}>
           <div className="modal coin-topup-modal" role="dialog" aria-modal="true" aria-labelledby="topup-title" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="modal-header"><div><span className="eyebrow">Offers applied</span><h2 id="topup-title">Add coins</h2></div><button className="icon-button" title="Close" onClick={() => setTopupOpen(false)}><X size={20} /></button></div>
+            <div className="modal-header"><div><span className="eyebrow">Offers applied</span><h2 id="topup-title">Add coins</h2></div><button className="icon-button" title="Close" onClick={closeTopup}><X size={20} /></button></div>
             <p className="coin-offer-note">Lowest recharge: ₹50 gets 45 coins. Bigger packs include bonus coins.</p>
             <div className="coin-packages">
               {coinPackages.map((packageItem, index) => {

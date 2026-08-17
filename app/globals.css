@@ -947,6 +947,20 @@ body:has(.side-nav) .global-back-button-fixed {
   min-width: 74px;
   border-left: 2px solid var(--gold);
   padding-left: 10px;
+  border-radius: 10px;
+  transition: background 120ms ease, transform 120ms ease;
+}
+
+a.header-balance {
+  cursor: pointer;
+}
+
+a.header-balance:hover {
+  background: rgb(244 196 95 / 10%);
+}
+
+a.header-balance:active {
+  transform: translateY(1px);
 }
 
 .header-balance span,

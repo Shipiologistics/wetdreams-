@@ -82,10 +82,10 @@ export default async function DiscoverPage() {
           <h1>Discover</h1>
         </div>
         {viewer ? (
-          <div className="header-balance">
+          <Link className="header-balance" href="/wallet?buy=coins" prefetch>
             <span>Coins</span>
             <strong>{Number(viewer.wallet.coins_balance).toLocaleString("en-IN")}</strong>
-          </div>
+          </Link>
         ) : (
           <Link className="button secondary" href="/login">Sign in</Link>
         )}
