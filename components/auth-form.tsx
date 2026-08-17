@@ -8,6 +8,7 @@ import { getOrCreateDeviceId, registerCurrentDevice } from "@/lib/device-id";
 import { formatLocation } from "@/lib/location-options";
 import { messageForError } from "@/lib/format";
 import { LocationSelects } from "@/components/location-selects";
+import { markDiscoverAuthRecovering } from "@/components/discover-session-recovery";
 
 type AuthFormProps = {
   next?: string;
@@ -35,6 +36,7 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
 
   async function finish(destination = next) {
     if (onSuccess) {
+      markDiscoverAuthRecovering();
       await onSuccess();
       return;
     }

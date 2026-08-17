@@ -42,6 +42,10 @@ html.call-overlay-open .app-main {
   overflow: hidden;
 }
 
+html.wetdreams-auth-recovering body {
+  opacity: 0;
+}
+
 button,
 input,
 textarea,

@@ -21,6 +21,7 @@ import { Avatar } from "@/components/avatar";
 import { DeviceRegistrar } from "@/components/device-registrar";
 import { LocationGate } from "@/components/location-gate";
 import { ProfileImageGate } from "@/components/profile-image-gate";
+import { justAuthenticatedKey, recoveryKey } from "@/components/discover-session-recovery";
 import { formatMoney } from "@/lib/format";
 import { createClient } from "@/lib/supabase/client";
 import type { AppNotification, ChatRoom, Message } from "@/lib/view-models";
@@ -77,7 +78,9 @@ export function AppShell({
   );
 
   useEffect(() => {
-    window.sessionStorage.removeItem("wetdreams:discover-session-recovery");
+    window.sessionStorage.removeItem(recoveryKey);
+    window.sessionStorage.removeItem(justAuthenticatedKey);
+    document.documentElement.classList.remove("wetdreams-auth-recovering");
   }, []);
 
   useEffect(() => {
