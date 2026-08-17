@@ -5198,8 +5198,9 @@ body:has(.side-nav) .global-back-button-fixed {
   }
   .app-frame .page-header .header-balance {
     flex: 0 0 auto;
-    min-width: 42px;
-    max-width: 48px;
+    min-width: 44px;
+    max-width: 58px;
+    margin-right: 8px;
     padding-left: 8px;
   }
   .app-frame .page-header .header-balance span {
