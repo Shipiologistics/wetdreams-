@@ -14,6 +14,10 @@
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="incoming_calls" />
 
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_wetdreams" />
+
         <service
             android:name="com.capacitorjs.plugins.pushnotifications.MessagingService"
             tools:node="remove" />

@@ -47,6 +47,7 @@ export async function sendFcmMessage(payload: FcmPayload) {
       collapse_key: payload.collapseKey,
       notification: payload.notification === false ? undefined : {
         channel_id: payload.channelId ?? "incoming_calls",
+        icon: "ic_stat_wetdreams",
         sound: "default",
         click_action: payload.clickAction,
         tag: payload.data.callId ? `call:${payload.data.callId}` : payload.data.messageId ? `message:${payload.data.messageId}` : undefined,
