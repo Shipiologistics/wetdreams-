@@ -1,5 +1,5 @@
 import notifee from '@notifee/react-native';
-import {NavigationContainer, DefaultTheme} from '@react-navigation/native';
+import {NavigationContainer, DarkTheme} from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {useEffect} from 'react';
@@ -32,8 +32,8 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tabs = createBottomTabNavigator<MainTabParamList>();
 
 const navigationTheme = {
-  ...DefaultTheme,
-  colors: {...DefaultTheme.colors, background: colors.canvas, card: colors.surface, text: colors.ink, border: colors.line, primary: colors.coral},
+  ...DarkTheme,
+  colors: {...DarkTheme.colors, background: colors.canvas, card: colors.surface, text: colors.ink, border: colors.line, primary: colors.coral},
 };
 
 function MainTabs() {
@@ -111,7 +111,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
+        <StatusBar barStyle="light-content" backgroundColor={colors.surface} />
         <AppProvider>
           <NavigationContainer ref={navigationRef} theme={navigationTheme} onReady={flushPendingRoute} linking={{prefixes: ['wetdreams://'], config: {screens: {ChatRoom: 'chat/:roomId', Call: 'call/:callId', Notifications: 'notifications'}}}}>
             <AppNavigator />

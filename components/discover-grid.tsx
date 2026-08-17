@@ -270,6 +270,7 @@ function ProfileCard({ profile, viewerId, eagerImage }: { profile: DiscoveryProf
           </button>
         </div>
         {media.length > 1 && <div className="gallery-count">1 / {media.length}</div>}
+        {profile.rating && <span className="profile-card-rating rating"><Star size={14} fill="currentColor" /> {profile.rating.toFixed(1)}</span>}
       </div>
       <div className="profile-card-body">
         <Link className="profile-card-copy" href={`/u/${account.username}`}>
@@ -279,9 +280,6 @@ function ProfileCard({ profile, viewerId, eagerImage }: { profile: DiscoveryProf
           </div>
           {profile.profile.location && <p className="location"><MapPin size={15} /> {profile.profile.location}</p>}
         </Link>
-        <div className="profile-card-badges">
-          {profile.rating && <span className="rating"><Star size={14} fill="currentColor" /> {profile.rating.toFixed(1)}</span>}
-        </div>
         {error && <p className="card-error" role="alert">{error}</p>}
         <div className="profile-actions">
           <button className="button primary" type="button" onClick={startChat} disabled={!!pending} aria-label="Message" title="Message">
