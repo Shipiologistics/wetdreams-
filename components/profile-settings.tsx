@@ -20,12 +20,13 @@ import {
   Plus,
   RotateCcw,
   Save,
+  Send,
   Settings,
   Star,
   Trash2,
   X,
 } from "lucide-react";
-import type { Account, Profile, ProfileMedia } from "@/lib/view-models";
+import type { Account, HostRequest, Profile, ProfileMedia } from "@/lib/view-models";
 import { createClient } from "@/lib/supabase/client";
 import { formatLocation, parseLocation } from "@/lib/location-options";
 import { messageForError } from "@/lib/format";
@@ -35,10 +36,21 @@ import { LocationSelects } from "@/components/location-selects";
 type CropState = { zoom: number; x: number; y: number };
 type SelectedMedia = { id: string; file: File; previewUrl: string; crop: CropState };
 
-export function ProfileSettings({ account, profile, media }: { account: Account; profile: Profile; media: ProfileMedia[] }) {
+export function ProfileSettings({
+  account,
+  profile,
+  media,
+  hostRequest,
+}: {
+  account: Account;
+  profile: Profile;
+  media: ProfileMedia[];
+  hostRequest: HostRequest | null;
+}) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [mediaOpen, setMediaOpen] = useState(false);
+  const [hostRequestOpen, setHostRequestOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [selectedMedia, setSelectedMedia] = useState<SelectedMedia[]>([]);
   const [activeMediaId, setActiveMediaId] = useState<string | null>(null);
@@ -153,10 +165,27 @@ export function ProfileSettings({ account, profile, media }: { account: Account;
   ];
   const completion = Math.round((completeItems.filter(Boolean).length / completeItems.length) * 100);
   const earningMode = profile.free_chat_enabled ? "Free chat" : `${Number(profile.chat_rate_coins)} coins/min`;
+  const canRequestHostFeature = account.role === "user" && account.gender === "female" && !account.is_guest && !account.is_verified;
+  const hasPendingHostRequest = hostRequest?.status === "pending";
 
   async function copyProfileLink() {
     await navigator.clipboard.writeText(`${window.location.origin}${publicUrl}`);
     setMessage("Profile link copied.");
+  }
+
+  async function submitHostRequest(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const phone = String(data.get("phone") ?? "").trim();
+    const note = String(data.get("note") ?? "").trim();
+    setPending(true);
+    setMessage(null);
+    const { error } = await createClient().rpc("submit_host_request", { p_phone: phone, p_note: note });
+    setPending(false);
+    if (error) return setMessage(messageForError(error.message));
+    setHostRequestOpen(false);
+    setMessage("Host request sent. Admin will review it.");
+    router.refresh();
   }
 
   function chooseMedia(files: FileList | File[] | null) {
@@ -302,6 +331,20 @@ export function ProfileSettings({ account, profile, media }: { account: Account;
           </div>
         </div>
       </section>
+
+      {canRequestHostFeature && (
+        <section className={`host-feature-cta ${hasPendingHostRequest ? "pending" : ""}`}>
+          <div>
+            <span className="eyebrow">Become host</span>
+            <h2>Earn real cash</h2>
+            <p>{hasPendingHostRequest ? "Your request is waiting for admin verification." : "Apply to get featured on Discover and start earning from chats and calls."}</p>
+          </div>
+          <button className="button primary" type="button" onClick={() => setHostRequestOpen(true)} disabled={hasPendingHostRequest}>
+            {hasPendingHostRequest ? <Clock3 size={18} /> : <IndianRupee size={18} />}
+            {hasPendingHostRequest ? "Request pending" : "Apply now"}
+          </button>
+        </section>
+      )}
 
       <section className="profile-dashboard" aria-label="Profile summary">
         <div>
@@ -457,6 +500,24 @@ export function ProfileSettings({ account, profile, media }: { account: Account;
               </label>
             )}
             <button className="button primary wide" type="submit" disabled={pending || !selectedMedia.length}>{pending && <LoaderCircle className="spin" size={18} />} {selectedMedia.length > 1 ? `Add ${selectedMedia.length} to profile` : "Add to profile"}</button>
+          </form>
+        </div>
+      )}
+
+      {hostRequestOpen && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => setHostRequestOpen(false)}>
+          <form className="modal compact-modal host-request-modal" role="dialog" aria-modal="true" aria-labelledby="host-request-title" onSubmit={submitHostRequest} onMouseDown={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <div><span className="eyebrow">Host application</span><h2 id="host-request-title">Earn real cash</h2></div>
+              <button className="icon-button" type="button" title="Close" onClick={() => setHostRequestOpen(false)}><X size={20} /></button>
+            </div>
+            <label className="field">WhatsApp or phone<input name="phone" inputMode="tel" autoComplete="tel" minLength={6} maxLength={30} placeholder="+91 98765 43210" required /></label>
+            <label className="field">Short note<textarea name="note" maxLength={500} rows={4} placeholder="City, available hours, language" /></label>
+            <p className="host-request-note">Use your real profile image. Fake images can get the account banned.</p>
+            <button className="button primary wide" type="submit" disabled={pending}>
+              {pending ? <LoaderCircle className="spin" size={18} /> : <Send size={18} />}
+              Send request
+            </button>
           </form>
         </div>
       )}

@@ -449,6 +449,60 @@ export type Database = {
         }
         Relationships: []
       }
+      host_requests: {
+        Row: {
+          admin_id: string | null
+          admin_notes: string | null
+          created_at: string
+          id: string
+          note: string
+          phone: string
+          reviewed_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_id?: string | null
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          note?: string
+          phone: string
+          reviewed_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_id?: string | null
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          note?: string
+          phone?: string
+          reviewed_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "host_requests_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "host_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_media: {
         Row: {
           cloudinary_public_id: string
@@ -1039,6 +1093,10 @@ export type Database = {
         Args: { p_notes: string; p_report_id: string; p_status: string }
         Returns: undefined
       }
+      admin_review_host_request: {
+        Args: { p_approve: boolean; p_notes?: string; p_request_id: string }
+        Returns: undefined
+      }
       admin_review_withdrawal: {
         Args: { p_approve: boolean; p_notes: string; p_request_id: string }
         Returns: undefined
@@ -1109,6 +1167,10 @@ export type Database = {
       }
       submit_host_review: {
         Args: { p_comment?: string | null; p_rated_user: string; p_score: number }
+        Returns: string
+      }
+      submit_host_request: {
+        Args: { p_note?: string; p_phone: string }
         Returns: string
       }
       track_visitor_session: {

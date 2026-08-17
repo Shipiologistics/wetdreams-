@@ -2551,10 +2551,18 @@ body:has(.side-nav) .global-back-button-fixed {
   color: #276b50;
 }
 
+.status-dot.approved {
+  background: #208767;
+}
+
 .status-label.rejected,
 .status-label.dismissed {
   background: #f2e7e8;
   color: #8f3440;
+}
+
+.status-dot.rejected {
+  background: #b84050;
 }
 
 .settings-page {
@@ -3114,6 +3122,55 @@ body:has(.side-nav) .global-back-button-fixed {
   margin-top: 22px;
 }
 
+.host-feature-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid #f0d588;
+  border-radius: 8px;
+  background: #fff8de;
+  margin-bottom: 18px;
+  padding: 18px;
+}
+
+.host-feature-cta h2 {
+  margin: 3px 0 6px;
+  font-size: 24px;
+}
+
+.host-feature-cta p {
+  max-width: 620px;
+  margin: 0;
+  color: #6b5a24;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.host-feature-cta.pending {
+  border-color: var(--line);
+  background: #fbfaf7;
+}
+
+.host-feature-cta.pending p {
+  color: var(--muted);
+}
+
+.host-request-modal {
+  gap: 14px;
+}
+
+.host-request-note {
+  margin: -2px 0 0;
+  border-left: 3px solid var(--accent);
+  background: #fff8f1;
+  padding: 10px 12px;
+  color: #654523;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 .profile-dashboard {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -3653,7 +3710,7 @@ body:has(.side-nav) .global-back-button-fixed {
 }
 
 .admin-metrics.expanded {
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   margin: 20px 0;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -4554,6 +4611,16 @@ body:has(.side-nav) .global-back-button-fixed {
   .profile-identity { padding: 18px; }
   .profile-hero-actions { align-items: stretch; }
   .profile-hero-actions .button { flex: 1; }
+  .host-feature-cta {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .host-feature-cta .button {
+    width: 100%;
+  }
+  .host-feature-cta h2 {
+    font-size: 22px;
+  }
   .profile-dashboard { grid-template-columns: 1fr 1fr; }
   .profile-dashboard > div { min-height: 76px; padding: 13px; }
   .profile-dashboard strong { font-size: 18px; }

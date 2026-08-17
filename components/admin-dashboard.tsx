@@ -28,13 +28,14 @@ import { formatMoney, formatRelativeTime, messageForError } from "@/lib/format";
 type Report = Database["public"]["Tables"]["reports"]["Row"];
 type User = Database["public"]["Tables"]["users"]["Row"];
 type Withdrawal = Database["public"]["Tables"]["withdrawal_requests"]["Row"];
+type HostRequest = Database["public"]["Tables"]["host_requests"]["Row"];
 type Action = Database["public"]["Tables"]["admin_actions"]["Row"];
 type Block = Database["public"]["Tables"]["blocks"]["Row"];
 type BlockEvent = Database["public"]["Tables"]["block_events"]["Row"];
 type PlatformConfig = Database["public"]["Tables"]["platform_config"]["Row"];
 type VisitorSession = Database["public"]["Tables"]["visitor_sessions"]["Row"];
 type Wallet = Database["public"]["Tables"]["wallets"]["Row"];
-type Section = "overview" | "visitors" | "reports" | "users" | "blocks" | "withdrawals" | "settings" | "audit";
+type Section = "overview" | "visitors" | "reports" | "hosts" | "users" | "blocks" | "withdrawals" | "settings" | "audit";
 
 function withdrawalStatusLabel(status: string) {
   if (status === "paid" || status === "approved") return "complete";
@@ -75,6 +76,7 @@ export function AdminDashboard({
   platformConfig,
   visitors,
   wallets,
+  hostRequests,
 }: {
   reports: Report[];
   users: User[];
@@ -85,6 +87,7 @@ export function AdminDashboard({
   platformConfig: PlatformConfig[];
   visitors: VisitorSession[];
   wallets: Wallet[];
+  hostRequests: HostRequest[];
 }) {
   const router = useRouter();
   const [section, setSection] = useState<Section>("overview");
@@ -112,6 +115,7 @@ export function AdminDashboard({
   const liveVisitors = visitors.filter((visitor) => visitor.presence === "online" && new Date(visitor.last_seen_at).getTime() >= liveCutoff);
   const openReports = reports.filter((report) => ["open", "reviewing"].includes(report.status)).length;
   const pendingWithdrawals = withdrawals.filter((withdrawal) => withdrawal.status === "pending").length;
+  const pendingHostRequests = hostRequests.filter((request) => request.status === "pending").length;
   const pendingApprovals = users.filter((user) => user.role === "user" && !user.is_guest && !user.is_verified && !user.is_banned).length;
   const bannedUsers = users.filter((user) => user.is_banned).length;
   const filteredUsers = users.filter((user) =>
@@ -163,6 +167,15 @@ export function AdminDashboard({
     await run(withdrawal.id, async () => createClient().rpc("admin_review_withdrawal", { p_request_id: withdrawal.id, p_approve: approve, p_notes: notes }));
   }
 
+  async function reviewHostRequest(request: HostRequest, approve: boolean) {
+    const notes = window.prompt(approve ? "Approval note" : "Reason for rejection") ?? "";
+    await run(`host-${request.id}`, async () => createClient().rpc("admin_review_host_request", {
+      p_request_id: request.id,
+      p_approve: approve,
+      p_notes: notes,
+    }));
+  }
+
   async function saveSetting(key: keyof typeof settingsDraft) {
     const value = Number(settingsDraft[key]);
     if (!Number.isFinite(value)) return setMessage("Enter a valid number.");
@@ -184,6 +197,7 @@ export function AdminDashboard({
     { key: "overview", label: "Overview", icon: Radio },
     { key: "visitors", label: "Visitors", icon: Eye, count: liveVisitors.length },
     { key: "reports", label: "Reports", icon: ShieldAlert, count: openReports },
+    { key: "hosts", label: "Host requests", icon: UserRoundCog, count: pendingHostRequests },
     { key: "users", label: "Users", icon: UsersRound, count: users.length },
     { key: "blocks", label: "Blocks", icon: ShieldBan, count: blocks.length },
     { key: "withdrawals", label: "Payouts", icon: BadgeIndianRupee, count: pendingWithdrawals },
@@ -233,6 +247,7 @@ export function AdminDashboard({
               <Metric icon={Eye} label="Live visitors" value={liveVisitors.length} />
               <Metric icon={UsersRound} label="Total visitors" value={visitors.length} />
               <Metric icon={ShieldAlert} label="Open reports" value={openReports} />
+              <Metric icon={UserRoundCog} label="Host requests" value={pendingHostRequests} />
               <Metric icon={Check} label="Pending approvals" value={pendingApprovals} />
               <Metric icon={UserRoundCog} label="Accounts" value={users.length} />
               <Metric icon={Ban} label="Suspended" value={bannedUsers} />
@@ -246,6 +261,10 @@ export function AdminDashboard({
               <Panel title="Recent visitors">
                 {visitors.slice(0, 6).map((visitor) => <VisitorLine key={visitor.session_id} visitor={visitor} userMap={userMap} />)}
                 {!visitors.length && <div className="inline-empty">No visitors yet.</div>}
+              </Panel>
+              <Panel title="Recent host requests">
+                {hostRequests.slice(0, 5).map((request) => <HostRequestLine key={request.id} request={request} userMap={userMap} />)}
+                {!hostRequests.length && <div className="inline-empty">No host requests yet.</div>}
               </Panel>
             </section>
           </>
@@ -287,6 +306,39 @@ export function AdminDashboard({
               );
             })}
             {!reports.length && <div className="inline-empty">No reports.</div>}
+          </div>
+        )}
+
+        {section === "hosts" && (
+          <div className="admin-list">
+            {hostRequests.map((request) => {
+              const user = userMap.get(request.user_id);
+              return (
+                <article className="admin-row compact-row" key={request.id}>
+                  <div className="admin-row-main">
+                    <span className={`status-label ${request.status}`}>{request.status}</span>
+                    <h3>{user?.display_name ?? "User"}</h3>
+                    <p>@{user?.username ?? "unknown"} · {user?.gender ?? "unknown"} · {user?.status ?? "offline"}</p>
+                    <dl className="admin-facts">
+                      <div><dt>Phone</dt><dd>{request.phone}</dd></div>
+                      <div><dt>Applied</dt><dd>{formatRelativeTime(request.created_at)}</dd></div>
+                      <div><dt>Reviewed</dt><dd>{request.reviewed_at ? formatRelativeTime(request.reviewed_at) : "not yet"}</dd></div>
+                    </dl>
+                    {request.note && <p className="admin-note">Note: {request.note}</p>}
+                    {request.admin_notes && <p className="admin-note">Admin: {request.admin_notes}</p>}
+                  </div>
+                  {request.status === "pending" && (
+                    <div className="admin-row-actions">
+                      <button className="button secondary small" disabled={pending === `host-${request.id}`} onClick={() => reviewHostRequest(request, false)}><X size={16} /> Reject</button>
+                      <button className="button primary small" disabled={pending === `host-${request.id}`} onClick={() => reviewHostRequest(request, true)}>
+                        {pending === `host-${request.id}` ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />} Approve
+                      </button>
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+            {!hostRequests.length && <div className="inline-empty">No host requests yet.</div>}
           </div>
         )}
 
@@ -447,6 +499,17 @@ function VisitorLine({ visitor, userMap }: { visitor: VisitorSession; userMap: M
   );
 }
 
+function HostRequestLine({ request, userMap }: { request: HostRequest; userMap: Map<string, User> }) {
+  const user = userMap.get(request.user_id);
+  return (
+    <div className="admin-mini-row">
+      <span className={`status-dot ${request.status}`} />
+      <div><strong>{user?.display_name ?? "User"}</strong><span>{request.phone}</span></div>
+      <time>{formatRelativeTime(request.created_at)}</time>
+    </div>
+  );
+}
+
 function VisitorRow({ visitor, userMap, live }: { visitor: VisitorSession; userMap: Map<string, User>; live: boolean }) {
   const user = visitor.user_id ? userMap.get(visitor.user_id) : null;
   return (
@@ -509,6 +572,7 @@ function titleForSection(section: Section) {
     overview: "Control center",
     visitors: "Visitor sessions",
     reports: "Reports queue",
+    hosts: "Host requests",
     users: "Account management",
     blocks: "Blocks and device risk",
     withdrawals: "Bean payouts",
