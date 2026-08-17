@@ -18,6 +18,7 @@ import { Logo } from "@/components/logo";
 import { Avatar } from "@/components/avatar";
 import { DeviceRegistrar } from "@/components/device-registrar";
 import { LocationGate } from "@/components/location-gate";
+import { ProfileImageGate } from "@/components/profile-image-gate";
 import { formatMoney } from "@/lib/format";
 
 const items = [
@@ -42,6 +43,7 @@ export function AppShell({
     coins: number;
     location: string | null;
     isGuest: boolean;
+    requiresProfileImage: boolean;
   };
 }) {
   const pathname = usePathname();
@@ -90,6 +92,7 @@ export function AppShell({
     <div className="app-frame">
       <DeviceRegistrar />
       <LocationGate required={!viewer.location?.trim()} />
+      <ProfileImageGate required={viewer.requiresProfileImage} />
       <aside className="side-nav">
         <Logo />
         <nav aria-label="Primary navigation">

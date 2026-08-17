@@ -84,9 +84,14 @@ export default async function PublicProfilePage({ params }: Params) {
   return (
     <main className="public-profile">
       <section className="public-profile-hero">
-        {primary && <Image src={primary.cloudinary_url} alt={`${account.display_name} profile`} fill priority sizes="100vw" />}
-        <div className="public-profile-scrim" />
         <div className="public-brand"><Logo /></div>
+        <div className="public-profile-photo">
+          {primary ? (
+            <Image src={primary.cloudinary_url} alt={`${account.display_name} profile`} fill priority sizes="(max-width: 760px) calc(100vw - 32px), 460px" />
+          ) : (
+            <span>{account.display_name.slice(0, 1)}</span>
+          )}
+        </div>
         <div className="public-profile-copy">
           <div className="public-status">
             <span className={account.status === "online" ? "online" : account.status === "busy" || account.status === "in_call" ? "busy" : ""} />
@@ -100,7 +105,7 @@ export default async function PublicProfilePage({ params }: Params) {
             {profile.languages.length > 0 && <span><Languages size={16} /> {profile.languages.slice(0, 2).join(", ")}</span>}
           </div>
           <p>{profile.bio}</p>
-          <div className="tag-row dark-tags">{profile.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
+          <div className="tag-row">{profile.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
           <HostProfileActions hostId={account.id} username={username} viewerId={viewer?.id ?? null} busy={busy} />
         </div>
       </section>
