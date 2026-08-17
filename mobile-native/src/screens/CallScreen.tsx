@@ -1,4 +1,5 @@
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import notifee from '@notifee/react-native';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {
   Alert,
@@ -19,7 +20,8 @@ import {
   type IRtcEngine,
   type IRtcEngineEventHandler,
 } from 'react-native-agora';
-import {Camera, CameraOff, Gift, Mic, MicOff, PhoneOff, RotateCcw, Volume2} from 'lucide-react-native';
+import {Camera, CameraOff, Gift, Mic, MicOff, Phone, PhoneOff, RotateCcw, Volume2} from 'lucide-react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {authenticatedPost} from '../lib/api';
 import {supabase} from '../lib/supabase';
 import {useApp} from '../state/AppProvider';
@@ -32,6 +34,7 @@ type Call = Database['public']['Tables']['calls']['Row'];
 type AgoraToken = {appId: string; channel: string; token: string; uid: string; expiresAt: number};
 
 export function CallScreen({route, navigation}: Props) {
+  const insets = useSafeAreaInsets();
   const {callId} = route.params;
   const {viewer, refreshViewer} = useApp();
   const [call, setCall] = useState<Call | null>(null);
@@ -47,7 +50,15 @@ export function CallScreen({route, navigation}: Props) {
   const [tipText, setTipText] = useState<string | null>(null);
   const engineRef = useRef<IRtcEngine | null>(null);
   const initializedFor = useRef<string | null>(null);
+  const closedRef = useRef(false);
   const tipScale = useRef(new Animated.Value(0)).current;
+
+  const closeCallScreen = useCallback(() => {
+    if (closedRef.current) return;
+    closedRef.current = true;
+    if (navigation.canGoBack()) navigation.goBack();
+    else navigation.replace('Main');
+  }, [navigation]);
 
   const loadCall = useCallback(async () => {
     if (!viewer) return;
@@ -77,17 +88,18 @@ export function CallScreen({route, navigation}: Props) {
   useEffect(() => {
     if (call?.status === 'ongoing' && initializedFor.current !== call.id) {
       initializedFor.current = call.id;
+      void notifee.cancelNotification(`call-${call.id}`);
       void joinAgora(call);
     }
     if (call && ['ended', 'declined', 'missed', 'failed'].includes(call.status)) {
       cleanupAgora();
       void refreshViewer();
-      const timeout = setTimeout(() => navigation.goBack(), 650);
+      const timeout = setTimeout(closeCallScreen, 650);
       return () => clearTimeout(timeout);
     }
   // The RTC setup is keyed to call state and guarded per call id.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [call, navigation, refreshViewer]);
+  }, [call, closeCallScreen, refreshViewer]);
 
   useEffect(() => {
     if (!call?.started_at || call.status !== 'ongoing') return;
@@ -113,12 +125,14 @@ export function CallScreen({route, navigation}: Props) {
     if (!granted) return Alert.alert('Permission required', 'Camera and microphone access are required for this call.');
     const {data: accepted, error} = await supabase.rpc('respond_to_call', {p_call_id: call.id, p_accept: true});
     if (error || !accepted) Alert.alert('Call unavailable', error?.message || 'The caller is no longer available.');
+    else await notifee.cancelNotification(`call-${call.id}`);
   }
 
   async function decline() {
     if (!call) return;
     await supabase.rpc('respond_to_call', {p_call_id: call.id, p_accept: false});
-    navigation.goBack();
+    await notifee.cancelNotification(`call-${call.id}`);
+    closeCallScreen();
   }
 
   async function joinAgora(activeCall: Call) {
@@ -131,10 +145,23 @@ export function CallScreen({route, navigation}: Props) {
       const credentials = await authenticatedPost<AgoraToken>('/api/agora/token', {callId: activeCall.id});
       const engine = createAgoraRtcEngine();
       const handler: IRtcEngineEventHandler = {
-        onJoinChannelSuccess: () => { setJoined(true); setJoining(false); },
-        onUserJoined: (_connection, uid) => setRemoteUid(uid),
-        onUserOffline: () => setRemoteUid(null),
-        onError: (_code, message) => Alert.alert('Call error', message || 'Agora could not connect.'),
+        onJoinChannelSuccess: () => {
+          console.info('[CallScreen] Agora joined', activeCall.id);
+          setJoined(true);
+          setJoining(false);
+        },
+        onUserJoined: (_connection, uid) => {
+          console.info('[CallScreen] Agora remote joined', uid);
+          setRemoteUid(uid);
+        },
+        onUserOffline: (_connection, uid) => {
+          console.info('[CallScreen] Agora remote left', uid);
+          setRemoteUid(null);
+        },
+        onError: (code, message) => {
+          console.error('[CallScreen] Agora error', code, message);
+          Alert.alert('Call error', message || `Agora could not connect (${code}).`);
+        },
       };
       engine.initialize({appId: credentials.appId});
       engine.registerEventHandler(handler);
@@ -177,9 +204,10 @@ export function CallScreen({route, navigation}: Props) {
 
   async function endCall() {
     if (call) await supabase.rpc('end_call', {p_call_id: call.id});
+    if (call) await notifee.cancelNotification(`call-${call.id}`);
     cleanupAgora();
     await refreshViewer();
-    navigation.goBack();
+    closeCallScreen();
   }
 
   function toggleMute() {
@@ -214,13 +242,21 @@ export function CallScreen({route, navigation}: Props) {
 
   const incoming = call && viewer && call.receiver_id === viewer.account.id;
   const video = call?.call_type === 'video';
-  const statusText = call?.status === 'ringing' ? (incoming ? `Incoming ${call.call_type} call` : 'Calling...') : joining ? 'Connecting securely...' : joined ? formatDuration(seconds) : 'Preparing call...';
+  const statusText = call?.status === 'ringing'
+    ? (incoming ? `Incoming ${call.call_type} call` : 'Calling...')
+    : joining
+      ? 'Connecting securely...'
+      : joined && remoteUid !== null
+        ? `Connected · ${formatDuration(seconds)}`
+        : joined
+          ? 'Waiting for the other person...'
+          : 'Preparing call...';
   return (
     <View style={styles.root}>
       {video && joined ? (
         <>
           {remoteUid !== null ? <RtcSurfaceView style={StyleSheet.absoluteFill} canvas={{uid: remoteUid}} /> : <View style={[StyleSheet.absoluteFill, styles.waiting]}><Text style={styles.waitingText}>Waiting for video...</Text></View>}
-          {!cameraOff ? <RtcSurfaceView style={styles.localVideo} canvas={{uid: 0}} zOrderMediaOverlay /> : null}
+          {!cameraOff ? <View style={styles.localVideo}><RtcSurfaceView style={StyleSheet.absoluteFill} canvas={{uid: 0}} zOrderMediaOverlay /></View> : null}
         </>
       ) : (
         <View style={styles.audioStage}>
@@ -230,12 +266,12 @@ export function CallScreen({route, navigation}: Props) {
       <View style={styles.topCopy}><Text style={styles.otherName}>{otherName}</Text><Text style={styles.callStatus}>{statusText}</Text></View>
       {tipText ? <Animated.View style={[styles.tipToast, {transform: [{scale: tipScale}]}]}><Gift size={30} color={colors.coral} /><Text style={styles.tipToastText}>{tipText}</Text></Animated.View> : null}
       {call?.status === 'ringing' && incoming ? (
-        <View style={styles.incomingActions}>
+        <View style={[styles.incomingActions, {bottom: 70 + insets.bottom}]}>
           <CallControl color={colors.danger} icon={<PhoneOff size={29} color={colors.white} />} label="Decline" onPress={() => void decline()} />
-          <CallControl color={colors.success} icon={<PhoneOff size={29} color={colors.white} style={{transform: [{rotate: '135deg'}]}} />} label="Accept" onPress={() => void accept()} />
+          <CallControl color={colors.success} icon={<Phone size={29} color={colors.white} />} label="Accept" onPress={() => void accept()} />
         </View>
       ) : (
-        <View style={styles.controlsPanel}>
+        <View style={[styles.controlsPanel, {paddingBottom: 35 + insets.bottom}]}>
           <View style={styles.tipRow}>{[5, 10, 25].map(amount => <Pressable key={amount} onPress={() => void sendTip(amount)} style={styles.quickTip}><Gift size={17} color={colors.coral} /><Text style={styles.quickTipText}>{amount}</Text></Pressable>)}</View>
           <View style={styles.controls}>
             <CallControl icon={muted ? <MicOff size={25} color={colors.white} /> : <Mic size={25} color={colors.white} />} label={muted ? 'Unmute' : 'Mute'} onPress={toggleMute} />
@@ -263,14 +299,14 @@ const styles = StyleSheet.create({
   heroAvatar: {width: 172, height: 172, borderRadius: 86, borderWidth: 3, borderColor: 'rgba(255,255,255,0.35)'},
   heroFallback: {backgroundColor: colors.tealSoft, alignItems: 'center', justifyContent: 'center'},
   heroInitial: {fontSize: 64, fontWeight: '900', color: colors.teal},
-  localVideo: {position: 'absolute', right: spacing.md, top: 126, width: 112, height: 160, borderRadius: radii.md, overflow: 'hidden'},
+  localVideo: {position: 'absolute', right: spacing.md, top: 126, width: 112, height: 160, borderRadius: radii.md, overflow: 'hidden', backgroundColor: '#171C19'},
   topCopy: {position: 'absolute', top: 45, left: spacing.lg, right: spacing.lg, alignItems: 'center'},
   otherName: {color: colors.white, fontSize: 26, fontWeight: '900'},
   callStatus: {marginTop: 4, color: 'rgba(255,255,255,0.75)', fontSize: 15},
   tipToast: {position: 'absolute', top: '36%', alignSelf: 'center', paddingHorizontal: spacing.lg, paddingVertical: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderRadius: radii.md, backgroundColor: colors.surface},
   tipToastText: {fontSize: 18, fontWeight: '900', color: colors.ink},
-  incomingActions: {position: 'absolute', left: 45, right: 45, bottom: 70, flexDirection: 'row', justifyContent: 'space-between'},
-  controlsPanel: {position: 'absolute', left: 0, right: 0, bottom: 0, padding: spacing.lg, paddingBottom: 35, backgroundColor: 'rgba(8,10,9,0.78)', alignItems: 'center', gap: spacing.md},
+  incomingActions: {position: 'absolute', left: 45, right: 45, flexDirection: 'row', justifyContent: 'space-between'},
+  controlsPanel: {position: 'absolute', left: 0, right: 0, bottom: 0, padding: spacing.lg, backgroundColor: 'rgba(8,10,9,0.78)', alignItems: 'center', gap: spacing.md},
   tipRow: {flexDirection: 'row', gap: spacing.sm},
   quickTip: {height: 38, minWidth: 70, paddingHorizontal: spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderRadius: radii.round, backgroundColor: colors.surface},
   quickTipText: {fontWeight: '900', color: colors.ink},

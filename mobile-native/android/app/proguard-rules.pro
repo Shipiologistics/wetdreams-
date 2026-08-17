@@ -12,3 +12,6 @@
 # Agora loads its media engine and callbacks through JNI/reflection.
 -keep class io.agora.** { *; }
 -dontwarn io.agora.**
+
+# react-native-device-info reflects over the Play Install Referrer API.
+-keep class com.android.installreferrer.api.** { *; }

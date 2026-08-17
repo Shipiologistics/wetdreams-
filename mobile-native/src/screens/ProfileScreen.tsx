@@ -3,6 +3,7 @@ import type {NavigationProp} from '@react-navigation/native';
 import {useCallback, useState} from 'react';
 import {Alert, FlatList, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 import ImagePicker, {type Image as PickerImage} from 'react-native-image-crop-picker';
+import ReactNativeBlobUtil from 'react-native-blob-util';
 import {Camera, CircleDollarSign, Edit3, MapPin, Settings, X} from 'lucide-react-native';
 import {FormField} from '../components/FormField';
 import {ScreenHeader} from '../components/ScreenHeader';
@@ -86,19 +87,28 @@ export function ProfileScreen() {
   }
 
   async function adjust(path: string): Promise<PickerImage | null> {
-    return ImagePicker.openCropper({
-      path,
-      width: 1080,
-      height: 1080,
-      mediaType: 'photo',
-      forceJpg: true,
-      avoidEmptySpaceAroundImage: true,
-      enableRotationGesture: true,
-      cropperRotateButtonsHidden: false,
-      cropperToolbarTitle: 'Crop and rotate',
-      cropperToolbarColor: colors.black,
-      cropperToolbarWidgetColor: colors.white,
-    });
+    let temporaryPath: string | null = null;
+    try {
+      if (/^https?:\/\//i.test(path)) {
+        const response = await ReactNativeBlobUtil.config({fileCache: true, appendExt: 'jpg'}).fetch('GET', path);
+        temporaryPath = response.path();
+      }
+      return await ImagePicker.openCropper({
+        path: temporaryPath || path,
+        width: 1080,
+        height: 1080,
+        mediaType: 'photo',
+        forceJpg: true,
+        avoidEmptySpaceAroundImage: true,
+        enableRotationGesture: true,
+        cropperRotateButtonsHidden: false,
+        cropperToolbarTitle: 'Crop and rotate',
+        cropperToolbarColor: colors.black,
+        cropperToolbarWidgetColor: colors.white,
+      });
+    } finally {
+      if (temporaryPath) await ReactNativeBlobUtil.fs.unlink(temporaryPath).catch(() => undefined);
+    }
   }
 
   async function makePrimary(item: Media) {

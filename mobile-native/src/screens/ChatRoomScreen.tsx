@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import ImagePicker from 'react-native-image-crop-picker';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {ChevronLeft, Gift, ImagePlus, MoreVertical, Phone, Send, Video, X} from 'lucide-react-native';
 import {authenticatedPost} from '../lib/api';
 import {uploadToCloudinary} from '../lib/cloudinary';
@@ -30,6 +31,7 @@ type Message = Database['public']['Tables']['messages']['Row'];
 type Account = Database['public']['Tables']['users']['Row'];
 
 export function ChatRoomScreen({route, navigation}: Props) {
+  const insets = useSafeAreaInsets();
   const {roomId} = route.params;
   const {viewer, refreshViewer} = useApp();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -87,13 +89,16 @@ export function ChatRoomScreen({route, navigation}: Props) {
     const content = text.trim();
     if (kind === 'text' && !content) return;
     setSending(true);
+    const mediaFields = image ? {
+      p_cloudinary_url: image.url,
+      p_cloudinary_public_id: image.publicId,
+      p_cloudinary_resource_type: image.resourceType,
+    } : {};
     const {data: message, error} = await supabase.rpc('send_message', {
       p_room_id: roomId,
       p_message_type: kind,
       p_content: kind === 'text' ? content : '',
-      p_cloudinary_url: image?.url || '',
-      p_cloudinary_public_id: image?.publicId || '',
-      p_cloudinary_resource_type: image?.resourceType || '',
+      ...mediaFields,
     });
     if (error || !message) {
       setSending(false);
@@ -178,7 +183,7 @@ export function ChatRoomScreen({route, navigation}: Props) {
         ListHeaderComponent={<View style={styles.person}><View style={[styles.largeAvatar, styles.avatarFallback]}>{avatar ? <Image source={{uri: avatar}} style={styles.largeAvatar} /> : <Text style={styles.largeInitial}>{other?.display_name?.charAt(0) || '?'}</Text>}</View><Text style={styles.personName}>{other?.display_name}</Text><Text style={styles.username}>@{other?.username}</Text></View>}
       />
       {blocked ? <View style={styles.blocked}><Text style={styles.blockedText}>{viewerBlocked ? 'You blocked this user.' : 'Messaging and calls are unavailable.'}</Text></View> : (
-        <View style={styles.composer}>
+        <View style={[styles.composer, {paddingBottom: Math.max(insets.bottom, spacing.sm)}]}>
           <Pressable onPress={() => void addPhoto()} style={styles.composerIcon}><ImagePlus size={25} color={colors.ink} /></Pressable>
           <Pressable onPress={() => setTipOpen(true)} style={styles.composerIcon}><Gift size={24} color={colors.ink} /></Pressable>
           <TextInput value={text} onChangeText={setText} placeholder="Write a message" placeholderTextColor={colors.muted} multiline style={styles.input} />
@@ -227,7 +232,7 @@ const styles = StyleSheet.create({
   time: {fontSize: 10, color: colors.muted},
   ticks: {fontSize: 12, fontWeight: '900', color: colors.muted},
   read: {color: '#1686C9'},
-  composer: {padding: spacing.xs, paddingBottom: Platform.OS === 'android' ? spacing.sm : spacing.md, flexDirection: 'row', alignItems: 'flex-end', gap: 4, backgroundColor: colors.surface, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line},
+  composer: {padding: spacing.xs, flexDirection: 'row', alignItems: 'flex-end', gap: 4, backgroundColor: colors.surface, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line},
   composerIcon: {width: 43, height: 48, alignItems: 'center', justifyContent: 'center'},
   input: {flex: 1, minHeight: 48, maxHeight: 112, paddingHorizontal: spacing.md, paddingTop: 13, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, color: colors.ink, fontSize: 16, backgroundColor: colors.canvas},
   send: {width: 49, height: 49, borderRadius: 25, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.coral},
