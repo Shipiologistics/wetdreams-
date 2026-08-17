@@ -14,12 +14,15 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { BrandedLoader } from "@/components/branded-loader";
+import { NotificationsBell } from "@/components/notifications-bell";
 import { Logo } from "@/components/logo";
 import { Avatar } from "@/components/avatar";
 import { DeviceRegistrar } from "@/components/device-registrar";
 import { LocationGate } from "@/components/location-gate";
 import { ProfileImageGate } from "@/components/profile-image-gate";
 import { formatMoney } from "@/lib/format";
+import { createClient } from "@/lib/supabase/client";
+import type { AppNotification, ChatRoom, Message } from "@/lib/view-models";
 
 const items = [
   { href: "/discover", label: "Discover", icon: Compass },
@@ -36,6 +39,7 @@ export function AppShell({
 }: {
   children: React.ReactNode;
   viewer: {
+    id: string;
     name: string;
     username: string;
     avatar: string | null;
@@ -45,11 +49,16 @@ export function AppShell({
     isGuest: boolean;
     requiresLocation: boolean;
     requiresProfileImage: boolean;
+    unreadChatCount: number;
+    chatRoomIds: string[];
+    notifications: AppNotification[];
   };
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [unreadChatCount, setUnreadChatCount] = useState(viewer.unreadChatCount);
+  const [chatRoomIds, setChatRoomIds] = useState(() => new Set(viewer.chatRoomIds));
   const navItems = useMemo(
     () => {
       const allowedItems = viewer.isGuest ? items.filter((item) => item.href !== "/settings") : items;
@@ -67,6 +76,73 @@ export function AppShell({
   useEffect(() => {
     navItems.forEach((item) => router.prefetch(item.href));
   }, [navItems, router]);
+
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`app-shell:${viewer.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "chat_rooms" },
+        (payload) => {
+          const room = payload.new as ChatRoom;
+          if (room.room_type !== "random" && room.status === "active") {
+            setChatRoomIds((current) => new Set(current).add(room.id));
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "chat_rooms" },
+        (payload) => {
+          const room = payload.new as ChatRoom;
+          setChatRoomIds((current) => {
+            const next = new Set(current);
+            if (room.room_type !== "random" && room.status === "active") next.add(room.id);
+            else next.delete(room.id);
+            return next;
+          });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        (payload) => {
+          const message = payload.new as Message;
+          if (message.sender_id !== viewer.id && !message.read_at && chatRoomIds.has(message.room_id)) {
+            setUnreadChatCount((current) => current + 1);
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages" },
+        (payload) => {
+          const previous = payload.old as Message;
+          const next = payload.new as Message;
+          if (next.sender_id === viewer.id || !chatRoomIds.has(next.room_id)) return;
+          const wasUnread = !previous.read_at;
+          const isUnread = !next.read_at;
+          if (wasUnread && !isUnread) setUnreadChatCount((current) => Math.max(0, current - 1));
+          if (!wasUnread && isUnread) setUnreadChatCount((current) => current + 1);
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "messages" },
+        (payload) => {
+          const message = payload.old as Message;
+          if (message.sender_id !== viewer.id && !message.read_at && chatRoomIds.has(message.room_id)) {
+            setUnreadChatCount((current) => Math.max(0, current - 1));
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [chatRoomIds, viewer.id]);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -95,7 +171,10 @@ export function AppShell({
       <LocationGate required={viewer.requiresLocation} />
       <ProfileImageGate required={viewer.requiresProfileImage} />
       <aside className="side-nav">
-        <Logo />
+        <div className="side-nav-head">
+          <Logo />
+          <NotificationsBell viewerId={viewer.id} initialNotifications={viewer.notifications} />
+        </div>
         <nav aria-label="Primary navigation">
           {navItems.map(({ href, label, icon: Icon }) => (
             <Link
@@ -108,6 +187,7 @@ export function AppShell({
             >
               <Icon size={20} strokeWidth={1.8} />
               <span>{label}</span>
+              {href === "/chat" && unreadChatCount > 0 && <span className="nav-count">{unreadChatCount > 99 ? "99+" : unreadChatCount}</span>}
             </Link>
           ))}
         </nav>
@@ -122,6 +202,9 @@ export function AppShell({
       </aside>
 
       <main className="app-main">
+        <div className="mobile-notifications">
+          <NotificationsBell viewerId={viewer.id} initialNotifications={viewer.notifications} />
+        </div>
         {visiblePendingHref ? <AppRouteLoading label={routeLabel} /> : children}
       </main>
 
@@ -137,6 +220,7 @@ export function AppShell({
           >
             <Icon size={21} strokeWidth={1.8} />
             <span>{label}</span>
+            {href === "/chat" && unreadChatCount > 0 && <span className="nav-count bottom-count">{unreadChatCount > 99 ? "99+" : unreadChatCount}</span>}
           </Link>
         ))}
       </nav>

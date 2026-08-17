@@ -96,16 +96,42 @@ export default async function DiscoverPage() {
 
   if (!viewer) return content;
 
-  const { data: avatar } = await supabase
-    .from("profile_media")
-    .select("cloudinary_url")
-    .eq("user_id", viewer.id)
-    .eq("is_primary", true)
-    .maybeSingle();
+  const [{ data: avatar }, { data: rooms }, { data: notifications }] = await Promise.all([
+    supabase
+      .from("profile_media")
+      .select("cloudinary_url")
+      .eq("user_id", viewer.id)
+      .eq("is_primary", true)
+      .maybeSingle(),
+    supabase
+      .from("chat_rooms")
+      .select("id")
+      .or(`user_a.eq.${viewer.id},user_b.eq.${viewer.id}`)
+      .eq("status", "active")
+      .neq("room_type", "random"),
+    supabase
+      .from("app_notifications")
+      .select("*")
+      .eq("user_id", viewer.id)
+      .order("created_at", { ascending: false })
+      .limit(20),
+  ]);
+
+  const roomIds = (rooms ?? []).map((room) => room.id);
+  const { count: unreadChatCount } = roomIds.length
+    ? await supabase
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .in("room_id", roomIds)
+        .neq("sender_id", viewer.id)
+        .is("read_at", null)
+        .gt("expires_at", new Date().toISOString())
+    : { count: 0 };
 
   return (
     <AppShell
       viewer={{
+        id: viewer.id,
         name: viewer.account.display_name,
         username: viewer.account.username,
         avatar: avatar?.cloudinary_url ?? null,
@@ -119,6 +145,9 @@ export default async function DiscoverPage() {
           && viewer.account.gender === "female"
           && !avatar?.cloudinary_url
           && Boolean(viewer.profile.location?.trim()),
+        unreadChatCount: unreadChatCount ?? 0,
+        chatRoomIds: roomIds,
+        notifications: notifications ?? [],
       }}
     >
       {content}

@@ -66,6 +66,60 @@ export type Database = {
           },
         ]
       }
+      app_notifications: {
+        Row: {
+          actor_id: string | null
+          body: string
+          created_at: string
+          href: string
+          id: string
+          metadata: Json
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          body?: string
+          created_at?: string
+          href?: string
+          id?: string
+          metadata?: Json
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          body?: string
+          created_at?: string
+          href?: string
+          id?: string
+          metadata?: Json
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_notifications_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blocks: {
         Row: {
           blocked_id: string
@@ -1162,6 +1216,10 @@ export type Database = {
       hash_device_id: { Args: { p_device_id: string }; Returns: string }
       is_admin: { Args: never; Returns: boolean }
       is_device_banned: { Args: { p_device_id: string }; Returns: boolean }
+      mark_notifications_read: {
+        Args: { p_notification_ids?: string[] | null }
+        Returns: number
+      }
       mark_room_delivered: { Args: { p_room_id: string }; Returns: number }
       mark_room_read: { Args: { p_room_id: string }; Returns: number }
       match_random_chat: { Args: { p_reset?: boolean }; Returns: string | null }
