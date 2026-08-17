@@ -35,10 +35,23 @@ export async function POST(request: NextRequest) {
 
   const email = guestEmail(deviceHash);
   const password = guestPassword(deviceId, guestSecret);
+  let mappedUserId: string | null;
+  try {
+    mappedUserId = await findMappedGuestUser(admin, deviceHash);
+  } catch (caught) {
+    return NextResponse.json(
+      { error: caught instanceof Error ? caught.message : "GUEST_CREATE_FAILED" },
+      { status: 500 },
+    );
+  }
+
+  if (!mappedUserId && !location) {
+    return NextResponse.json({ error: "LOCATION_REQUIRED" }, { status: 400 });
+  }
+
   let userId: string;
   try {
-    const existingUserId = await findMappedGuestUser(admin, deviceHash);
-    userId = existingUserId ?? await createGuestUser(admin, email, password);
+    userId = mappedUserId ?? await createGuestUser(admin, email, password);
   } catch (caught) {
     return NextResponse.json(
       { error: caught instanceof Error ? caught.message : "GUEST_CREATE_FAILED" },
