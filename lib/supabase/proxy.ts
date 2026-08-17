@@ -4,9 +4,11 @@ import type { Database } from "@/lib/database.types";
 
 const publicPaths = [
   "/login",
+  "/landing",
   "/auth",
   "/u",
   "/discover",
+  "/downloads",
   "/device-banned",
   "/privacy",
   "/terms",
