@@ -25,6 +25,7 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
   const [signupStep, setSignupStep] = useState<SignupStep>(1);
   const [signupFieldError, setSignupFieldError] = useState<SignupFieldError>(null);
   const [signupName, setSignupName] = useState("");
+  const [guestName, setGuestName] = useState("");
   const [signupGender, setSignupGender] = useState<"male" | "female" | "">("");
   const [signupState, setSignupState] = useState("");
   const [signupCity, setSignupCity] = useState("");
@@ -40,6 +41,11 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
   }
 
   async function continueAsGuest() {
+    const cleanGuestName = guestName.trim();
+    if (cleanGuestName.length < 2) {
+      setError("Nickname required.");
+      return;
+    }
     setPending("guest");
     setError(null);
     setNotice(null);
@@ -47,7 +53,7 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
     const response = await fetch("/api/auth/guest", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ deviceId: getOrCreateDeviceId() }),
+      body: JSON.stringify({ deviceId: getOrCreateDeviceId(), nickname: cleanGuestName }),
     });
     const guest = await response.json().catch(() => null) as { email?: string; password?: string; error?: string } | null;
 
@@ -219,10 +225,31 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
         <p>Quick guest access, or login with your registered email.</p>
       </div>
 
-      <button className="quick-start-button" type="button" onClick={continueAsGuest} disabled={!!pending}>
-        <span>{pending === "guest" ? <LoaderCircle className="spin" size={24} /> : <Zap size={24} fill="currentColor" />}</span>
-        <strong>Quick Start</strong>
-      </button>
+      <form
+        className="quick-start-card"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void continueAsGuest();
+        }}
+      >
+        <label>
+          Nickname
+          <input
+            value={guestName}
+            onChange={(event) => setGuestName(event.target.value)}
+            autoComplete="nickname"
+            minLength={2}
+            maxLength={60}
+            placeholder="Your nickname"
+            required
+          />
+        </label>
+        <button className="quick-start-button" type="submit" disabled={!!pending}>
+          <span>{pending === "guest" ? <LoaderCircle className="spin" size={24} /> : <Zap size={24} fill="currentColor" />}</span>
+          <strong>Quick Start</strong>
+        </button>
+        <small>Guest accounts are male by default.</small>
+      </form>
 
       <div className="auth-divider"><span>Email login</span></div>
 

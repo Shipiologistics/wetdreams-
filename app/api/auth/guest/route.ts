@@ -15,15 +15,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "GUEST_AUTH_NOT_CONFIGURED" }, { status: 500 });
   }
 
-  const payload = await request.json().catch(() => null) as { deviceId?: unknown; location?: unknown } | null;
+  const payload = await request.json().catch(() => null) as { deviceId?: unknown; nickname?: unknown } | null;
   const deviceId = typeof payload?.deviceId === "string" ? payload.deviceId.trim() : "";
-  const location = typeof payload?.location === "string" ? payload.location.trim() : "";
+  const nickname = sanitizeNickname(payload?.nickname);
 
   if (deviceId.length < 16 || deviceId.length > 200) {
     return NextResponse.json({ error: "INVALID_DEVICE" }, { status: 400 });
   }
-  if (location.length > 100) {
-    return NextResponse.json({ error: "INVALID_LOCATION" }, { status: 400 });
+  if (!nickname) {
+    return NextResponse.json({ error: "NICKNAME_REQUIRED" }, { status: 400 });
   }
 
   const admin = createAdminClient(serviceKey);
@@ -55,24 +55,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { data: profile, error: profileError } = await admin
-    .from("profiles")
-    .select("location")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (profileError) return NextResponse.json({ error: profileError.message }, { status: 500 });
-
   const now = new Date().toISOString();
   const { error: userError } = await admin
     .from("users")
-    .update({ display_name: "Guest", gender: "male", is_guest: true, updated_at: now })
+    .update({ display_name: nickname, gender: "male", is_guest: true, updated_at: now })
     .eq("id", userId);
   if (userError) return NextResponse.json({ error: userError.message }, { status: 500 });
 
   const { error: authError } = await admin.auth.admin.updateUserById(userId, {
     password,
-    user_metadata: { display_name: "Guest", gender: "male", is_guest: true },
+    user_metadata: { display_name: nickname, gender: "male", is_guest: true },
     app_metadata: { is_guest: true },
   });
   if (authError) return NextResponse.json({ error: authError.message }, { status: 500 });
@@ -81,14 +73,6 @@ export async function POST(request: NextRequest) {
     .from("guest_devices")
     .upsert({ device_hash: deviceHash, user_id: userId, last_seen_at: now }, { onConflict: "device_hash" });
   if (deviceError) return NextResponse.json({ error: deviceError.message }, { status: 500 });
-
-  if (location && location !== profile?.location) {
-    const { error: locationError } = await admin
-      .from("profiles")
-      .update({ location })
-      .eq("user_id", userId);
-    if (locationError) return NextResponse.json({ error: locationError.message }, { status: 500 });
-  }
 
   return NextResponse.json({ email, password });
 }
@@ -103,6 +87,13 @@ function guestEmail(deviceHash: string) {
 
 function guestPassword(deviceId: string, secret: string) {
   return `${createHmac("sha256", secret).update(deviceId).digest("base64url")}Aa1!`;
+}
+
+function sanitizeNickname(value: unknown) {
+  if (typeof value !== "string") return "";
+  const nickname = value.replace(/\s+/g, " ").trim();
+  if (nickname.length < 2 || nickname.length > 60) return "";
+  return nickname;
 }
 
 function createAdminClient(serviceKey: string) {
