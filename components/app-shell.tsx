@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -54,11 +54,13 @@ export function AppShell({
     notifications: AppNotification[];
   };
 }) {
+  const shellChannelSuffix = useId();
   const pathname = usePathname();
   const router = useRouter();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const [unreadChatCount, setUnreadChatCount] = useState(viewer.unreadChatCount);
   const [chatRoomIds, setChatRoomIds] = useState(() => new Set(viewer.chatRoomIds));
+  const chatRoomIdsRef = useRef(chatRoomIds);
   const navItems = useMemo(
     () => {
       const allowedItems = viewer.isGuest ? items.filter((item) => item.href !== "/settings") : items;
@@ -78,9 +80,13 @@ export function AppShell({
   }, [navItems, router]);
 
   useEffect(() => {
+    chatRoomIdsRef.current = chatRoomIds;
+  }, [chatRoomIds]);
+
+  useEffect(() => {
     const supabase = createClient();
     const channel = supabase
-      .channel(`app-shell:${viewer.id}`)
+      .channel(`app-shell:${viewer.id}:${shellChannelSuffix}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "chat_rooms" },
@@ -109,7 +115,7 @@ export function AppShell({
         { event: "INSERT", schema: "public", table: "messages" },
         (payload) => {
           const message = payload.new as Message;
-          if (message.sender_id !== viewer.id && !message.read_at && chatRoomIds.has(message.room_id)) {
+          if (message.sender_id !== viewer.id && !message.read_at && chatRoomIdsRef.current.has(message.room_id)) {
             setUnreadChatCount((current) => current + 1);
           }
         },
@@ -120,7 +126,7 @@ export function AppShell({
         (payload) => {
           const previous = payload.old as Message;
           const next = payload.new as Message;
-          if (next.sender_id === viewer.id || !chatRoomIds.has(next.room_id)) return;
+          if (next.sender_id === viewer.id || !chatRoomIdsRef.current.has(next.room_id)) return;
           const wasUnread = !previous.read_at;
           const isUnread = !next.read_at;
           if (wasUnread && !isUnread) setUnreadChatCount((current) => Math.max(0, current - 1));
@@ -132,7 +138,7 @@ export function AppShell({
         { event: "DELETE", schema: "public", table: "messages" },
         (payload) => {
           const message = payload.old as Message;
-          if (message.sender_id !== viewer.id && !message.read_at && chatRoomIds.has(message.room_id)) {
+          if (message.sender_id !== viewer.id && !message.read_at && chatRoomIdsRef.current.has(message.room_id)) {
             setUnreadChatCount((current) => Math.max(0, current - 1));
           }
         },
@@ -142,7 +148,7 @@ export function AppShell({
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [chatRoomIds, viewer.id]);
+  }, [shellChannelSuffix, viewer.id]);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { Bell, CheckCheck, Coins, MessageCircle, Phone, Sparkles, X } from "lucide-react";
 import clsx from "clsx";
@@ -14,6 +14,7 @@ type NotificationsBellProps = {
 };
 
 export function NotificationsBell({ viewerId, initialNotifications }: NotificationsBellProps) {
+  const channelSuffix = useId();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState(initialNotifications);
   const unreadCount = useMemo(() => notifications.filter((notification) => !notification.read_at).length, [notifications]);
@@ -21,7 +22,7 @@ export function NotificationsBell({ viewerId, initialNotifications }: Notificati
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
-      .channel(`app-notifications:${viewerId}`)
+      .channel(`app-notifications:${viewerId}:${channelSuffix}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "app_notifications", filter: `user_id=eq.${viewerId}` },
@@ -43,7 +44,7 @@ export function NotificationsBell({ viewerId, initialNotifications }: Notificati
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [viewerId]);
+  }, [channelSuffix, viewerId]);
 
   async function markRead(ids?: string[]) {
     const unreadIds = ids ?? notifications.filter((notification) => !notification.read_at).map((notification) => notification.id);
