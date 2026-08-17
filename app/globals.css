@@ -5158,14 +5158,14 @@ body:has(.side-nav) .global-back-button-fixed {
   }
   .mobile-notifications {
     position: fixed;
-    top: max(12px, calc(env(safe-area-inset-top) + 10px));
-    right: 12px;
+    top: max(40px, calc(env(safe-area-inset-top) + 38px));
+    right: 14px;
     z-index: 70;
     display: block;
   }
   .mobile-notifications .notification-button {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     background: rgb(255 255 255 / 92%);
   }
   .mobile-notifications .notifications-panel {
@@ -5187,7 +5187,7 @@ body:has(.side-nav) .global-back-button-fixed {
     border-bottom: 1px solid var(--line);
     background: rgb(247 246 242 / 96%);
     backdrop-filter: blur(12px);
-    padding: max(18px, env(safe-area-inset-top)) 64px 14px 16px;
+    padding: max(18px, env(safe-area-inset-top)) 84px 14px 16px;
     gap: 12px;
   }
   .app-frame .page-header .eyebrow {
@@ -5200,7 +5200,7 @@ body:has(.side-nav) .global-back-button-fixed {
   .app-frame .page-header .header-balance {
     flex: 0 0 auto;
     min-width: 42px;
-    max-width: 52px;
+    max-width: 48px;
     padding-left: 8px;
   }
   .app-frame .page-header .header-balance span {
