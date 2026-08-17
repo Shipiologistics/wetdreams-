@@ -28,6 +28,7 @@ import { CoinTopupModal } from "@/components/coin-topup-modal";
 import { GlobalBackButton } from "@/components/global-back-button";
 import { TipButton } from "@/components/tip-button";
 import { notifyIncomingCall } from "@/lib/call-notifications";
+import { notifyChatMessage } from "@/lib/message-notifications";
 import { createClient } from "@/lib/supabase/client";
 import { getOrCreateDeviceId } from "@/lib/device-id";
 import { formatRelativeTime, messageForError } from "@/lib/format";
@@ -101,6 +102,38 @@ export function ChatRoom({
   const blocked = blockState.viewerBlockedOther || blockState.otherBlockedViewer;
   const isRandomRoom = room.room_type === "random";
   const paywalled = !isRandomRoom && count >= 10 && !profile.free_chat_enabled && Number(profile.chat_rate_coins) > 0;
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const callId = params.get("call");
+    const action = params.get("action");
+    if (!callId || (action !== "accept" && action !== "decline")) return;
+
+    const notificationCallId = callId;
+    let cancelled = false;
+    async function handleNotificationAction() {
+      const accept = action === "accept";
+      const supabase = createClient();
+      const { error: responseError } = await supabase.rpc("respond_to_call", { p_call_id: notificationCallId, p_accept: accept });
+      if (cancelled) return;
+
+      if (responseError) {
+        setError(messageForError(responseError.message));
+      } else if (accept) {
+        const { data: nextCall } = await supabase.from("calls").select("*").eq("id", notificationCallId).single();
+        if (nextCall) setActiveCall(nextCall);
+      } else {
+        setActiveCall(null);
+      }
+
+      window.history.replaceState(null, "", `/chat/${room.id}`);
+    }
+
+    void handleNotificationAction();
+    return () => {
+      cancelled = true;
+    };
+  }, [room.id]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -227,6 +260,7 @@ export function ChatRoom({
       return;
     }
     if (data && !messages.some((message) => message.id === data.id)) setMessages((current) => [...current, data]);
+    if (data?.id && !isRandomRoom) void notifyChatMessage(data.id);
     const { data: latest } = await createClient()
       .from("messages")
       .select("*")

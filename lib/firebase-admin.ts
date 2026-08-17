@@ -11,6 +11,9 @@ type FcmPayload = {
   title: string;
   body: string;
   data: Record<string, string>;
+  channelId?: string;
+  collapseKey?: string;
+  notification?: boolean;
 };
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
@@ -24,31 +27,38 @@ export async function sendFcmMessage(payload: FcmPayload) {
   if (!credentials) throw new Error("FIREBASE_NOT_CONFIGURED");
 
   const accessToken = await getAccessToken(credentials);
+  const message = {
+    token: payload.token,
+    ...(payload.notification === false ? {} : {
+      notification: {
+        title: payload.title,
+        body: payload.body,
+      },
+    }),
+    data: {
+      ...payload.data,
+      title: payload.title,
+      body: payload.body,
+      channelId: payload.channelId ?? "incoming_calls",
+    },
+    android: {
+      priority: "HIGH",
+      collapse_key: payload.collapseKey,
+      notification: payload.notification === false ? undefined : {
+        channel_id: payload.channelId ?? "incoming_calls",
+        sound: "default",
+        tag: payload.data.callId ? `call:${payload.data.callId}` : payload.data.messageId ? `message:${payload.data.messageId}` : undefined,
+      },
+    },
+  };
+
   const response = await fetch(`https://fcm.googleapis.com/v1/projects/${credentials.projectId}/messages:send`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      message: {
-        token: payload.token,
-        notification: {
-          title: payload.title,
-          body: payload.body,
-        },
-        data: payload.data,
-        android: {
-          priority: "HIGH",
-          notification: {
-            channel_id: "incoming_calls",
-            sound: "default",
-            tag: payload.data.callId ? `call:${payload.data.callId}` : undefined,
-            click_action: "OPEN_CALL",
-          },
-        },
-      },
-    }),
+    body: JSON.stringify({ message }),
   });
 
   const result = await response.json().catch(() => ({})) as { error?: { status?: string; message?: string } };

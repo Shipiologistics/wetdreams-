@@ -37,6 +37,15 @@ export function NativeAppBridge() {
         sound: "default",
         vibration: true,
       });
+      await PushNotifications.createChannel({
+        id: "messages",
+        name: "Messages",
+        description: "WetDreams chat message alerts",
+        importance: 4,
+        visibility: 1,
+        sound: "default",
+        vibration: true,
+      });
       await PushNotifications.register();
     }
 
@@ -56,6 +65,11 @@ export function NativeAppBridge() {
     });
 
     const actionPerformed = PushNotifications.addListener("pushNotificationActionPerformed", ({ notification }) => {
+      const url = typeof notification.data?.url === "string" ? notification.data.url : null;
+      if (url?.startsWith("/")) {
+        router.push(url);
+        return;
+      }
       const roomId = typeof notification.data?.roomId === "string" ? notification.data.roomId : null;
       if (roomId) router.push(`/chat/${roomId}`);
     });

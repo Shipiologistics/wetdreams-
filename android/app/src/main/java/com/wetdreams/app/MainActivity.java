@@ -1,6 +1,7 @@
 package com.wetdreams.app;
 
 import android.Manifest;
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import androidx.core.app.ActivityCompat;
@@ -13,6 +14,14 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestAppPermissions();
+        openTargetUrl(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        openTargetUrl(intent);
     }
 
     private void requestAppPermissions() {
@@ -37,5 +46,22 @@ public class MainActivity extends BridgeActivity {
             },
             WETDREAMS_PERMISSION_REQUEST
         );
+    }
+
+    private void openTargetUrl(Intent intent) {
+        if (intent == null || getBridge() == null || getBridge().getWebView() == null) {
+            return;
+        }
+
+        String targetUrl = intent.getStringExtra("target_url");
+        if (targetUrl == null) {
+            targetUrl = intent.getDataString();
+        }
+        if (targetUrl == null || !targetUrl.startsWith("https://wetdreams.vercel.app/")) {
+            return;
+        }
+
+        final String url = targetUrl;
+        getBridge().getWebView().post(() -> getBridge().getWebView().loadUrl(url));
     }
 }
