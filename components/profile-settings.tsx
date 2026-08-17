@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { FormEvent, PointerEvent as ReactPointerEvent } from "react";
+import type { FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -33,8 +33,8 @@ import { formatLocation, parseLocation } from "@/lib/location-options";
 import { messageForError } from "@/lib/format";
 import { cropSquareImage, uploadProfileMedia } from "@/lib/profile-media-upload";
 import { LocationSelects } from "@/components/location-selects";
+import { ImageCropPreview, type CropState } from "@/components/image-crop-preview";
 
-type CropState = { zoom: number; x: number; y: number; rotation: number };
 type SelectedMedia = { id: string; file: File; previewUrl: string; crop: CropState };
 
 export function ProfileSettings({
@@ -59,7 +59,6 @@ export function ProfileSettings({
   const [loadingEditor, setLoadingEditor] = useState<string | null>(null);
   const [cropMode, setCropMode] = useState(false);
   const mediaPreviewUrlsRef = useRef<string[]>([]);
-  const cropDragRef = useRef<{ pointerId: number; startX: number; startY: number; cropX: number; cropY: number; size: number } | null>(null);
   const initialLocation = parseLocation(profile.location);
   const [locationState, setLocationState] = useState(initialLocation.state);
   const [locationCity, setLocationCity] = useState(initialLocation.city);
@@ -339,37 +338,6 @@ export function ProfileSettings({
     }));
   }
 
-  function startCropDrag(event: ReactPointerEvent<HTMLDivElement>) {
-    if (!activeMedia?.file.type.startsWith("image/") || !cropMode) return;
-    const rect = event.currentTarget.getBoundingClientRect();
-    cropDragRef.current = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      cropX: activeMedia.crop.x,
-      cropY: activeMedia.crop.y,
-      size: Math.max(1, rect.width),
-    };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  }
-
-  function moveCropDrag(event: ReactPointerEvent<HTMLDivElement>) {
-    const drag = cropDragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    const sensitivity = 100 / drag.size;
-    updateActiveCrop((current) => ({
-      ...current,
-      x: clamp(drag.cropX + (event.clientX - drag.startX) * sensitivity, -50, 50),
-      y: clamp(drag.cropY + (event.clientY - drag.startY) * sensitivity, -50, 50),
-    }));
-  }
-
-  function endCropDrag(event: ReactPointerEvent<HTMLDivElement>) {
-    if (cropDragRef.current?.pointerId !== event.pointerId) return;
-    event.currentTarget.releasePointerCapture(event.pointerId);
-    cropDragRef.current = null;
-  }
-
   return (
     <div className="page-shell profile-page">
       <header className="page-header app-page-header">
@@ -509,29 +477,19 @@ export function ProfileSettings({
             <div className="modal-header"><div><span className="eyebrow">Profile gallery</span><h2 id="media-title">{editingMedia ? "Edit image" : "Add media"}</h2></div><button className="icon-button" type="button" title="Close" onClick={closeMediaModal}><X size={20} /></button></div>
             {activeMedia ? (
               <div className="upload-preview-card">
-                <div
-                  className={`square-media-preview ${activeMedia.file.type.startsWith("image/") && cropMode ? "is-draggable is-adjusting" : ""}`}
-                  onPointerDown={startCropDrag}
-                  onPointerMove={moveCropDrag}
-                  onPointerUp={endCropDrag}
-                  onPointerCancel={endCropDrag}
-                >
-                  {activeMedia.file.type.startsWith("image/")
-                    ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={activeMedia.previewUrl}
-                        alt="Selected media preview"
-                        draggable={false}
-                        style={{
-                          objectPosition: `${50 - activeMedia.crop.x}% ${50 - activeMedia.crop.y}%`,
-                          transform: `scale(${activeMedia.crop.zoom}) rotate(${activeMedia.crop.rotation}deg)`,
-                        }}
-                      />
-                    )
-                    : <video src={activeMedia.previewUrl} muted playsInline controls />}
-                  {activeMedia.file.type.startsWith("image/") && cropMode && <span className="crop-frame" aria-hidden="true" />}
-                </div>
+                {activeMedia.file.type.startsWith("image/") ? (
+                  <ImageCropPreview
+                    src={activeMedia.previewUrl}
+                    alt="Selected media preview"
+                    crop={activeMedia.crop}
+                    adjusting={cropMode}
+                    onChange={updateActiveCrop}
+                  />
+                ) : (
+                  <div className="square-media-preview">
+                    <video src={activeMedia.previewUrl} muted playsInline controls />
+                  </div>
+                )}
                 <div className="upload-preview-meta">
                   <strong>{editingMedia ? "Adjust crop and rotation" : activeMedia.file.name}</strong>
                   {selectedMedia.length > 1 && <span>{activeMediaIndex + 1}/{selectedMedia.length}</span>}
@@ -624,10 +582,6 @@ export function ProfileSettings({
 
 function splitList(value: string) {
   return value.split(",").map((item) => item.trim()).filter(Boolean).slice(0, 12);
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
 }
 
 async function fileFromUrl(url: string, name: string) {

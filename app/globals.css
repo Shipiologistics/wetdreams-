@@ -3913,6 +3913,17 @@ body:has(.side-nav) .global-back-button-fixed {
   object-fit: cover;
 }
 
+.square-media-preview .crop-image-preview {
+  position: absolute;
+  display: block;
+  max-width: none;
+  max-height: none;
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+  will-change: left, top, width, height, transform;
+}
+
 .square-media-preview img {
   object-position: var(--crop-object-x) var(--crop-object-y);
   transform: scale(var(--crop-zoom)) rotate(var(--crop-rotation, 0deg));
@@ -3950,6 +3961,15 @@ body:has(.side-nav) .global-back-button-fixed {
   display: grid;
   grid-template-columns: repeat(4, 42px) minmax(0, 1fr);
   gap: 8px;
+}
+
+.profile-image-adjust-card {
+  display: grid;
+  gap: 10px;
+}
+
+.profile-image-crop-toolbar {
+  grid-template-columns: repeat(4, 1fr);
 }
 
 .selected-media-strip {
