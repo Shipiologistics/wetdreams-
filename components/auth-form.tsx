@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import type { FormEvent } from "react";
+import { Capacitor } from "@capacitor/core";
 import { ArrowRight, LoaderCircle, Mail, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getOrCreateDeviceId, registerCurrentDevice } from "@/lib/device-id";
@@ -25,6 +26,7 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
   const [signupCity, setSignupCity] = useState("");
   const [signupGender, setSignupGender] = useState<"male" | "female" | "">("");
   const [requiredScope, setRequiredScope] = useState<"guest" | "signup" | null>(null);
+  const isNativeApp = useNativeAppFlag();
 
   async function finish() {
     if (onSuccess) {
@@ -159,25 +161,27 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
       <div className="auth-panel-heading compact">
         <span className="auth-kicker">WetDreams access</span>
         <h2>{mode === "signup" ? "Create account" : "Welcome back"}</h2>
-        <p>{mode === "signup" ? "Register with any email." : "Continue as guest or login."}</p>
+        <p>{mode === "signup" ? "Register with any email." : isNativeApp === false ? "Continue as guest or login." : "Login with your email."}</p>
       </div>
 
-      <div className="auth-guest-card">
-        <div>
-          <span>Fast start</span>
-          <strong>Guest sign in</strong>
+      {isNativeApp === false && (
+        <div className="auth-guest-card">
+          <div>
+            <span>Fast start</span>
+            <strong>Guest sign in</strong>
+          </div>
+          <div className={requiredScope === "guest" ? "field-error" : undefined}>
+            <LocationSelects state={guestState} city={guestCity} onStateChange={setGuestState} onCityChange={setGuestCity} required={false} />
+          </div>
+          {requiredScope === "guest" && <p className="field-required-message">Location required</p>}
+          <button className="button primary wide" type="button" onClick={continueAsGuest} disabled={!!pending}>
+            {pending === "guest" ? <LoaderCircle className="spin" size={19} /> : <UserRound size={19} />}
+            Continue as guest
+          </button>
         </div>
-        <div className={requiredScope === "guest" ? "field-error" : undefined}>
-          <LocationSelects state={guestState} city={guestCity} onStateChange={setGuestState} onCityChange={setGuestCity} required={false} />
-        </div>
-        {requiredScope === "guest" && <p className="field-required-message">Location required</p>}
-        <button className="button primary wide" type="button" onClick={continueAsGuest} disabled={!!pending}>
-          {pending === "guest" ? <LoaderCircle className="spin" size={19} /> : <UserRound size={19} />}
-          Continue as guest
-        </button>
-      </div>
+      )}
 
-      <div className="auth-divider"><span>{mode === "login" ? "or login" : "or register"}</span></div>
+      {isNativeApp === false && <div className="auth-divider"><span>{mode === "login" ? "or login" : "or register"}</span></div>}
 
       <div className="auth-tabs" role="tablist" aria-label="Email access">
         <button className={mode === "login" ? "active" : ""} type="button" onClick={() => { setMode("login"); setError(null); setNotice(null); setRequiredScope(null); }}>
@@ -257,4 +261,21 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
       </button>
     </div>
   );
+}
+
+function useNativeAppFlag() {
+  return useSyncExternalStore(subscribeNativeAppFlag, getNativeAppFlag, getServerNativeAppFlag);
+}
+
+function subscribeNativeAppFlag(onStoreChange: () => void) {
+  const timeout = window.setTimeout(onStoreChange, 0);
+  return () => window.clearTimeout(timeout);
+}
+
+function getNativeAppFlag() {
+  return Capacitor.isNativePlatform();
+}
+
+function getServerNativeAppFlag() {
+  return null;
 }
