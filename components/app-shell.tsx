@@ -43,6 +43,7 @@ export function AppShell({
     coins: number;
     location: string | null;
     isGuest: boolean;
+    requiresLocation: boolean;
     requiresProfileImage: boolean;
   };
 }) {
@@ -91,7 +92,7 @@ export function AppShell({
   return (
     <div className="app-frame">
       <DeviceRegistrar />
-      <LocationGate required={!viewer.location?.trim()} />
+      <LocationGate required={viewer.requiresLocation} />
       <ProfileImageGate required={viewer.requiresProfileImage} />
       <aside className="side-nav">
         <Logo />

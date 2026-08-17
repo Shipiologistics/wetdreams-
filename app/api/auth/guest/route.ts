@@ -45,10 +45,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!mappedUserId && !location) {
-    return NextResponse.json({ error: "LOCATION_REQUIRED" }, { status: 400 });
-  }
-
   let userId: string;
   try {
     userId = mappedUserId ?? await createGuestUser(admin, email, password);
@@ -66,9 +62,6 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
 
   if (profileError) return NextResponse.json({ error: profileError.message }, { status: 500 });
-  if (!location && !profile?.location) {
-    return NextResponse.json({ error: "LOCATION_REQUIRED" }, { status: 400 });
-  }
 
   const now = new Date().toISOString();
   const { error: userError } = await admin

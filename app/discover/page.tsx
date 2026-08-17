@@ -113,6 +113,7 @@ export default async function DiscoverPage() {
         coins: Number(viewer.wallet.coins_balance),
         location: viewer.profile.location,
         isGuest: viewer.account.is_guest,
+        requiresLocation: !viewer.account.is_guest && !viewer.profile.location?.trim(),
         requiresProfileImage: viewer.account.role === "user"
           && !viewer.account.is_guest
           && viewer.account.gender === "female"

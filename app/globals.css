@@ -705,6 +705,65 @@ body:has(.side-nav) .global-back-button-fixed {
   gap: 12px;
 }
 
+.quick-start-panel {
+  overflow: hidden;
+}
+
+.quick-start-button {
+  width: 100%;
+  min-height: 68px;
+  border: 0;
+  border-radius: 999px;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 48px;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(90deg, #20e4bd, #19cce5);
+  color: #062e31;
+  padding: 10px 14px;
+  box-shadow: 0 18px 34px rgb(18 201 205 / 28%);
+}
+
+.quick-start-button span {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: white;
+  color: #111;
+}
+
+.quick-start-button strong {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.quick-start-button:disabled {
+  opacity: 0.72;
+}
+
+.auth-register-entry {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 800;
+  margin-top: 12px;
+}
+
+.auth-register-entry:hover {
+  border-color: var(--teal);
+  color: var(--teal);
+}
+
 .auth-guest-card {
   display: grid;
   gap: 12px;
@@ -888,6 +947,162 @@ body:has(.side-nav) .global-back-button-fixed {
   color: var(--teal);
   font-size: 13px;
   font-weight: 700;
+}
+
+.auth-step-backdrop {
+  z-index: 70;
+}
+
+.auth-step-modal {
+  width: min(520px, calc(100vw - 26px));
+  max-height: min(760px, calc(100dvh - 24px));
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border-radius: 18px;
+  overflow-y: auto;
+}
+
+.auth-step-topbar {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.auth-step-title {
+  text-align: center;
+}
+
+.auth-step-title strong {
+  display: block;
+  color: #16cbe5;
+  font-size: clamp(28px, 8vw, 42px);
+  line-height: 1.05;
+}
+
+.auth-step-title h2 {
+  margin: 5px 0 0;
+  color: #070807;
+  font-size: clamp(34px, 9vw, 48px);
+  line-height: 1.03;
+}
+
+.signup-gender-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.signup-gender-cards button {
+  min-height: 164px;
+  border: 2px solid transparent;
+  border-radius: 20px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 12px;
+  background: #f1fbfb;
+  color: #20bfd2;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.signup-gender-cards button.female {
+  background: #fff4fb;
+  color: #d890bf;
+}
+
+.signup-gender-cards button.active {
+  border-color: #1fd2df;
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 80%);
+}
+
+.signup-gender-cards button.active.female {
+  border-color: #ed86c6;
+}
+
+.signup-gender-cards.field-error button,
+.step-field.field-error input {
+  border-color: #d92d42;
+  background: #fff5f6;
+}
+
+.step-field {
+  min-height: 72px;
+  border-radius: 16px;
+  display: grid;
+  grid-template-columns: minmax(92px, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  background: #f4f4f4;
+  color: #1c1f1d;
+  padding: 0 18px;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.step-field input {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: #111;
+  font-size: 20px;
+  font-weight: 700;
+  text-align: right;
+  outline: none;
+}
+
+.auth-step-modal .location-select-grid {
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.auth-step-modal .location-select-grid select,
+.auth-step-modal .location-custom-city input {
+  min-height: 58px;
+  border-radius: 16px;
+  background: #f4f4f4;
+  font-size: 16px;
+}
+
+.step-tip-card {
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f4f4f4;
+  padding: 14px 16px;
+  color: var(--muted);
+}
+
+.step-tip-card svg {
+  color: #18cfe1;
+  flex: 0 0 auto;
+}
+
+.step-tip-card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.button.primary.step-next-button {
+  min-height: 64px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #20e4bd, #19cce5);
+  color: white;
+  font-size: 22px;
+  box-shadow: 0 18px 34px rgb(18 201 205 / 24%);
+}
+
+.button.primary.step-next-button:hover:not(:disabled) {
+  background: linear-gradient(90deg, #18d7af, #12bed8);
 }
 
 .quick-auth-actions {
@@ -4516,6 +4731,52 @@ body:has(.side-nav) .global-back-button-fixed {
   .auth-panel,
   .auth-panel-stack { width: 100%; margin: 0; }
   .auth-panel { padding: 20px; }
+  .quick-start-panel {
+    border-radius: 22px 22px 8px 8px;
+  }
+  .quick-start-button {
+    min-height: 64px;
+    grid-template-columns: 46px minmax(0, 1fr) 22px;
+  }
+  .quick-start-button span {
+    width: 46px;
+    height: 46px;
+  }
+  .auth-step-backdrop {
+    align-items: stretch;
+    background: white;
+    padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+  }
+  .auth-step-modal {
+    width: 100%;
+    max-height: none;
+    min-height: calc(100dvh - max(24px, env(safe-area-inset-top)) - max(24px, env(safe-area-inset-bottom)));
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 8px 8px 22px;
+  }
+  .signup-gender-cards {
+    gap: 10px;
+  }
+  .signup-gender-cards button {
+    min-height: 148px;
+    border-radius: 18px;
+  }
+  .step-field {
+    min-height: 68px;
+    border-radius: 14px;
+    grid-template-columns: minmax(86px, auto) minmax(0, 1fr);
+    padding: 0 16px;
+    font-size: 17px;
+  }
+  .step-field input {
+    font-size: 18px;
+  }
+  .button.primary.step-next-button {
+    margin-top: auto;
+    margin-bottom: 10px;
+  }
   .auth-background { object-position: 58% center; }
   .legal-page { padding: 20px 12px 34px; }
   .legal-topbar { margin-bottom: 14px; }
