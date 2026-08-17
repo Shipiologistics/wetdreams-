@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   BadgeIndianRupee,
@@ -35,7 +36,10 @@ type BlockEvent = Database["public"]["Tables"]["block_events"]["Row"];
 type PlatformConfig = Database["public"]["Tables"]["platform_config"]["Row"];
 type VisitorSession = Database["public"]["Tables"]["visitor_sessions"]["Row"];
 type Wallet = Database["public"]["Tables"]["wallets"]["Row"];
+type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+type ProfileMedia = Database["public"]["Tables"]["profile_media"]["Row"];
 type Section = "overview" | "visitors" | "reports" | "hosts" | "users" | "blocks" | "withdrawals" | "settings" | "audit";
+type GenderFilter = "all" | "male" | "female";
 
 function withdrawalStatusLabel(status: string) {
   if (status === "paid" || status === "approved") return "complete";
@@ -77,6 +81,8 @@ export function AdminDashboard({
   visitors,
   wallets,
   hostRequests,
+  profiles,
+  media,
 }: {
   reports: Report[];
   users: User[];
@@ -88,12 +94,16 @@ export function AdminDashboard({
   visitors: VisitorSession[];
   wallets: Wallet[];
   hostRequests: HostRequest[];
+  profiles: Profile[];
+  media: ProfileMedia[];
 }) {
   const router = useRouter();
   const [section, setSection] = useState<Section>("overview");
   const [search, setSearch] = useState("");
   const [pending, setPending] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [genderFilter, setGenderFilter] = useState<GenderFilter>("all");
+  const [profileViewer, setProfileViewer] = useState<User | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [settingsDraft, setSettingsDraft] = useState(() => ({
     bean_inr_value: String(configNumber(platformConfig, "bean_inr_value", 0.8)),
@@ -111,6 +121,19 @@ export function AdminDashboard({
 
   const userMap = useMemo(() => new Map(users.map((user) => [user.id, user])), [users]);
   const walletMap = useMemo(() => new Map(wallets.map((wallet) => [wallet.user_id, wallet])), [wallets]);
+  const profileMap = useMemo(() => new Map(profiles.map((profile) => [profile.user_id, profile])), [profiles]);
+  const mediaMap = useMemo(() => {
+    const map = new Map<string, ProfileMedia[]>();
+    for (const item of media) {
+      const current = map.get(item.user_id) ?? [];
+      current.push(item);
+      map.set(item.user_id, current);
+    }
+    for (const items of map.values()) {
+      items.sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || a.position - b.position);
+    }
+    return map;
+  }, [media]);
   const liveCutoff = now - 5 * 60 * 1000;
   const liveVisitors = visitors.filter((visitor) => visitor.presence === "online" && new Date(visitor.last_seen_at).getTime() >= liveCutoff);
   const openReports = reports.filter((report) => ["open", "reviewing"].includes(report.status)).length;
@@ -118,9 +141,11 @@ export function AdminDashboard({
   const pendingHostRequests = hostRequests.filter((request) => request.status === "pending").length;
   const pendingApprovals = users.filter((user) => user.role === "user" && !user.is_guest && !user.is_verified && !user.is_banned).length;
   const bannedUsers = users.filter((user) => user.is_banned).length;
-  const filteredUsers = users.filter((user) =>
-    `${user.display_name} ${user.username} ${user.role}`.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch = `${user.display_name} ${user.username} ${user.role} ${user.gender ?? ""}`.toLowerCase().includes(search.toLowerCase());
+    const matchesGender = genderFilter === "all" || user.gender === genderFilter;
+    return matchesSearch && matchesGender;
+  });
 
   async function run(id: string, operation: () => Promise<{ error: { message: string } | null }>) {
     setPending(id);
@@ -327,14 +352,21 @@ export function AdminDashboard({
                     {request.note && <p className="admin-note">Note: {request.note}</p>}
                     {request.admin_notes && <p className="admin-note">Admin: {request.admin_notes}</p>}
                   </div>
-                  {request.status === "pending" && (
-                    <div className="admin-row-actions">
+                  <div className="admin-row-actions">
+                    {user && (
+                      <button className="button secondary small" type="button" onClick={() => setProfileViewer(user)}>
+                        <Eye size={16} /> View profile
+                      </button>
+                    )}
+                    {request.status === "pending" && (
+                      <>
                       <button className="button secondary small" disabled={pending === `host-${request.id}`} onClick={() => reviewHostRequest(request, false)}><X size={16} /> Reject</button>
                       <button className="button primary small" disabled={pending === `host-${request.id}`} onClick={() => reviewHostRequest(request, true)}>
                         {pending === `host-${request.id}` ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />} Approve
                       </button>
-                    </div>
-                  )}
+                      </>
+                    )}
+                  </div>
                 </article>
               );
             })}
@@ -344,7 +376,21 @@ export function AdminDashboard({
 
         {section === "users" && (
           <>
-            <label className="search-field admin-search"><Search size={18} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search accounts" /></label>
+            <div className="admin-filter-row">
+              <label className="search-field admin-search"><Search size={18} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search accounts" /></label>
+              <div className="admin-segmented" aria-label="Filter users by gender">
+                {(["all", "male", "female"] as const).map((value) => (
+                  <button
+                    className={clsx(genderFilter === value && "active")}
+                    key={value}
+                    type="button"
+                    onClick={() => setGenderFilter(value)}
+                  >
+                    {value === "all" ? "All" : value}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="admin-list">
               {filteredUsers.map((user) => {
                 const wallet = walletMap.get(user.id);
@@ -366,6 +412,7 @@ export function AdminDashboard({
                       </dl>
                     </div>
                     <div className="admin-row-actions">
+                      <button className="button secondary small" type="button" onClick={() => setProfileViewer(user)}><Eye size={16} /> View profile</button>
                       <button className="button secondary small" onClick={() => adjustWallet(user)}><BadgeIndianRupee size={16} /> Wallet</button>
                       {user.role === "user" && !user.is_guest && (
                         <button className="button secondary small" disabled={pending === `verify-${user.id}`} onClick={() => toggleVerification(user)}>
@@ -378,6 +425,7 @@ export function AdminDashboard({
                   </article>
                 );
               })}
+              {!filteredUsers.length && <div className="inline-empty">No users match this filter.</div>}
             </div>
           </>
         )}
@@ -466,7 +514,138 @@ export function AdminDashboard({
             {!actions.length && <div className="inline-empty">No admin actions yet.</div>}
           </div>
         )}
+
+        {profileViewer && (
+          <AdminProfileModal
+            user={profileViewer}
+            profile={profileMap.get(profileViewer.id) ?? null}
+            media={mediaMap.get(profileViewer.id) ?? []}
+            wallet={walletMap.get(profileViewer.id) ?? null}
+            pending={pending}
+            onClose={() => setProfileViewer(null)}
+            onAdjustWallet={adjustWallet}
+            onToggleBan={toggleBan}
+            onToggleVerification={toggleVerification}
+          />
+        )}
       </main>
+    </div>
+  );
+}
+
+function AdminProfileModal({
+  user,
+  profile,
+  media,
+  wallet,
+  pending,
+  onClose,
+  onAdjustWallet,
+  onToggleBan,
+  onToggleVerification,
+}: {
+  user: User;
+  profile: Profile | null;
+  media: ProfileMedia[];
+  wallet: Wallet | null;
+  pending: string | null;
+  onClose: () => void;
+  onAdjustWallet: (user: User) => void;
+  onToggleBan: (user: User) => void;
+  onToggleVerification: (user: User) => void;
+}) {
+  const primaryMedia = media[0];
+
+  return (
+    <div className="modal-backdrop admin-modal-backdrop" role="presentation" onMouseDown={onClose}>
+      <section className="modal admin-profile-modal" role="dialog" aria-modal="true" aria-label={`${user.display_name} profile`} onMouseDown={(event) => event.stopPropagation()}>
+        <div className="modal-header">
+          <div>
+            <span className="eyebrow">Profile review</span>
+            <h2>{user.display_name}</h2>
+          </div>
+          <button className="icon-button" type="button" onClick={onClose} aria-label="Close profile review">
+            <X size={22} />
+          </button>
+        </div>
+
+        <div className="admin-profile-review-grid">
+          <div className="admin-profile-media-preview">
+            {primaryMedia ? (
+              primaryMedia.media_type === "video" ? (
+                <video src={primaryMedia.cloudinary_url} controls playsInline />
+              ) : (
+                <Image src={primaryMedia.cloudinary_url} alt={`${user.display_name} profile image`} fill sizes="(max-width: 760px) 92vw, 360px" />
+              )
+            ) : (
+              <div className="admin-profile-empty-media">No profile image</div>
+            )}
+          </div>
+
+          <div className="admin-profile-review-main">
+            <div className="admin-profile-status-row">
+              <span className={`status-label ${user.is_banned ? "rejected" : "resolved"}`}>{user.is_banned ? "suspended" : "active"}</span>
+              {user.role === "user" && !user.is_guest && (
+                <span className={`status-label ${user.is_verified ? "approved" : "pending"}`}>
+                  {user.is_verified ? "discover approved" : "verification pending"}
+                </span>
+              )}
+            </div>
+            <h3>@{user.username}</h3>
+            <p>{profile?.bio || "No bio added yet."}</p>
+
+            <dl className="admin-profile-facts">
+              <div><dt>Gender</dt><dd>{user.gender ?? "unknown"}</dd></div>
+              <div><dt>Age</dt><dd>{profile?.age ?? "not added"}</dd></div>
+              <div><dt>Location</dt><dd>{profile?.location ?? "not added"}</dd></div>
+              <div><dt>Status</dt><dd>{user.status}</dd></div>
+              <div><dt>Chat rate</dt><dd>{profile ? `${formatMoney(profile.chat_rate_coins)} coins/min` : "not set"}</dd></div>
+              <div><dt>Voice rate</dt><dd>{profile ? `${formatMoney(profile.audio_call_rate_coins)} coins/min` : "not set"}</dd></div>
+              <div><dt>Video rate</dt><dd>{profile ? `${formatMoney(profile.video_call_rate_coins)} coins/min` : "not set"}</dd></div>
+              <div><dt>Media</dt><dd>{media.length}/10</dd></div>
+              <div><dt>Coins</dt><dd>{formatMoney(wallet?.coins_balance ?? 0)}</dd></div>
+              <div><dt>Beans</dt><dd>{formatMoney(wallet?.beans_balance ?? 0)}</dd></div>
+              <div><dt>Joined</dt><dd>{formatRelativeTime(user.created_at)}</dd></div>
+              <div><dt>Last seen</dt><dd>{user.last_seen ? formatRelativeTime(user.last_seen) : "never"}</dd></div>
+            </dl>
+
+            <div className="admin-profile-chip-list">
+              {(profile?.languages ?? []).map((language) => <span key={`language-${language}`}>{language}</span>)}
+              {(profile?.tags ?? []).map((tag) => <span key={`tag-${tag}`}>{tag}</span>)}
+              {!(profile?.languages?.length || profile?.tags?.length) && <span>No tags or languages</span>}
+            </div>
+          </div>
+        </div>
+
+        {media.length > 1 && (
+          <div className="admin-profile-gallery" aria-label="Profile gallery">
+            {media.map((item) => (
+              <div className="admin-profile-thumb" key={item.id}>
+                {item.media_type === "video" ? (
+                  <video src={item.cloudinary_url} muted playsInline />
+                ) : (
+                  <Image src={item.cloudinary_url} alt={`${user.display_name} gallery media`} fill sizes="96px" />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="admin-profile-actions">
+          <button className="button secondary" type="button" onClick={() => onAdjustWallet(user)}><BadgeIndianRupee size={17} /> Wallet</button>
+          {user.role === "user" && !user.is_guest && (
+            <button className="button primary" disabled={pending === `verify-${user.id}`} type="button" onClick={() => onToggleVerification(user)}>
+              {pending === `verify-${user.id}` ? <LoaderCircle className="spin" size={17} /> : <Check size={17} />}
+              {user.is_verified ? "Hide from Discover" : "Approve for Discover"}
+            </button>
+          )}
+          {user.role !== "admin" && (
+            <button className="button danger" type="button" onClick={() => onToggleBan(user)}>
+              <Ban size={17} /> {user.is_banned ? "Restore account" : "Suspend account"}
+            </button>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

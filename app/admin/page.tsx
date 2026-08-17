@@ -20,6 +20,8 @@ export default async function AdminPage() {
     { data: visitors },
     { data: wallets },
     { data: hostRequests },
+    { data: profiles },
+    { data: media },
   ] = await Promise.all([
     supabase.from("reports").select("*").order("created_at", { ascending: false }),
     supabase.from("users").select("*").order("created_at", { ascending: false }),
@@ -31,6 +33,8 @@ export default async function AdminPage() {
     supabase.from("visitor_sessions").select("*").order("last_seen_at", { ascending: false }).limit(300),
     supabase.from("wallets").select("*"),
     supabase.from("host_requests").select("*").order("created_at", { ascending: false }),
+    supabase.from("profiles").select("*"),
+    supabase.from("profile_media").select("*").order("position", { ascending: true }),
   ]);
 
   return (
@@ -45,6 +49,8 @@ export default async function AdminPage() {
       visitors={visitors ?? []}
       wallets={wallets ?? []}
       hostRequests={hostRequests ?? []}
+      profiles={profiles ?? []}
+      media={media ?? []}
     />
   );
 }
