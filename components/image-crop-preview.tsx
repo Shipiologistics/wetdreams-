@@ -20,6 +20,7 @@ export function ImageCropPreview({ src, crop, onChange, adjusting, alt }: ImageC
   function startDrag(event: ReactPointerEvent<HTMLDivElement>) {
     if (!adjusting) return;
     const rect = event.currentTarget.getBoundingClientRect();
+    const dragZoom = Math.max(crop.zoom, 1.18);
     dragRef.current = {
       pointerId: event.pointerId,
       startX: event.clientX,
@@ -28,6 +29,9 @@ export function ImageCropPreview({ src, crop, onChange, adjusting, alt }: ImageC
       cropY: crop.y,
       size: Math.max(1, rect.width),
     };
+    if (crop.zoom < dragZoom) {
+      onChange((current) => ({ ...current, zoom: Math.max(current.zoom, dragZoom) }));
+    }
     event.currentTarget.setPointerCapture(event.pointerId);
     event.preventDefault();
   }
