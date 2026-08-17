@@ -601,6 +601,10 @@ body:has(.side-nav) .global-back-button-fixed {
   margin-bottom: 26px;
 }
 
+.page-header > div:first-child {
+  min-width: 0;
+}
+
 .app-page-header {
   border-bottom: 1px solid var(--line);
   padding-bottom: 16px;
@@ -5134,7 +5138,7 @@ body:has(.side-nav) .global-back-button-fixed {
   }
   .mobile-notifications {
     position: fixed;
-    top: max(10px, calc(env(safe-area-inset-top) + 8px));
+    top: max(12px, calc(env(safe-area-inset-top) + 10px));
     right: 12px;
     z-index: 70;
     display: block;
@@ -5163,7 +5167,30 @@ body:has(.side-nav) .global-back-button-fixed {
     border-bottom: 1px solid var(--line);
     background: rgb(247 246 242 / 96%);
     backdrop-filter: blur(12px);
-    padding: max(18px, env(safe-area-inset-top)) 16px 14px;
+    padding: max(18px, env(safe-area-inset-top)) 64px 14px 16px;
+    gap: 12px;
+  }
+  .app-frame .page-header .eyebrow {
+    display: block;
+    max-width: 100%;
+  }
+  .app-frame .page-header > div:first-child {
+    flex: 1 1 auto;
+  }
+  .app-frame .page-header .header-balance {
+    flex: 0 0 auto;
+    min-width: 42px;
+    max-width: 52px;
+    padding-left: 8px;
+  }
+  .app-frame .page-header .header-balance span {
+    font-size: 9px;
+  }
+  .app-frame .page-header .header-balance strong {
+    font-size: 18px;
+    line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .page-header { min-height: 62px; margin-bottom: 20px; }
   .app-page-header {
