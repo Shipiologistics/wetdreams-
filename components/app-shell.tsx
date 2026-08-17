@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -297,16 +298,49 @@ export function AppShell({
 function MobileHeaderNotifications({
   viewerId,
   notifications,
+  pathname,
+  pendingHref,
 }: {
   viewerId: string;
   notifications: AppNotification[];
   pathname: string;
   pendingHref: string | null;
 }) {
-  return (
+  const [headerTarget, setHeaderTarget] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const appMain = document.querySelector<HTMLElement>(".app-main");
+    let frame = 0;
+    let timeout = 0;
+
+    function syncHeaderTarget() {
+      const nextTarget = document.querySelector<HTMLElement>(".app-main .chat-header, .app-main .page-header");
+      setHeaderTarget(nextTarget);
+    }
+
+    const observer = appMain ? new MutationObserver(() => {
+      frame = window.requestAnimationFrame(syncHeaderTarget);
+    }) : null;
+
+    timeout = window.setTimeout(() => {
+      syncHeaderTarget();
+      observer?.observe(appMain!, { childList: true, subtree: true });
+    }, 500);
+
+    return () => {
+      window.clearTimeout(timeout);
+      window.cancelAnimationFrame(frame);
+      observer?.disconnect();
+    };
+  }, [pathname, pendingHref]);
+
+  if (!headerTarget) return null;
+
+  return createPortal(
     <div className="mobile-header-notifications">
       <NotificationsBell viewerId={viewerId} initialNotifications={notifications} />
-    </div>
+    </div>,
+    headerTarget,
   );
 }
 
