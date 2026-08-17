@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { authenticateApiRequest } from "@/lib/api-auth";
 import { createServiceClient } from "@/lib/supabase/service";
 import { firebaseConfigured, sendFcmMessage } from "@/lib/firebase-admin";
 
@@ -9,10 +9,9 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null) as { callId?: string } | null;
   if (!body?.callId) return Response.json({ error: "CALL_REQUIRED" }, { status: 400 });
 
-  const userClient = await createClient();
-  const { data: claims } = await userClient.auth.getClaims();
-  const callerId = claims?.claims?.sub;
-  if (!callerId) return Response.json({ error: "AUTH_REQUIRED" }, { status: 401 });
+  const auth = await authenticateApiRequest(request);
+  if (!auth.authenticated) return Response.json({ error: "AUTH_REQUIRED" }, { status: 401 });
+  const callerId = auth.userId;
 
   const admin = createServiceClient();
   const { data: call, error: callError } = await admin

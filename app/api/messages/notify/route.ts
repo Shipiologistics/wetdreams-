@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { authenticateApiRequest } from "@/lib/api-auth";
 import { createServiceClient } from "@/lib/supabase/service";
 import { firebaseConfigured, sendFcmMessage } from "@/lib/firebase-admin";
 
@@ -9,10 +9,9 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null) as { messageId?: string } | null;
   if (!body?.messageId) return Response.json({ error: "MESSAGE_REQUIRED" }, { status: 400 });
 
-  const userClient = await createClient();
-  const { data: claims } = await userClient.auth.getClaims();
-  const senderId = claims?.claims?.sub;
-  if (!senderId) return Response.json({ error: "AUTH_REQUIRED" }, { status: 401 });
+  const auth = await authenticateApiRequest(request);
+  if (!auth.authenticated) return Response.json({ error: "AUTH_REQUIRED" }, { status: 401 });
+  const senderId = auth.userId;
 
   const admin = createServiceClient();
   const { data: message, error: messageError } = await admin
@@ -66,6 +65,7 @@ export async function POST(request: Request) {
         body: bodyText,
         channelId: "messages",
         collapseKey: `room:${room.id}`,
+        notification: false,
         clickAction: "OPEN_CHAT",
         data: {
           type: "chat_message",

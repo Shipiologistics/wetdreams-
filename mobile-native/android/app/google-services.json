@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "43653118841",
+    "project_id": "wetdreams-push",
+    "storage_bucket": "wetdreams-push.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:43653118841:android:2ff5528019d35e23fe0da8",
+        "android_client_info": {
+          "package_name": "com.wetdreams.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDovHU3y7gZKPB-aApmso8FEXCn4f9IU24"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

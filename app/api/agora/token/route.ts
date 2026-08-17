@@ -1,5 +1,5 @@
 import { RtcRole, RtcTokenBuilder } from "agora-token";
-import { createClient } from "@/lib/supabase/server";
+import { authenticateApiRequest } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 
@@ -16,10 +16,9 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null) as { callId?: string } | null;
   if (!body?.callId) return Response.json({ error: "CALL_REQUIRED" }, { status: 400 });
 
-  const supabase = await createClient();
-  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
-  const userId = claimsData?.claims?.sub;
-  if (claimsError || !userId) return Response.json({ error: "AUTH_REQUIRED" }, { status: 401 });
+  const auth = await authenticateApiRequest(request);
+  if (!auth.authenticated) return Response.json({ error: "AUTH_REQUIRED" }, { status: 401 });
+  const { client: supabase, userId } = auth;
 
   const { data: call, error: callError } = await supabase
     .from("calls")
