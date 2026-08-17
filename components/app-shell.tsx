@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -83,6 +83,29 @@ export function AppShell({
   useEffect(() => {
     chatRoomIdsRef.current = chatRoomIds;
   }, [chatRoomIds]);
+
+  const refreshUnreadChatCount = useCallback(async () => {
+    const roomIds = Array.from(chatRoomIdsRef.current);
+    if (!roomIds.length) {
+      setUnreadChatCount(0);
+      return;
+    }
+
+    const { count } = await createClient()
+      .from("messages")
+      .select("id", { count: "exact", head: true })
+      .in("room_id", roomIds)
+      .neq("sender_id", viewer.id)
+      .is("read_at", null)
+      .gt("expires_at", new Date().toISOString());
+
+    setUnreadChatCount(count ?? 0);
+  }, [viewer.id]);
+
+  useEffect(() => {
+    window.addEventListener("wetdreams:refresh-unread-chats", refreshUnreadChatCount);
+    return () => window.removeEventListener("wetdreams:refresh-unread-chats", refreshUnreadChatCount);
+  }, [refreshUnreadChatCount]);
 
   useEffect(() => {
     const supabase = createClient();

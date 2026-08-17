@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -103,6 +103,19 @@ export function ChatRoom({
   const isRandomRoom = room.room_type === "random";
   const paywalled = !isRandomRoom && count >= 10 && !profile.free_chat_enabled && Number(profile.chat_rate_coins) > 0;
 
+  const markRoomRead = useCallback(async () => {
+    const { error: readError } = await createClient().rpc("mark_room_read", { p_room_id: room.id });
+    if (readError) return;
+
+    const readAt = new Date().toISOString();
+    setMessages((current) => current.map((message) => (
+      message.sender_id !== viewerId && !message.read_at
+        ? { ...message, delivered_at: message.delivered_at ?? readAt, read_at: readAt }
+        : message
+    )));
+    window.dispatchEvent(new CustomEvent("wetdreams:refresh-unread-chats"));
+  }, [room.id, viewerId]);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const callId = params.get("call");
@@ -136,6 +149,7 @@ export function ChatRoom({
   }, [room.id]);
 
   useEffect(() => {
+    let readFrame: number | null = null;
     const supabase = createClient();
     const channel = supabase
       .channel(`room:${room.id}`)
@@ -145,7 +159,7 @@ export function ChatRoom({
         (payload) => {
           const message = payload.new as Message;
           setMessages((current) => current.some((item) => item.id === message.id) ? current : [...current, message]);
-          if (message.sender_id !== viewerId) void supabase.rpc("mark_room_read", { p_room_id: room.id });
+          if (message.sender_id !== viewerId) void markRoomRead();
         },
       )
       .on(
@@ -216,12 +230,15 @@ export function ChatRoom({
       )
       .subscribe();
     channelRef.current = channel;
-    void supabase.rpc("mark_room_read", { p_room_id: room.id });
+    readFrame = window.requestAnimationFrame(() => {
+      void markRoomRead();
+    });
     return () => {
+      if (readFrame) window.cancelAnimationFrame(readFrame);
       if (burstTimerRef.current) window.clearTimeout(burstTimerRef.current);
       void supabase.removeChannel(channel);
     };
-  }, [other.id, room.id, router, viewerId]);
+  }, [markRoomRead, other.id, room.id, router, viewerId]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });

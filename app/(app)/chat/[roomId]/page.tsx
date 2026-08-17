@@ -15,6 +15,18 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ roomI
   if (!room || room.status !== "active") notFound();
 
   const otherId = room.user_a === viewer.id ? room.user_b : room.user_a;
+  const readAt = new Date().toISOString();
+  await Promise.all([
+    supabase.rpc("mark_room_read", { p_room_id: roomId }),
+    supabase
+      .from("app_notifications")
+      .update({ read_at: readAt })
+      .eq("user_id", viewer.id)
+      .eq("type", "message")
+      .filter("metadata->>room_id", "eq", roomId)
+      .is("read_at", null),
+  ]);
+
   const [{ data: account }, { data: profile }, { data: media }, { data: messages }, { data: calls }, { data: blockState }] = await Promise.all([
     supabase.from("users").select("*").eq("id", otherId).single(),
     supabase.from("profiles").select("*").eq("user_id", otherId).single(),
