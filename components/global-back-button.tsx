@@ -6,7 +6,7 @@ import clsx from "clsx";
 
 export function GlobalBackButton({ variant = "fixed" }: { variant?: "fixed" | "inline" }) {
   const pathname = usePathname();
-  const mainPages = new Set(["/", "/discover", "/chat", "/random", "/wallet", "/profile", "/admin"]);
+  const mainPages = new Set(["/", "/landing", "/discover", "/chat", "/random", "/wallet", "/profile", "/admin"]);
   const isChatRoom = /^\/chat\/[^/]+/.test(pathname);
   const isAuthPage = pathname === "/login";
 
