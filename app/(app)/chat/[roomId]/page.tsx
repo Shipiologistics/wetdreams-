@@ -22,7 +22,12 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ roomI
       .from("app_notifications")
       .update({ read_at: readAt })
       .eq("user_id", viewer.id)
-      .eq("type", "message")
+      .eq("href", `/chat/${roomId}`)
+      .is("read_at", null),
+    supabase
+      .from("app_notifications")
+      .update({ read_at: readAt })
+      .eq("user_id", viewer.id)
       .filter("metadata->>room_id", "eq", roomId)
       .is("read_at", null),
   ]);

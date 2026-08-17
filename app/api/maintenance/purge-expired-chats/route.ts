@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { destroyCloudinaryAsset, isCloudinaryConfigured } from "@/lib/cloudinary";
+import { createServiceClient } from "@/lib/supabase/service";
 import type { Database } from "@/lib/database.types";
 
 export const runtime = "nodejs";
@@ -81,9 +82,20 @@ export async function GET(request: NextRequest) {
     deleted = data ?? 0;
   }
 
+  const notificationCutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { count: notificationsDeleted, error: notificationsDeleteError } = await createServiceClient()
+    .from("app_notifications")
+    .delete({ count: "exact" })
+    .lt("created_at", notificationCutoff);
+
+  if (notificationsDeleteError) {
+    return NextResponse.json({ error: notificationsDeleteError.message }, { status: 500 });
+  }
+
   return NextResponse.json({
     scanned: expired?.length ?? 0,
     deleted,
+    notificationsDeleted: notificationsDeleted ?? 0,
     cloudinaryDeleted,
     cloudinarySkipped,
     cloudinaryFailed: cloudinaryFailures.length,

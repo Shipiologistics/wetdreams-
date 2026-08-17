@@ -20,6 +20,20 @@ export function NotificationsBell({ viewerId, initialNotifications }: Notificati
   const unreadCount = useMemo(() => notifications.filter((notification) => !notification.read_at).length, [notifications]);
 
   useEffect(() => {
+    function handleExternalRead(event: Event) {
+      const { ids, readAt } = (event as CustomEvent<{ ids?: string[]; readAt?: string }>).detail ?? {};
+      if (!ids?.length) return;
+      const nextReadAt = readAt ?? new Date().toISOString();
+      setNotifications((current) => current.map((notification) => (
+        ids.includes(notification.id) ? { ...notification, read_at: notification.read_at ?? nextReadAt } : notification
+      )));
+    }
+
+    window.addEventListener("wetdreams:notifications-read", handleExternalRead);
+    return () => window.removeEventListener("wetdreams:notifications-read", handleExternalRead);
+  }, []);
+
+  useEffect(() => {
     const supabase = createClient();
     const channel = supabase
       .channel(`app-notifications:${viewerId}:${channelSuffix}`)

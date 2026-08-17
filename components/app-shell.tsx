@@ -190,6 +190,32 @@ export function AppShell({
     return () => window.cancelAnimationFrame(frame);
   }, [pathname]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const readAt = new Date().toISOString();
+
+    async function markCurrentPageNotificationsRead() {
+      const { data } = await createClient()
+        .from("app_notifications")
+        .update({ read_at: readAt })
+        .eq("user_id", viewer.id)
+        .eq("href", pathname)
+        .is("read_at", null)
+        .select("id");
+
+      if (!cancelled && data?.length) {
+        window.dispatchEvent(new CustomEvent("wetdreams:notifications-read", {
+          detail: { ids: data.map((notification) => notification.id), readAt },
+        }));
+      }
+    }
+
+    void markCurrentPageNotificationsRead();
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, viewer.id]);
+
   function startNavigation(href: string) {
     if (href !== pathname) setPendingHref(href);
     router.prefetch(href);
