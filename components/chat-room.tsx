@@ -98,9 +98,9 @@ export function ChatRoom({
 
   const primaryImage = media.find((item) => item.is_primary)?.cloudinary_url ?? media[0]?.cloudinary_url;
   const count = Math.max(room.message_count, messages.length);
-  const paywalled = count >= 10 && !profile.free_chat_enabled && Number(profile.chat_rate_coins) > 0;
   const blocked = blockState.viewerBlockedOther || blockState.otherBlockedViewer;
   const isRandomRoom = room.room_type === "random";
+  const paywalled = !isRandomRoom && count >= 10 && !profile.free_chat_enabled && Number(profile.chat_rate_coins) > 0;
 
   useEffect(() => {
     const supabase = createClient();
