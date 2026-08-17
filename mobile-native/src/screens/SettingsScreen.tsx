@@ -1,120 +1,29 @@
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {useEffect, useMemo, useState} from 'react';
+import {useState} from 'react';
 import {Alert, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
-import {Bell, ChevronRight, FileText, LogOut, ShieldCheck} from 'lucide-react-native';
+import {Bell, ChevronRight, FileText, KeyRound, LogOut, Mail, ShieldCheck, UserRound} from 'lucide-react-native';
 import {FormField} from '../components/FormField';
 import {ScreenHeader} from '../components/ScreenHeader';
-import {SelectField} from '../components/SelectField';
 import {WetButton} from '../components/WetButton';
-import {formatLocation, getCitiesForState, indianLocations, parseLocation} from '../lib/location-options';
 import {supabase} from '../lib/supabase';
 import {useApp} from '../state/AppProvider';
 import {colors, radii, spacing} from '../theme';
 import type {RootStackParamList} from '../types/navigation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
-
 export function SettingsScreen({navigation}: Props) {
-  const {viewer, unreadNotifications, refreshViewer, signOut} = useApp();
-  const location = parseLocation(viewer?.profile.location);
-  const [name, setName] = useState(viewer?.account.display_name || '');
-  const [age, setAge] = useState(viewer?.profile.age?.toString() || '');
-  const [state, setState] = useState(location.state);
-  const [city, setCity] = useState(location.city);
-  const [bio, setBio] = useState(viewer?.profile.bio || '');
-  const [languages, setLanguages] = useState(viewer?.profile.languages.join(', ') || '');
-  const [tags, setTags] = useState(viewer?.profile.tags.join(', ') || '');
-  const [chatRate, setChatRate] = useState(viewer?.profile.chat_rate_coins.toString() || '5');
-  const [audioRate, setAudioRate] = useState(viewer?.profile.audio_call_rate_coins.toString() || '10');
-  const [videoRate, setVideoRate] = useState(viewer?.profile.video_call_rate_coins.toString() || '25');
-  const [password, setPassword] = useState('');
-  const [saving, setSaving] = useState(false);
-  const cities = useMemo(() => getCitiesForState(state), [state]);
-
-  useEffect(() => {
-    if (!viewer) return;
-    setName(viewer.account.display_name);
-    setBio(viewer.profile.bio);
-  }, [viewer]);
-
-  async function save() {
-    if (!viewer) return;
-    if (name.trim().length < 2) return Alert.alert('Name required', 'Enter at least 2 characters.');
-    if (!formatLocation(city, state)) return Alert.alert('Location required', 'Select your state and city.');
-    setSaving(true);
-    const [{error: userError}, {error: profileError}] = await Promise.all([
-      supabase.from('users').update({display_name: name.trim()}).eq('id', viewer.account.id),
-      supabase.from('profiles').update({
-        age: Number(age) || null,
-        location: formatLocation(city, state),
-        bio: bio.trim(),
-        languages: list(languages),
-        tags: list(tags),
-        chat_rate_coins: Math.max(0, Number(chatRate) || 0),
-        audio_call_rate_coins: Math.max(0, Number(audioRate) || 0),
-        video_call_rate_coins: Math.max(0, Number(videoRate) || 0),
-      }).eq('user_id', viewer.account.id),
-    ]);
-    setSaving(false);
-    if (userError || profileError) return Alert.alert('Save failed', userError?.message || profileError?.message || 'Please try again.');
-    await refreshViewer();
-    Alert.alert('Saved', 'Your profile is updated.');
-  }
-
-  async function changePassword() {
-    if (password.length < 8) return Alert.alert('Password too short', 'Use at least 8 characters.');
-    const {error} = await supabase.auth.updateUser({password});
-    if (error) return Alert.alert('Password not changed', error.message);
-    setPassword('');
-    Alert.alert('Password changed', 'Use your new password next time you sign in.');
-  }
-
-  async function confirmSignOut() {
-    Alert.alert('Sign out?', 'You will stop appearing online on this device.', [
-      {text: 'Cancel', style: 'cancel'},
-      {text: 'Sign out', style: 'destructive', onPress: () => void signOut()},
-    ]);
-  }
-
-  return (
-    <View style={styles.root}>
-      <ScreenHeader back title="Settings" eyebrow="Account and privacy" unreadNotifications={unreadNotifications} onNotifications={() => navigation.navigate('Notifications')} />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Section title="Public profile">
-          <FormField label="Display name" value={name} onChangeText={setName} maxLength={60} />
-          <FormField label="Age" value={age} onChangeText={setAge} keyboardType="number-pad" maxLength={2} />
-          <SelectField label="State" value={state} placeholder="Select state" options={indianLocations.map(item => item.state)} onChange={value => {setState(value); setCity('');}} />
-          <SelectField label="City" value={city} placeholder="Select city" options={cities} onChange={setCity} disabled={!state} />
-          <FormField label="Bio" value={bio} onChangeText={setBio} multiline maxLength={500} placeholder="A short introduction" />
-          <FormField label="Languages" value={languages} onChangeText={setLanguages} placeholder="Hindi, English" />
-          <FormField label="Interests" value={tags} onChangeText={setTags} placeholder="Music, travel, books" />
-        </Section>
-        {viewer?.account.gender === 'female' ? <Section title="Per-minute rates"><FormField label="Chat coins/min" value={chatRate} onChangeText={setChatRate} keyboardType="number-pad" /><FormField label="Audio call coins/min" value={audioRate} onChangeText={setAudioRate} keyboardType="number-pad" /><FormField label="Video call coins/min" value={videoRate} onChangeText={setVideoRate} keyboardType="number-pad" /></Section> : null}
-        <WetButton title="Save profile" onPress={() => void save()} loading={saving} />
-        <Section title="Security"><FormField label="New password" value={password} onChangeText={setPassword} secureTextEntry placeholder="At least 8 characters" /><WetButton title="Change password" variant="dark" onPress={() => void changePassword()} disabled={!password} /></Section>
-        <Section title="Notifications"><SettingsRow icon={<Bell size={21} color={colors.teal} />} label="Notification inbox" onPress={() => navigation.navigate('Notifications')} /></Section>
-        <Section title="Policies">
-          <SettingsRow icon={<ShieldCheck size={21} color={colors.teal} />} label="Safety and community rules" onPress={() => navigation.navigate('Policies', {page: 'safety'})} />
-          <SettingsRow icon={<FileText size={21} color={colors.teal} />} label="Privacy policy" onPress={() => navigation.navigate('Policies', {page: 'privacy'})} />
-          <SettingsRow icon={<FileText size={21} color={colors.teal} />} label="Terms of service" onPress={() => navigation.navigate('Policies', {page: 'terms'})} />
-          <SettingsRow icon={<FileText size={21} color={colors.teal} />} label="Host payout policy" onPress={() => navigation.navigate('Policies', {page: 'host-policy'})} />
-          <SettingsRow icon={<FileText size={21} color={colors.teal} />} label="Refund policy" onPress={() => navigation.navigate('Policies', {page: 'refund-policy'})} />
-        </Section>
-        <WetButton title="Sign out" variant="outline" onPress={() => void confirmSignOut()} icon={<LogOut size={20} color={colors.danger} />} />
-      </ScrollView>
-    </View>
-  );
+  const {viewer, unreadNotifications, signOut} = useApp();
+  const [password, setPassword] = useState(''); const [changingPassword, setChangingPassword] = useState(false);
+  async function changePassword() { if (password.length < 8) return Alert.alert('Password too short', 'Use at least 8 characters.'); setChangingPassword(true); const {error} = await supabase.auth.updateUser({password}); setChangingPassword(false); if (error) return Alert.alert('Password not changed', error.message); setPassword(''); Alert.alert('Password changed', 'Use your new password next time you sign in.'); }
+  async function confirmSignOut() { Alert.alert('Sign out?', 'You will stop appearing online on this device.', [{text: 'Cancel', style: 'cancel'}, {text: 'Sign out', style: 'destructive', onPress: () => void signOut()}]); }
+  return <View style={styles.root}><ScreenHeader back title="Settings" eyebrow="Account controls" unreadNotifications={unreadNotifications} onNotifications={() => navigation.navigate('Notifications')} /><ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <View style={styles.accountBand}><View style={styles.avatar}><Text style={styles.initial}>{viewer?.account.display_name.charAt(0).toUpperCase()}</Text></View><View style={styles.accountCopy}><Text style={styles.accountName}>{viewer?.account.display_name}</Text><Text numberOfLines={1} style={styles.accountEmail}>{viewer?.session.user.email}</Text></View><UserRound size={21} color={colors.teal} /></View>
+    <SettingsSection eyebrow="SECURITY" title="Sign-in and access"><View style={styles.infoRow}><View style={styles.rowIcon}><Mail size={19} color={colors.blue} /></View><View style={styles.rowCopy}><Text style={styles.rowLabel}>Email address</Text><Text numberOfLines={1} style={styles.rowValue}>{viewer?.session.user.email}</Text></View></View><View style={styles.passwordBox}><View style={styles.passwordHeading}><KeyRound size={19} color={colors.violet} /><Text style={styles.passwordTitle}>Change password</Text></View><FormField label="New password" value={password} onChangeText={setPassword} secureTextEntry placeholder="At least 8 characters" /><WetButton title="Update password" variant="dark" onPress={() => void changePassword()} disabled={!password} loading={changingPassword} /></View></SettingsSection>
+    <SettingsSection eyebrow="PREFERENCES" title="App and notifications"><SettingsRow icon={<Bell size={20} color={colors.coral} />} label="Notification inbox" detail={unreadNotifications ? `${unreadNotifications} unread` : 'All caught up'} onPress={() => navigation.navigate('Notifications')} /></SettingsSection>
+    <SettingsSection eyebrow="TRUST" title="Safety and policies"><SettingsRow icon={<ShieldCheck size={20} color={colors.teal} />} label="Safety and community rules" onPress={() => navigation.navigate('Policies', {page: 'safety'})} /><SettingsRow icon={<FileText size={20} color={colors.blue} />} label="Privacy policy" onPress={() => navigation.navigate('Policies', {page: 'privacy'})} /><SettingsRow icon={<FileText size={20} color={colors.violet} />} label="Terms of service" onPress={() => navigation.navigate('Policies', {page: 'terms'})} /><SettingsRow icon={<FileText size={20} color={colors.mustard} />} label="Host payout policy" onPress={() => navigation.navigate('Policies', {page: 'host-policy'})} /><SettingsRow icon={<FileText size={20} color={colors.coral} />} label="Refund policy" onPress={() => navigation.navigate('Policies', {page: 'refund-policy'})} /></SettingsSection>
+    <WetButton title="Sign out" variant="outline" onPress={() => void confirmSignOut()} icon={<LogOut size={20} color={colors.danger} />} /><Text style={styles.version}>WetDreams for Android · Version 2.0.0</Text>
+  </ScrollView></View>;
 }
-
-function Section({title, children}: {title: string; children: React.ReactNode}) { return <View style={styles.section}><Text style={styles.sectionTitle}>{title}</Text>{children}</View>; }
-function SettingsRow({icon, label, onPress}: {icon: React.ReactNode; label: string; onPress: () => void}) { return <Pressable onPress={onPress} style={styles.row}>{icon}<Text style={styles.rowLabel}>{label}</Text><ChevronRight size={20} color={colors.muted} /></Pressable>; }
-function list(value: string) { return value.split(',').map(item => item.trim()).filter(Boolean).slice(0, 12); }
-
-const styles = StyleSheet.create({
-  root: {flex: 1, backgroundColor: colors.canvas},
-  content: {padding: spacing.md, paddingBottom: 40, gap: spacing.md},
-  section: {padding: spacing.md, gap: spacing.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: radii.md},
-  sectionTitle: {fontSize: 18, fontWeight: '900', color: colors.ink},
-  row: {minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line},
-  rowLabel: {flex: 1, fontSize: 15, fontWeight: '700', color: colors.ink},
-});
+function SettingsSection({eyebrow, title, children}: {eyebrow: string; title: string; children: React.ReactNode}) { return <View style={styles.section}><View><Text style={styles.eyebrow}>{eyebrow}</Text><Text style={styles.sectionTitle}>{title}</Text></View>{children}</View>; }
+function SettingsRow({icon, label, detail, onPress}: {icon: React.ReactNode; label: string; detail?: string; onPress: () => void}) { return <Pressable onPress={onPress} style={({pressed}) => [styles.row, pressed && styles.pressed]}><View style={styles.rowIcon}>{icon}</View><View style={styles.rowCopy}><Text style={styles.rowLabel}>{label}</Text>{detail ? <Text style={styles.rowValue}>{detail}</Text> : null}</View><ChevronRight size={19} color={colors.muted} /></Pressable>; }
+const styles = StyleSheet.create({root: {flex: 1, backgroundColor: colors.canvas}, content: {padding: spacing.md, paddingBottom: 40, gap: spacing.lg}, accountBand: {minHeight: 76, padding: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderRadius: radii.md, backgroundColor: colors.black}, avatar: {width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.teal}, initial: {fontSize: 18, fontWeight: '900', color: colors.white}, accountCopy: {flex: 1, minWidth: 0}, accountName: {fontSize: 17, fontWeight: '900', color: colors.white}, accountEmail: {fontSize: 12, color: 'rgba(255,255,255,0.68)'}, section: {gap: spacing.sm}, eyebrow: {fontSize: 10, fontWeight: '900', color: colors.teal}, sectionTitle: {fontSize: 20, fontWeight: '900', color: colors.ink}, row: {minHeight: 62, paddingHorizontal: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line, backgroundColor: colors.surface}, pressed: {backgroundColor: colors.tealSoft}, rowIcon: {width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.canvas}, rowCopy: {flex: 1, minWidth: 0}, rowLabel: {fontSize: 14, fontWeight: '800', color: colors.ink}, rowValue: {marginTop: 2, fontSize: 12, color: colors.muted}, infoRow: {minHeight: 62, paddingHorizontal: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.surface}, passwordBox: {padding: spacing.md, gap: spacing.sm, borderWidth: 1, borderColor: colors.line, borderRadius: radii.md, backgroundColor: colors.surface}, passwordHeading: {flexDirection: 'row', alignItems: 'center', gap: spacing.xs}, passwordTitle: {fontSize: 15, fontWeight: '900', color: colors.ink}, version: {textAlign: 'center', fontSize: 11, color: colors.muted}});

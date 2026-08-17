@@ -2,7 +2,7 @@ import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import type {NavigationProp} from '@react-navigation/native';
 import {useCallback, useState} from 'react';
 import {Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
-import {ArrowDownLeft, ArrowUpRight, Bean, CalendarX2, Clock3, Coins, Plus, X} from 'lucide-react-native';
+import {ArrowDownLeft, ArrowUpRight, Bean, CalendarX2, Clock3, Gift, Plus, WalletCards, X} from 'lucide-react-native';
 import {CoinTopupModal} from '../components/CoinTopupModal';
 import {FormField} from '../components/FormField';
 import {ScreenHeader} from '../components/ScreenHeader';
@@ -71,16 +71,15 @@ export function WalletScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenHeader title="Wallet" eyebrow="Balances and earnings" unreadNotifications={unreadNotifications} onNotifications={() => navigation.navigate('Notifications')} />
+      <ScreenHeader title="Wallet" eyebrow="Coins and earnings" unreadNotifications={unreadNotifications} onNotifications={() => navigation.navigate('Notifications')} />
       <FlatList
         data={transactions}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.content}
         ListHeaderComponent={<>
-          <View style={styles.balanceRow}>
-            <View style={[styles.balance, styles.coinCard]}><Coins size={25} color={colors.ink} /><Text style={styles.balanceLabel}>Coins</Text><Text style={styles.balanceValue}>{Number(viewer?.wallet.coins_balance || 0).toLocaleString('en-IN')}</Text><Text style={styles.rate}>Use for chats, calls and tips</Text><WetButton title="Add coins" variant="dark" onPress={() => setTopupOpen(true)} icon={<Plus size={18} color={colors.white} />} /></View>
-            <View style={[styles.balance, styles.beanCard]}><Bean size={25} color={colors.teal} /><Text style={styles.balanceLabel}>Beans</Text><Text style={styles.balanceValue}>{Number(viewer?.wallet.beans_balance || 0).toLocaleString('en-IN')}</Text><Text style={styles.rate}>₹{beanValue} per approved bean</Text><WetButton title="Withdraw" variant="outline" disabled={Number(viewer?.wallet.beans_balance || 0) < 1} onPress={() => setWithdrawOpen(true)} /></View>
-          </View>
+          <View style={styles.walletHero}><View style={styles.heroHeading}><View style={styles.walletIcon}><WalletCards size={22} color={colors.white} /></View><Text style={styles.heroLabel}>AVAILABLE COINS</Text></View><Text style={styles.coinValue}>{Number(viewer?.wallet.coins_balance || 0).toLocaleString('en-IN')}</Text><Text style={styles.heroCopy}>Use coins for messages, calls and tips.</Text><View style={styles.beanBalance}><View><Text style={styles.beanLabel}>CREATOR EARNINGS</Text><Text style={styles.beanValue}>{Number(viewer?.wallet.beans_balance || 0).toLocaleString('en-IN')} beans</Text></View><Text style={styles.beanRupees}>₹{(Number(viewer?.wallet.beans_balance || 0) * beanValue).toLocaleString('en-IN')}</Text></View></View>
+          <View style={styles.walletActions}><Pressable onPress={() => setTopupOpen(true)} style={[styles.walletAction, styles.addAction]}><View style={styles.actionIcon}><Plus size={21} color={colors.coral} /></View><View><Text style={styles.actionTitle}>Add coins</Text><Text style={styles.actionCopy}>Bonus packs available</Text></View></Pressable><Pressable disabled={Number(viewer?.wallet.beans_balance || 0) < 1} onPress={() => setWithdrawOpen(true)} style={[styles.walletAction, Number(viewer?.wallet.beans_balance || 0) < 1 && styles.actionDisabled]}><View style={[styles.actionIcon, styles.beanActionIcon]}><Bean size={21} color={colors.teal} /></View><View><Text style={styles.actionTitle}>Withdraw</Text><Text style={styles.actionCopy}>₹{beanValue} per bean</Text></View></Pressable></View>
+          <Pressable onPress={() => setTopupOpen(true)} style={styles.offer}><View style={styles.offerIcon}><Gift size={21} color={colors.warning} /></View><View style={styles.offerCopy}><Text style={styles.offerTitle}>Get more with bonus packs</Text><Text style={styles.offerText}>Popular packs include extra coins automatically.</Text></View><Text style={styles.offerCta}>View</Text></Pressable>
           <View style={styles.policy}><View style={styles.policyRow}><Clock3 size={18} color={colors.teal} /><Text style={styles.policyText}>Processed within 24 hours</Text></View><View style={styles.policyRow}><CalendarX2 size={18} color={colors.teal} /><Text style={styles.policyText}>No payouts on Sundays or government holidays</Text></View></View>
           {withdrawals.length ? <View style={styles.section}><Text style={styles.sectionTitle}>Withdrawals</Text>{withdrawals.map(item => <View key={item.id} style={styles.withdrawal}><View><Text style={styles.withdrawalAmount}>{item.beans_requested} beans · ₹{item.inr_amount}</Text><Text style={styles.txTime}>{new Date(item.created_at).toLocaleDateString('en-IN')}</Text></View><Text style={[styles.status, completeStatus(item.status) && styles.complete]}>{completeStatus(item.status) ? 'Complete' : item.status}</Text></View>)}</View> : null}
           <Text style={styles.sectionTitle}>Activity</Text>
@@ -112,13 +111,7 @@ function transactionLabel(type: string) { return ({topup: 'Coin top-up', chat_sp
 const styles = StyleSheet.create({
   root: {flex: 1, backgroundColor: colors.canvas},
   content: {padding: spacing.md, paddingBottom: 112, gap: spacing.sm},
-  balanceRow: {flexDirection: 'row', gap: spacing.sm},
-  balance: {flex: 1, minHeight: 236, padding: spacing.md, borderRadius: radii.md, gap: spacing.xs},
-  coinCard: {backgroundColor: colors.mustardSoft},
-  beanCard: {backgroundColor: colors.tealSoft},
-  balanceLabel: {fontSize: 13, fontWeight: '800', color: colors.muted},
-  balanceValue: {fontSize: 31, fontWeight: '900', color: colors.ink},
-  rate: {minHeight: 35, fontSize: 12, lineHeight: 17, color: colors.muted},
+  walletHero: {minHeight: 220, padding: spacing.lg, borderRadius: radii.md, backgroundColor: colors.black}, heroHeading: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm}, walletIcon: {width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.violet}, heroLabel: {fontSize: 10, fontWeight: '900', color: 'rgba(255,255,255,0.62)'}, coinValue: {marginTop: spacing.md, fontSize: 42, lineHeight: 48, fontWeight: '900', color: colors.white}, heroCopy: {fontSize: 13, color: 'rgba(255,255,255,0.64)'}, beanBalance: {marginTop: spacing.lg, paddingTop: spacing.md, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(255,255,255,0.22)'}, beanLabel: {fontSize: 9, fontWeight: '900', color: colors.teal}, beanValue: {fontSize: 18, fontWeight: '900', color: colors.white}, beanRupees: {fontSize: 14, fontWeight: '800', color: colors.mustardSoft}, walletActions: {flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs}, walletAction: {flex: 1, minHeight: 76, padding: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface}, addAction: {borderColor: '#F2C9D0'}, actionIcon: {width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.coralSoft}, beanActionIcon: {backgroundColor: colors.tealSoft}, actionTitle: {fontSize: 14, fontWeight: '900', color: colors.ink}, actionCopy: {fontSize: 10, color: colors.muted}, actionDisabled: {opacity: 0.42}, offer: {marginTop: spacing.sm, padding: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderRadius: radii.md, backgroundColor: colors.mustardSoft}, offerIcon: {width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface}, offerCopy: {flex: 1}, offerTitle: {fontSize: 14, fontWeight: '900', color: colors.ink}, offerText: {fontSize: 11, color: colors.muted}, offerCta: {fontSize: 12, fontWeight: '900', color: colors.warning},
   policy: {marginTop: spacing.sm, padding: spacing.md, gap: spacing.sm, borderWidth: 1, borderColor: colors.line, borderRadius: radii.md, backgroundColor: colors.surface},
   policyRow: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm},
   policyText: {flex: 1, color: colors.ink, fontWeight: '700'},

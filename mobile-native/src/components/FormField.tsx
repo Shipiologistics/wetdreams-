@@ -6,7 +6,7 @@ type Props = TextInputProps & {label: string; error?: string};
 export function FormField({label, error, ...props}: Props) {
   return (
     <View style={styles.root}>
-      <Text style={styles.label}>{label}</Text>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
       <TextInput
         placeholderTextColor={colors.muted}
         {...props}

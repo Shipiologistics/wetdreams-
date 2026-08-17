@@ -58,13 +58,13 @@ function MainTabs() {
             paddingBottom: Math.max(insets.bottom, 8),
           },
         ],
-        tabBarIcon: ({color, size}) => tabIcon(route.name, color, size),
+        tabBarIcon: ({color, size, focused}) => tabIcon(route.name, color, size, focused),
         tabBarBadge: route.name === 'Chats' && unreadChats > 0 ? (unreadChats > 9 ? '9+' : unreadChats) : undefined,
         tabBarBadgeStyle: styles.tabBadge,
       })}>
-      <Tabs.Screen name="Discover" component={DiscoverScreen} />
-      <Tabs.Screen name="Chats" component={ChatsScreen} />
-      <Tabs.Screen name="Random" component={RandomScreen} />
+      <Tabs.Screen name="Discover" component={DiscoverScreen} options={{tabBarLabel: 'Explore'}} />
+      <Tabs.Screen name="Chats" component={ChatsScreen} options={{tabBarLabel: 'Messages'}} />
+      <Tabs.Screen name="Random" component={RandomScreen} options={{tabBarLabel: 'Match'}} />
       <Tabs.Screen name="Wallet" component={WalletScreen} />
       <Tabs.Screen name="Profile" component={ProfileScreen} />
     </Tabs.Navigator>
@@ -122,12 +122,17 @@ export default function App() {
   );
 }
 
-function tabIcon(name: keyof MainTabParamList, color: string, size: number) {
-  if (name === 'Discover') return <Compass size={size} color={color} />;
-  if (name === 'Chats') return <MessageCircle size={size} color={color} />;
-  if (name === 'Random') return <HeartHandshake size={size} color={color} />;
-  if (name === 'Wallet') return <WalletCards size={size} color={color} />;
-  return <UserRound size={size} color={color} />;
+function tabIcon(name: keyof MainTabParamList, color: string, size: number, focused: boolean) {
+  const icon = name === 'Discover'
+    ? <Compass size={size} color={color} />
+    : name === 'Chats'
+      ? <MessageCircle size={size} color={color} />
+      : name === 'Random'
+        ? <HeartHandshake size={size} color={color} />
+        : name === 'Wallet'
+          ? <WalletCards size={size} color={color} />
+          : <UserRound size={size} color={color} />;
+  return <View style={[styles.tabIcon, focused && styles.tabIconActive]}>{icon}</View>;
 }
 
 function BannedScreen() {
@@ -136,8 +141,10 @@ function BannedScreen() {
 
 const styles = StyleSheet.create({
   safe: {flex: 1, backgroundColor: colors.surface},
-  tabBar: {paddingTop: 7, borderTopColor: colors.line, backgroundColor: colors.surface},
-  tabLabel: {fontSize: 11, fontWeight: '800'},
+  tabBar: {paddingTop: 5, borderTopColor: colors.line, backgroundColor: colors.surface},
+  tabLabel: {fontSize: 10, fontWeight: '800'},
+  tabIcon: {width: 38, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center'},
+  tabIconActive: {backgroundColor: colors.coralSoft},
   tabBadge: {fontSize: 10, fontWeight: '900', backgroundColor: colors.coral},
   banned: {flex: 1, padding: 32, alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: colors.canvas},
   bannedTitle: {fontSize: 30, fontWeight: '900', color: colors.danger},

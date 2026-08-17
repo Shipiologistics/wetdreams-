@@ -32,6 +32,7 @@ export function ChatsScreen() {
   const [media, setMedia] = useState<Media[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
   const load = useCallback(async () => {
     if (!viewer) return;
@@ -88,15 +89,18 @@ export function ChatsScreen() {
       }];
     }).sort((a, b) => new Date(b.last?.created_at || b.room.last_message_at).getTime() - new Date(a.last?.created_at || a.room.last_message_at).getTime());
   }, [accounts, media, messages, rooms, viewer]);
+  const active = useMemo(() => conversations.filter(item => item.account.status === 'online').slice(0, 12), [conversations]);
+  const visibleConversations = filter === 'unread' ? conversations.filter(item => item.unread > 0) : conversations;
 
   return (
     <View style={styles.root}>
-      <ScreenHeader title="Chats" eyebrow="Recent conversations" coins={Number(viewer?.wallet.coins_balance || 0)} unreadNotifications={unreadNotifications} onNotifications={() => navigation.navigate('Notifications')} />
+      <ScreenHeader title="Messages" eyebrow="Stay connected" coins={Number(viewer?.wallet.coins_balance || 0)} unreadNotifications={unreadNotifications} onNotifications={() => navigation.navigate('Notifications')} />
       <FlatList
-        data={conversations}
+        data={visibleConversations}
         keyExtractor={item => item.room.id}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} tintColor={colors.coral} />}
         contentContainerStyle={styles.list}
+        ListHeaderComponent={<View style={styles.listHeader}>{active.length ? <View style={styles.activeSection}><View style={styles.sectionHeading}><Text style={styles.sectionTitle}>Active now</Text><Text style={styles.sectionMeta}>{active.length} online</Text></View><FlatList horizontal data={active} keyExtractor={item => `active-${item.room.id}`} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.activeList} renderItem={({item}) => <Pressable onPress={() => navigation.navigate('ChatRoom', {roomId: item.room.id, otherUserId: item.account.id, title: item.account.display_name})} style={styles.activePerson}><View style={styles.activeRing}>{item.avatar ? <Image source={{uri: item.avatar}} style={styles.activeAvatar} /> : <View style={[styles.activeAvatar, styles.fallback]}><Text style={styles.activeInitial}>{item.account.display_name.charAt(0)}</Text></View>}<View style={styles.activeDot} /></View><Text numberOfLines={1} style={styles.activeName}>{item.account.display_name.split(' ')[0]}</Text></Pressable>} /></View> : null}<View style={styles.conversationHeading}><Text style={styles.sectionTitle}>Conversations</Text><View style={styles.segment}><Pressable onPress={() => setFilter('all')} style={[styles.segmentButton, filter === 'all' && styles.segmentActive]}><Text style={[styles.segmentText, filter === 'all' && styles.segmentTextActive]}>All</Text></Pressable><Pressable onPress={() => setFilter('unread')} style={[styles.segmentButton, filter === 'unread' && styles.segmentActive]}><Text style={[styles.segmentText, filter === 'unread' && styles.segmentTextActive]}>Unread</Text></Pressable></View></View></View>}
         renderItem={({item}) => (
           <Pressable
             onPress={() => navigation.navigate('ChatRoom', {roomId: item.room.id, otherUserId: item.account.id, title: item.account.display_name})}
@@ -112,7 +116,7 @@ export function ChatsScreen() {
             {item.unread ? <View style={styles.badge}><Text style={styles.badgeText}>{item.unread > 9 ? '9+' : item.unread}</Text></View> : null}
           </Pressable>
         )}
-        ListEmptyComponent={!loading ? <View style={styles.empty}><MessageCircle size={42} color={colors.teal} /><Text style={styles.emptyTitle}>No conversations yet</Text><Text style={styles.emptyText}>Message a host from Discover to start.</Text></View> : null}
+        ListEmptyComponent={!loading ? <View style={styles.empty}><View style={styles.emptyIcon}><MessageCircle size={31} color={colors.teal} /></View><Text style={styles.emptyTitle}>{filter === 'unread' ? 'No unread messages' : 'No conversations yet'}</Text><Text style={styles.emptyText}>{filter === 'unread' ? 'You are all caught up.' : 'Start a conversation from Discover.'}</Text></View> : null}
       />
     </View>
   );
@@ -133,8 +137,9 @@ function relativeTime(value: string) {
 
 const styles = StyleSheet.create({
   root: {flex: 1, backgroundColor: colors.canvas},
-  list: {paddingBottom: 112},
-  row: {minHeight: 82, paddingHorizontal: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.surface, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line},
+  list: {padding: spacing.md, paddingBottom: 112},
+  listHeader: {marginHorizontal: -spacing.md, gap: spacing.md, marginBottom: spacing.sm}, activeSection: {paddingTop: spacing.sm, gap: spacing.sm}, sectionHeading: {paddingHorizontal: spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}, sectionTitle: {fontSize: 17, fontWeight: '900', color: colors.ink}, sectionMeta: {fontSize: 12, color: colors.muted}, activeList: {paddingHorizontal: spacing.md, gap: spacing.sm}, activePerson: {width: 64, alignItems: 'center', gap: 5}, activeRing: {width: 58, height: 58, padding: 2, borderWidth: 2, borderColor: colors.teal, borderRadius: 29}, activeAvatar: {width: '100%', height: '100%', borderRadius: 27}, activeInitial: {fontWeight: '900', color: colors.teal}, activeDot: {position: 'absolute', right: 0, bottom: 0, width: 13, height: 13, borderRadius: 7, borderWidth: 2, borderColor: colors.surface, backgroundColor: colors.success}, activeName: {width: 64, fontSize: 11, textAlign: 'center', fontWeight: '700', color: colors.ink}, conversationHeading: {paddingHorizontal: spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}, segment: {height: 34, padding: 3, flexDirection: 'row', borderRadius: 17, backgroundColor: colors.surface}, segmentButton: {minWidth: 48, paddingHorizontal: spacing.sm, borderRadius: 14, alignItems: 'center', justifyContent: 'center'}, segmentActive: {backgroundColor: colors.black}, segmentText: {fontSize: 11, fontWeight: '800', color: colors.muted}, segmentTextActive: {color: colors.white},
+  row: {minHeight: 80, marginBottom: spacing.xs, paddingHorizontal: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderRadius: 8, backgroundColor: colors.surface},
   pressed: {backgroundColor: colors.tealSoft},
   avatar: {width: 56, height: 56, borderRadius: 28},
   fallback: {backgroundColor: colors.tealSoft, alignItems: 'center', justifyContent: 'center'},
@@ -149,7 +154,7 @@ const styles = StyleSheet.create({
   preview: {fontSize: 14, color: colors.muted},
   badge: {minWidth: 23, height: 23, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: colors.coral},
   badgeText: {fontSize: 11, fontWeight: '900', color: colors.white},
-  empty: {alignItems: 'center', padding: spacing.xxl, gap: spacing.xs},
+  empty: {alignItems: 'center', padding: spacing.xxl, gap: spacing.xs}, emptyIcon: {width: 62, height: 62, borderRadius: 31, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.tealSoft},
   emptyTitle: {fontSize: 20, fontWeight: '900', color: colors.ink},
   emptyText: {fontSize: 14, color: colors.muted, textAlign: 'center'},
 });

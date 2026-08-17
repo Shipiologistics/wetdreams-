@@ -91,7 +91,7 @@ export function RegisterScreen({navigation}: Props) {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.topbar}>
         <Pressable onPress={back} style={styles.back}><ChevronLeft size={28} color={colors.ink} /></Pressable>
         <View style={styles.progress}><View style={[styles.progressFill, {width: `${(step / 3) * 100}%`}]} /></View>
@@ -100,7 +100,7 @@ export function RegisterScreen({navigation}: Props) {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {step === 1 ? (
           <>
-            <View style={styles.heading}><Text style={styles.aqua}>Tell us your</Text><Text style={styles.title}>Basic info</Text></View>
+            <View style={styles.heading}><Text style={styles.aqua}>STEP ONE</Text><Text style={styles.title}>Create your profile</Text><Text style={styles.headingCopy}>Choose how you want to appear in the community.</Text></View>
             <View style={styles.genderRow}>
               {(['male', 'female'] as const).map(option => (
                 <Pressable key={option} onPress={() => setGender(option)} style={[styles.gender, gender === option && styles.genderActive]}>
@@ -116,7 +116,7 @@ export function RegisterScreen({navigation}: Props) {
 
         {step === 2 ? (
           <>
-            <View style={styles.heading}><Text style={styles.aqua}>Choose your</Text><Text style={styles.title}>Location</Text></View>
+            <View style={styles.heading}><Text style={styles.aqua}>STEP TWO</Text><Text style={styles.title}>Where are you based?</Text><Text style={styles.headingCopy}>This keeps discovery useful and relevant.</Text></View>
             <SelectField label="State" value={state} placeholder="Select state" options={indianLocations.map(item => item.state)} onChange={value => {setState(value); setCity('');}} error={submitted && !state} />
             <SelectField label="City" value={city} placeholder="Select city" options={cities} onChange={setCity} disabled={!state} error={submitted && !city} />
             <FormField label="Age" value={age} onChangeText={setAge} placeholder="18+ only" keyboardType="number-pad" maxLength={2} error={submitted && (Number(age) < 18 || Number(age) > 99) ? 'Enter an age from 18 to 99.' : undefined} />
@@ -126,7 +126,7 @@ export function RegisterScreen({navigation}: Props) {
 
         {step === 3 ? (
           <>
-            <View style={styles.heading}><Text style={styles.aqua}>Secure your</Text><Text style={styles.title}>Account</Text></View>
+            <View style={styles.heading}><Text style={styles.aqua}>FINAL STEP</Text><Text style={styles.title}>Secure your account</Text><Text style={styles.headingCopy}>Use any email you can access.</Text></View>
             <FormField label="Email" value={email} onChangeText={setEmail} placeholder="you@example.com" keyboardType="email-address" autoCapitalize="none" autoComplete="email" error={submitted && !/.+@.+\..+/.test(email.trim()) ? 'Valid email is required.' : undefined} />
             <FormField label="Password" value={password} onChangeText={setPassword} placeholder="At least 8 characters" secureTextEntry autoComplete="new-password" error={submitted && password.length < 8 ? 'Use at least 8 characters.' : undefined} />
             {gender === 'female' ? <Text style={styles.note}>After sign in, add a clear real profile photo for host verification. Fake images may lead to an account ban.</Text> : null}
@@ -134,25 +134,26 @@ export function RegisterScreen({navigation}: Props) {
         ) : null}
 
         <View style={styles.spacer} />
-        <WetButton title={step === 3 ? 'Create account' : `${step}/3 Next`} onPress={step === 3 ? () => void register() : next} loading={loading} />
+        <WetButton title={step === 3 ? 'Create account' : 'Continue'} onPress={step === 3 ? () => void register() : next} loading={loading} />
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {flex: 1, backgroundColor: colors.surface},
+  root: {flex: 1, backgroundColor: colors.canvas},
   topbar: {height: 70, paddingHorizontal: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.md},
   back: {width: 44, height: 44, alignItems: 'center', justifyContent: 'center'},
   progress: {height: 5, flex: 1, borderRadius: 3, backgroundColor: colors.line, overflow: 'hidden'},
   progressFill: {height: '100%', backgroundColor: colors.teal},
   step: {fontSize: 13, fontWeight: '800', color: colors.muted},
   content: {flexGrow: 1, padding: spacing.lg, gap: spacing.md},
-  heading: {alignItems: 'center', marginVertical: spacing.md},
-  aqua: {fontSize: 25, fontWeight: '900', color: colors.teal},
-  title: {fontSize: 35, fontWeight: '900', color: colors.ink},
+  heading: {marginVertical: spacing.sm},
+  aqua: {fontSize: 10, fontWeight: '900', color: colors.teal},
+  title: {fontSize: 27, fontWeight: '900', color: colors.ink},
+  headingCopy: {marginTop: 4, fontSize: 13, color: colors.muted},
   genderRow: {flexDirection: 'row', gap: spacing.md},
-  gender: {flex: 1, height: 148, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, borderWidth: 2, borderColor: colors.line, borderRadius: radii.md, backgroundColor: colors.canvas},
+  gender: {flex: 1, height: 126, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, borderWidth: 2, borderColor: colors.line, borderRadius: radii.md, backgroundColor: colors.surface},
   genderActive: {borderColor: colors.teal, backgroundColor: colors.tealSoft},
   genderLabel: {fontSize: 17, fontWeight: '900', color: colors.muted},
   genderLabelActive: {color: colors.teal},

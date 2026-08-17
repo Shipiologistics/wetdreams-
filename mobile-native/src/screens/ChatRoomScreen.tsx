@@ -4,6 +4,7 @@ import {
   Alert,
   FlatList,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -15,7 +16,8 @@ import {
 } from 'react-native';
 import ImagePicker from 'react-native-image-crop-picker';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {ChevronLeft, Gift, ImagePlus, MoreVertical, Phone, Send, Video, X} from 'lucide-react-native';
+import {ChevronLeft, Gift, ImagePlus, MoreVertical, Phone, Send, Video} from 'lucide-react-native';
+import {TipSheet} from '../components/TipSheet';
 import {authenticatedPost} from '../lib/api';
 import {uploadToCloudinary} from '../lib/cloudinary';
 import {getDeviceId} from '../lib/device';
@@ -43,6 +45,7 @@ export function ChatRoomScreen({route, navigation}: Props) {
   const [tipOpen, setTipOpen] = useState(false);
   const [viewerBlocked, setViewerBlocked] = useState(false);
   const [otherBlocked, setOtherBlocked] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const listRef = useRef<FlatList<Message>>(null);
 
   const load = useCallback(async () => {
@@ -83,6 +86,7 @@ export function ChatRoomScreen({route, navigation}: Props) {
   useEffect(() => {
     if (messages.length) requestAnimationFrame(() => listRef.current?.scrollToEnd({animated: false}));
   }, [messages.length]);
+  useEffect(() => { const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setKeyboardVisible(true)); const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardVisible(false)); return () => { show.remove(); hide.remove(); }; }, []);
 
   async function sendMessage(kind: 'text' | 'image', image?: {url: string; publicId: string; resourceType: string}) {
     if (!viewer || viewerBlocked || otherBlocked) return;
@@ -154,15 +158,15 @@ export function ChatRoomScreen({route, navigation}: Props) {
 
   async function sendTip(amount: number) {
     const {error} = await supabase.rpc('send_tip', {p_amount: amount, p_room_id: roomId, p_call_id: null});
-    if (error) return Alert.alert(error.message.includes('INSUFFICIENT') ? 'Not enough coins' : 'Tip failed', error.message.includes('INSUFFICIENT') ? 'Add coins in Wallet and try again.' : error.message);
-    setTipOpen(false);
+    if (error) { Alert.alert(error.message.includes('INSUFFICIENT') ? 'Not enough coins' : 'Tip failed', error.message.includes('INSUFFICIENT') ? 'Add coins in Wallet and try again.' : error.message); return false; }
     await refreshViewer();
     Alert.alert('Tip sent', `${amount} coins sent to ${other?.display_name || 'host'}.`);
+    return true;
   }
 
   const blocked = viewerBlocked || otherBlocked;
   return (
-    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={0}>
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.headerButton}><ChevronLeft size={29} color={colors.ink} /></Pressable>
         {avatar ? <Image source={{uri: avatar}} style={styles.avatar} /> : <View style={[styles.avatar, styles.avatarFallback]}><Text style={styles.avatarText}>{other?.display_name?.charAt(0) || '?'}</Text></View>}
@@ -179,11 +183,12 @@ export function ChatRoomScreen({route, navigation}: Props) {
         data={messages}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.messages}
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets
         renderItem={({item}) => <MessageBubble message={item} mine={item.sender_id === viewer?.account.id} />}
         ListHeaderComponent={<View style={styles.person}><View style={[styles.largeAvatar, styles.avatarFallback]}>{avatar ? <Image source={{uri: avatar}} style={styles.largeAvatar} /> : <Text style={styles.largeInitial}>{other?.display_name?.charAt(0) || '?'}</Text>}</View><Text style={styles.personName}>{other?.display_name}</Text><Text style={styles.username}>@{other?.username}</Text></View>}
       />
       {blocked ? <View style={styles.blocked}><Text style={styles.blockedText}>{viewerBlocked ? 'You blocked this user.' : 'Messaging and calls are unavailable.'}</Text></View> : (
-        <View style={[styles.composer, {paddingBottom: Math.max(insets.bottom, spacing.sm)}]}>
+        <View style={[styles.composer, {paddingBottom: keyboardVisible ? spacing.xs : Math.max(insets.bottom, spacing.sm)}]}>
           <Pressable onPress={() => void addPhoto()} style={styles.composerIcon}><ImagePlus size={25} color={colors.ink} /></Pressable>
           <Pressable onPress={() => setTipOpen(true)} style={styles.composerIcon}><Gift size={24} color={colors.ink} /></Pressable>
           <TextInput value={text} onChangeText={setText} placeholder="Write a message" placeholderTextColor={colors.muted} multiline style={styles.input} />
@@ -191,7 +196,7 @@ export function ChatRoomScreen({route, navigation}: Props) {
         </View>
       )}
       <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}><Pressable style={styles.modalBackdrop} onPress={() => setMenuOpen(false)}><View style={styles.menu}><WetButton title={viewerBlocked ? 'Unblock user' : 'Block user'} variant={viewerBlocked ? 'outline' : 'danger'} onPress={() => void blockOrUnblock()} /><WetButton title="Report user" variant="outline" onPress={() => void report()} /></View></Pressable></Modal>
-      <Modal visible={tipOpen} transparent animationType="slide" onRequestClose={() => setTipOpen(false)}><Pressable style={styles.modalBackdrop} onPress={() => setTipOpen(false)}><Pressable style={styles.tipSheet} onPress={() => undefined}><View style={styles.tipHeading}><View><Text style={styles.tipEyebrow}>Make their day</Text><Text style={styles.tipTitle}>Send a tip</Text></View><Pressable onPress={() => setTipOpen(false)} style={styles.headerButton}><X size={24} color={colors.ink} /></Pressable></View><Text style={styles.tipBalance}>Balance: {Number(viewer?.wallet.coins_balance || 0)} coins</Text><View style={styles.tipGrid}>{[5, 10, 25, 50].map(amount => <Pressable key={amount} onPress={() => void sendTip(amount)} style={styles.tipAmount}><Gift size={22} color={colors.coral} /><Text style={styles.tipAmountText}>{amount}</Text><Text style={styles.tipCoin}>coins</Text></Pressable>)}</View></Pressable></Pressable></Modal>
+      <TipSheet visible={tipOpen} balance={Number(viewer?.wallet.coins_balance || 0)} onClose={() => setTipOpen(false)} onSend={sendTip} />
     </KeyboardAvoidingView>
   );
 }
@@ -208,7 +213,7 @@ function MessageBubble({message, mine}: {message: Message; mine: boolean}) {
 }
 
 const styles = StyleSheet.create({
-  root: {flex: 1, backgroundColor: '#F3F5F1'},
+  root: {flex: 1, backgroundColor: colors.canvas},
   header: {height: 74, paddingHorizontal: spacing.xs, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line},
   headerButton: {width: 44, height: 44, alignItems: 'center', justifyContent: 'center'},
   avatar: {width: 44, height: 44, borderRadius: 22},
@@ -223,16 +228,14 @@ const styles = StyleSheet.create({
   largeInitial: {fontSize: 34, fontWeight: '900', color: colors.teal},
   personName: {fontSize: 22, fontWeight: '900', color: colors.ink},
   username: {color: colors.muted},
-  bubble: {maxWidth: '82%', minWidth: 92, padding: spacing.sm, borderRadius: radii.md, marginVertical: 2},
-  mine: {alignSelf: 'flex-end', backgroundColor: '#DDF3EF'},
-  theirs: {alignSelf: 'flex-start', backgroundColor: colors.surface},
+  bubble: {maxWidth: '84%', minWidth: 92, padding: spacing.sm, borderRadius: radii.lg, marginVertical: 2}, mine: {alignSelf: 'flex-end', backgroundColor: colors.tealSoft, borderBottomRightRadius: radii.sm}, theirs: {alignSelf: 'flex-start', backgroundColor: colors.surface, borderBottomLeftRadius: radii.sm},
   messageText: {fontSize: 16, lineHeight: 22, color: colors.ink, paddingRight: spacing.sm},
   messageImage: {width: 230, aspectRatio: 1, borderRadius: radii.sm, backgroundColor: colors.line},
   meta: {alignSelf: 'flex-end', flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 3},
   time: {fontSize: 10, color: colors.muted},
   ticks: {fontSize: 12, fontWeight: '900', color: colors.muted},
   read: {color: '#1686C9'},
-  composer: {padding: spacing.xs, flexDirection: 'row', alignItems: 'flex-end', gap: 4, backgroundColor: colors.surface, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line},
+  composer: {paddingHorizontal: spacing.xs, paddingTop: spacing.xs, flexDirection: 'row', alignItems: 'flex-end', gap: 4, backgroundColor: colors.surface, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line},
   composerIcon: {width: 43, height: 48, alignItems: 'center', justifyContent: 'center'},
   input: {flex: 1, minHeight: 48, maxHeight: 112, paddingHorizontal: spacing.md, paddingTop: 13, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, color: colors.ink, fontSize: 16, backgroundColor: colors.canvas},
   send: {width: 49, height: 49, borderRadius: 25, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.coral},
@@ -241,13 +244,4 @@ const styles = StyleSheet.create({
   blockedText: {fontWeight: '800', color: colors.danger},
   modalBackdrop: {flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(15,18,16,0.45)'},
   menu: {padding: spacing.lg, paddingBottom: 34, gap: spacing.sm, backgroundColor: colors.surface, borderTopLeftRadius: 18, borderTopRightRadius: 18},
-  tipSheet: {padding: spacing.lg, paddingBottom: 34, gap: spacing.md, backgroundColor: colors.surface, borderTopLeftRadius: 18, borderTopRightRadius: 18},
-  tipHeading: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
-  tipEyebrow: {fontSize: 12, fontWeight: '900', textTransform: 'uppercase', color: colors.teal},
-  tipTitle: {fontSize: 27, fontWeight: '900', color: colors.ink},
-  tipBalance: {fontSize: 14, color: colors.muted},
-  tipGrid: {flexDirection: 'row', gap: spacing.xs},
-  tipAmount: {flex: 1, minHeight: 96, alignItems: 'center', justifyContent: 'center', borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.canvas},
-  tipAmountText: {fontSize: 21, fontWeight: '900', color: colors.ink},
-  tipCoin: {fontSize: 11, color: colors.muted},
 });

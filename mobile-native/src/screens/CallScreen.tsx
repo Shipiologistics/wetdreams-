@@ -23,6 +23,7 @@ import {
 import {Camera, CameraOff, Gift, Mic, MicOff, Phone, PhoneOff, RotateCcw, Volume2} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {authenticatedPost} from '../lib/api';
+import {TipSheet} from '../components/TipSheet';
 import {supabase} from '../lib/supabase';
 import {useApp} from '../state/AppProvider';
 import {colors, radii, spacing} from '../theme';
@@ -48,6 +49,7 @@ export function CallScreen({route, navigation}: Props) {
   const [speaker, setSpeaker] = useState(true);
   const [seconds, setSeconds] = useState(0);
   const [tipText, setTipText] = useState<string | null>(null);
+  const [tipOpen, setTipOpen] = useState(false);
   const engineRef = useRef<IRtcEngine | null>(null);
   const initializedFor = useRef<string | null>(null);
   const closedRef = useRef(false);
@@ -227,9 +229,9 @@ export function CallScreen({route, navigation}: Props) {
   }
 
   async function sendTip(amount: number) {
-    if (!call) return;
+    if (!call) return false;
     const {error} = await supabase.rpc('send_tip', {p_amount: amount, p_room_id: call.room_id, p_call_id: call.id});
-    if (error) return Alert.alert(error.message.includes('INSUFFICIENT') ? 'Not enough coins' : 'Tip failed', error.message.includes('INSUFFICIENT') ? 'Add coins in Wallet after the call.' : error.message);
+    if (error) { Alert.alert(error.message.includes('INSUFFICIENT') ? 'Not enough coins' : 'Tip failed', error.message.includes('INSUFFICIENT') ? 'Add coins in Wallet after the call.' : error.message); return false; }
     await refreshViewer();
     setTipText(`${amount} coin tip sent!`);
     tipScale.setValue(0);
@@ -238,6 +240,7 @@ export function CallScreen({route, navigation}: Props) {
       Animated.delay(1300),
       Animated.timing(tipScale, {toValue: 0, duration: 240, useNativeDriver: true}),
     ]).start(() => setTipText(null));
+    return true;
   }
 
   const incoming = call && viewer && call.receiver_id === viewer.account.id;
@@ -267,21 +270,22 @@ export function CallScreen({route, navigation}: Props) {
       {tipText ? <Animated.View style={[styles.tipToast, {transform: [{scale: tipScale}]}]}><Gift size={30} color={colors.coral} /><Text style={styles.tipToastText}>{tipText}</Text></Animated.View> : null}
       {call?.status === 'ringing' && incoming ? (
         <View style={[styles.incomingActions, {bottom: 70 + insets.bottom}]}>
-          <CallControl color={colors.danger} icon={<PhoneOff size={29} color={colors.white} />} label="Decline" onPress={() => void decline()} />
-          <CallControl color={colors.success} icon={<Phone size={29} color={colors.white} />} label="Accept" onPress={() => void accept()} />
+          <CallControl color="rgba(197,47,73,0.78)" icon={<PhoneOff size={29} color={colors.white} />} label="Decline" onPress={() => void decline()} />
+          <CallControl color="rgba(22,132,91,0.78)" icon={<Phone size={29} color={colors.white} />} label="Accept" onPress={() => void accept()} />
         </View>
       ) : (
         <View style={[styles.controlsPanel, {paddingBottom: 35 + insets.bottom}]}>
-          <View style={styles.tipRow}>{[5, 10, 25].map(amount => <Pressable key={amount} onPress={() => void sendTip(amount)} style={styles.quickTip}><Gift size={17} color={colors.coral} /><Text style={styles.quickTipText}>{amount}</Text></Pressable>)}</View>
           <View style={styles.controls}>
             <CallControl icon={muted ? <MicOff size={25} color={colors.white} /> : <Mic size={25} color={colors.white} />} label={muted ? 'Unmute' : 'Mute'} onPress={toggleMute} />
             <CallControl icon={<Volume2 size={25} color={colors.white} />} label={speaker ? 'Speaker' : 'Earpiece'} onPress={toggleSpeaker} />
             {video ? <CallControl icon={cameraOff ? <CameraOff size={25} color={colors.white} /> : <Camera size={25} color={colors.white} />} label={cameraOff ? 'Camera on' : 'Camera off'} onPress={toggleVideo} /> : null}
             {video ? <CallControl icon={<RotateCcw size={25} color={colors.white} />} label="Flip" onPress={() => engineRef.current?.switchCamera()} /> : null}
+            <CallControl icon={<Gift size={25} color={colors.white} />} label="Tip" onPress={() => setTipOpen(true)} />
           </View>
           <Pressable onPress={() => void endCall()} style={styles.end}><PhoneOff size={31} color={colors.white} /></Pressable>
         </View>
       )}
+      <TipSheet visible={tipOpen} balance={Number(viewer?.wallet.coins_balance || 0)} onClose={() => setTipOpen(false)} onSend={sendTip} />
     </View>
   );
 }
@@ -306,13 +310,6 @@ const styles = StyleSheet.create({
   tipToast: {position: 'absolute', top: '36%', alignSelf: 'center', paddingHorizontal: spacing.lg, paddingVertical: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderRadius: radii.md, backgroundColor: colors.surface},
   tipToastText: {fontSize: 18, fontWeight: '900', color: colors.ink},
   incomingActions: {position: 'absolute', left: 45, right: 45, flexDirection: 'row', justifyContent: 'space-between'},
-  controlsPanel: {position: 'absolute', left: 0, right: 0, bottom: 0, padding: spacing.lg, backgroundColor: 'rgba(8,10,9,0.78)', alignItems: 'center', gap: spacing.md},
-  tipRow: {flexDirection: 'row', gap: spacing.sm},
-  quickTip: {height: 38, minWidth: 70, paddingHorizontal: spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderRadius: radii.round, backgroundColor: colors.surface},
-  quickTipText: {fontWeight: '900', color: colors.ink},
-  controls: {flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center', gap: spacing.sm},
-  controlWrap: {width: 68, alignItems: 'center', gap: spacing.xs},
-  control: {width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.18)'},
-  controlLabel: {fontSize: 11, color: colors.white, textAlign: 'center'},
-  end: {width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.danger},
+  controlsPanel: {position: 'absolute', left: 0, right: 0, bottom: 0, padding: spacing.lg, alignItems: 'center', gap: spacing.md},
+  controls: {maxWidth: 350, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'center', gap: spacing.xs}, controlWrap: {width: 62, alignItems: 'center', gap: 5}, control: {width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.overlay, borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)'}, controlLabel: {fontSize: 10, fontWeight: '700', color: colors.white, textAlign: 'center'}, end: {width: 66, height: 66, borderRadius: 33, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(197,47,73,0.78)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)'},
 });

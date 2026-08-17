@@ -49,7 +49,7 @@ export function WetButton({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 52,
+    minHeight: 50,
     paddingHorizontal: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
@@ -64,6 +64,6 @@ const styles = StyleSheet.create({
   ghost: {backgroundColor: 'transparent'},
   label: {color: colors.white, fontSize: 16, fontWeight: '800'},
   darkLabel: {color: colors.ink},
-  pressed: {opacity: 0.78, transform: [{scale: 0.985}]},
+  pressed: {opacity: 0.82, transform: [{scale: 0.98}]},
   disabled: {opacity: 0.45},
 });

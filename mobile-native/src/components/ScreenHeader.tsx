@@ -1,6 +1,6 @@
 import type {ReactNode} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
-import {Bell, ChevronLeft} from 'lucide-react-native';
+import {Bell, ChevronLeft, Coins} from 'lucide-react-native';
 import {useNavigation} from '@react-navigation/native';
 import {colors, spacing} from '../theme';
 
@@ -40,7 +40,7 @@ export function ScreenHeader({
       <View style={styles.right}>
         {typeof coins === 'number' ? (
           <View style={styles.coins}>
-            <Text style={styles.coinLabel}>Coins</Text>
+            <Coins size={15} color={colors.mustard} />
             <Text style={styles.coinValue}>{Math.floor(coins)}</Text>
           </View>
         ) : null}
@@ -58,11 +58,11 @@ export function ScreenHeader({
 
 const styles = StyleSheet.create({
   root: {
-    minHeight: 92,
+    minHeight: 76,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: colors.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -70,12 +70,11 @@ const styles = StyleSheet.create({
   },
   left: {flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.xs},
   copy: {flex: 1},
-  eyebrow: {color: colors.teal, fontSize: 11, fontWeight: '900', textTransform: 'uppercase'},
-  title: {fontSize: 29, lineHeight: 34, fontWeight: '900', color: colors.ink},
+  eyebrow: {color: colors.teal, fontSize: 10, lineHeight: 14, fontWeight: '900', textTransform: 'uppercase'},
+  title: {fontSize: 25, lineHeight: 29, fontWeight: '900', color: colors.ink},
   right: {flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginLeft: spacing.sm},
-  coins: {minWidth: 48, paddingLeft: spacing.sm, borderLeftWidth: 3, borderLeftColor: colors.mustard},
-  coinLabel: {fontSize: 11, color: colors.muted},
-  coinValue: {fontSize: 20, lineHeight: 22, fontWeight: '900', color: colors.ink},
-  iconButton: {width: 44, height: 44, alignItems: 'center', justifyContent: 'center'},
-  dot: {position: 'absolute', right: 8, top: 7, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.coral},
+  coins: {height: 38, minWidth: 58, paddingHorizontal: spacing.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderRadius: 19, backgroundColor: colors.mustardSoft},
+  coinValue: {fontSize: 15, lineHeight: 19, fontWeight: '900', color: colors.ink},
+  iconButton: {width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.canvas},
+  dot: {position: 'absolute', right: 7, top: 6, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.coral, borderWidth: 1.5, borderColor: colors.surface},
 });
