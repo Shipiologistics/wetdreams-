@@ -112,6 +112,7 @@ export function AdminDashboard({
   const liveVisitors = visitors.filter((visitor) => visitor.presence === "online" && new Date(visitor.last_seen_at).getTime() >= liveCutoff);
   const openReports = reports.filter((report) => ["open", "reviewing"].includes(report.status)).length;
   const pendingWithdrawals = withdrawals.filter((withdrawal) => withdrawal.status === "pending").length;
+  const pendingApprovals = users.filter((user) => user.role === "user" && !user.is_guest && !user.is_verified && !user.is_banned).length;
   const bannedUsers = users.filter((user) => user.is_banned).length;
   const filteredUsers = users.filter((user) =>
     `${user.display_name} ${user.username} ${user.role}`.toLowerCase().includes(search.toLowerCase()),
@@ -135,6 +136,16 @@ export function AdminDashboard({
     const notes = window.prompt(user.is_banned ? "Reason for restoring access" : "Reason for suspension");
     if (!notes) return;
     await run(user.id, async () => createClient().rpc("admin_set_user_ban", { p_target_user: user.id, p_banned: !user.is_banned, p_notes: notes }));
+  }
+
+  async function toggleVerification(user: User) {
+    const approve = !user.is_verified;
+    const notes = window.prompt(approve ? "Approval note" : "Reason for hiding from Discover") ?? "";
+    await run(`verify-${user.id}`, async () => createClient().rpc("admin_set_user_verification", {
+      p_target_user: user.id,
+      p_verified: approve,
+      p_notes: notes,
+    }));
   }
 
   async function adjustWallet(user: User) {
@@ -222,6 +233,7 @@ export function AdminDashboard({
               <Metric icon={Eye} label="Live visitors" value={liveVisitors.length} />
               <Metric icon={UsersRound} label="Total visitors" value={visitors.length} />
               <Metric icon={ShieldAlert} label="Open reports" value={openReports} />
+              <Metric icon={Check} label="Pending approvals" value={pendingApprovals} />
               <Metric icon={UserRoundCog} label="Accounts" value={users.length} />
               <Metric icon={Ban} label="Suspended" value={bannedUsers} />
               <Metric icon={BadgeIndianRupee} label="Pending payouts" value={pendingWithdrawals} />
@@ -288,6 +300,11 @@ export function AdminDashboard({
                   <article className="admin-row compact-row" key={user.id}>
                     <div className="admin-row-main">
                       <span className={`status-label ${user.is_banned ? "rejected" : "resolved"}`}>{user.is_banned ? "suspended" : "active"}</span>
+                      {user.role === "user" && !user.is_guest && (
+                        <span className={`status-label ${user.is_verified ? "approved" : "pending"}`}>
+                          {user.is_verified ? "discover approved" : "verification pending"}
+                        </span>
+                      )}
                       <h3>{user.display_name}</h3>
                       <p>@{user.username} · {user.role} · {user.gender ?? "unknown"} · {user.status}</p>
                       <dl className="admin-facts">
@@ -298,6 +315,12 @@ export function AdminDashboard({
                     </div>
                     <div className="admin-row-actions">
                       <button className="button secondary small" onClick={() => adjustWallet(user)}><BadgeIndianRupee size={16} /> Wallet</button>
+                      {user.role === "user" && !user.is_guest && (
+                        <button className="button secondary small" disabled={pending === `verify-${user.id}`} onClick={() => toggleVerification(user)}>
+                          {pending === `verify-${user.id}` ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />}
+                          {user.is_verified ? "Hide" : "Approve"}
+                        </button>
+                      )}
                       {user.role !== "admin" && <button className="button danger small" onClick={() => toggleBan(user)}><Ban size={16} /> {user.is_banned ? "Restore" : "Suspend"}</button>}
                     </div>
                   </article>

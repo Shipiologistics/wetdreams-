@@ -1047,6 +1047,10 @@ export type Database = {
         Args: { p_banned: boolean; p_notes: string; p_target_user: string }
         Returns: undefined
       }
+      admin_set_user_verification: {
+        Args: { p_notes?: string; p_target_user: string; p_verified: boolean }
+        Returns: undefined
+      }
       admin_update_platform_config: {
         Args: { p_key: string; p_notes?: string; p_value: number }
         Returns: undefined

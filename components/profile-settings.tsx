@@ -11,6 +11,7 @@ import {
   Check,
   Copy,
   Crop,
+  Clock3,
   ImagePlus,
   IndianRupee,
   LoaderCircle,
@@ -289,7 +290,7 @@ export function ProfileSettings({ account, profile, media }: { account: Account;
           <span className="eyebrow">@{account.username}</span>
           <h1>{account.display_name}</h1>
           <div className="identity-badges">
-            {account.is_verified && <span><BadgeCheck size={16} /> Verified</span>}
+            {account.is_verified ? <span><BadgeCheck size={16} /> Verified</span> : !account.is_guest && <span className="pending-verification"><Clock3 size={16} /> Verification pending</span>}
             <span className={`presence-label ${account.status}`}>{account.status}</span>
             {profile.location && <span><MapPin size={15} /> {profile.location}</span>}
           </div>

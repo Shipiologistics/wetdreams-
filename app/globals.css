@@ -3036,6 +3036,11 @@ body:has(.side-nav) .global-back-button-fixed {
   text-transform: capitalize;
 }
 
+.identity-badges .pending-verification {
+  background: #fff3cc;
+  color: #785500;
+}
+
 .profile-identity p {
   max-width: 640px;
   margin: 0;
