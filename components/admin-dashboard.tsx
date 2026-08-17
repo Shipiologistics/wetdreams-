@@ -46,24 +46,21 @@ function withdrawalStatusLabel(status: string) {
   return status;
 }
 
-const settingLabels: Record<string, { label: string; helper: string; step: string; min: string; max: string }> = {
+const settingLabels: Record<string, { label: string; step: string; min: string; max: string }> = {
   bean_inr_value: {
     label: "Bean to rupee",
-    helper: "Creator payout value. Example: 1 bean = ₹0.60.",
     step: "0.01",
     min: "0.01",
     max: "100",
   },
   bean_payout_ratio: {
     label: "Bean earning ratio",
-    helper: "How many beans creators earn from paid chat/call spend. 0.8 means 80%.",
     step: "0.01",
     min: "0",
     max: "1",
   },
   free_message_limit: {
     label: "Free messages",
-    helper: "Starter messages allowed before per-minute paid chat applies.",
     step: "1",
     min: "0",
     max: "10000",
@@ -492,7 +489,7 @@ export function AdminDashboard({
                 <form className="setting-row" key={key} onSubmit={(event) => { event.preventDefault(); void saveSetting(key); }}>
                   <div>
                     <h3>{meta.label}</h3>
-                    <p>{meta.helper}</p>
+                    <p>{settingHelper(key, settingsDraft)}</p>
                   </div>
                   <label>
                     Value
@@ -745,6 +742,24 @@ function configNumber(config: PlatformConfig[], key: string, fallback: number) {
   const value = config.find((item) => item.key === key)?.value;
   const parsed = jsonToNumber(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function settingHelper(key: keyof typeof settingLabels, draft: Record<keyof typeof settingLabels, string>) {
+  const beanValue = Number(draft.bean_inr_value);
+  const payoutRatio = Number(draft.bean_payout_ratio);
+  const safeBeanValue = Number.isFinite(beanValue) ? beanValue : 0;
+  const safePayoutRatio = Number.isFinite(payoutRatio) ? payoutRatio : 0;
+
+  if (key === "bean_inr_value") {
+    return `Withdrawal value. Right now 1 bean pays ₹${formatMoney(safeBeanValue)}.`;
+  }
+
+  if (key === "bean_payout_ratio") {
+    const exampleBeans = 10 * safePayoutRatio;
+    return `Earning share from user spend. ${safePayoutRatio} means ${formatMoney(safePayoutRatio * 100)}%. Example: 10 coins charged gives ${formatMoney(exampleBeans)} beans, worth ₹${formatMoney(exampleBeans * safeBeanValue)}.`;
+  }
+
+  return "Starter messages allowed before per-minute paid chat applies.";
 }
 
 function jsonToNumber(value: Json | undefined) {
