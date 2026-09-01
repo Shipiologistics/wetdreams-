@@ -36,7 +36,9 @@ export function NotificationsScreen({navigation}: Props) {
     const metadata = item.metadata && typeof item.metadata === 'object' && !Array.isArray(item.metadata) ? item.metadata as Record<string, unknown> : {};
     const roomId = typeof metadata.room_id === 'string' ? metadata.room_id : item.href.match(/\/chat\/([^?]+)/)?.[1];
     const callId = typeof metadata.call_id === 'string' ? metadata.call_id : null;
-    if (item.type.includes('call') && callId) navigation.navigate('Call', {callId, incoming: true});
+    const destination = typeof metadata.destination === 'string' ? metadata.destination : null;
+    if (destination === 'host_rates' || item.href === '/profile#rates') navigation.navigate('Main', {screen: 'Profile', params: {focus: 'rates'}});
+    else if (item.type.includes('call') && callId) navigation.navigate('Call', {callId, incoming: true});
     else if (roomId) navigation.navigate('ChatRoom', {roomId});
   }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -40,6 +41,13 @@ type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type ProfileMedia = Database["public"]["Tables"]["profile_media"]["Row"];
 type Section = "overview" | "visitors" | "reports" | "hosts" | "users" | "blocks" | "withdrawals" | "settings" | "audit";
 type GenderFilter = "all" | "male" | "female";
+type WalletCurrency = "coin" | "bean";
+type WalletAdjustmentDraft = {
+  user: User;
+  currency: WalletCurrency;
+  amount: string;
+  notes: string;
+};
 
 function withdrawalStatusLabel(status: string) {
   if (status === "paid" || status === "approved") return "complete";
@@ -101,6 +109,7 @@ export function AdminDashboard({
   const [message, setMessage] = useState<string | null>(null);
   const [genderFilter, setGenderFilter] = useState<GenderFilter>("all");
   const [profileViewer, setProfileViewer] = useState<User | null>(null);
+  const [walletAdjustment, setWalletAdjustment] = useState<WalletAdjustmentDraft | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [settingsDraft, setSettingsDraft] = useState(() => ({
     bean_inr_value: String(configNumber(platformConfig, "bean_inr_value", 0.8)),
@@ -167,34 +176,88 @@ export function AdminDashboard({
   async function toggleVerification(user: User) {
     const approve = !user.is_verified;
     const notes = window.prompt(approve ? "Approval note" : "Reason for hiding from Discover") ?? "";
-    await run(`verify-${user.id}`, async () => createClient().rpc("admin_set_user_verification", {
-      p_target_user: user.id,
-      p_verified: approve,
-      p_notes: notes,
+    await run(`verify-${user.id}`, async () => postHostReview({
+      action: "set_verification",
+      userId: user.id,
+      verified: approve,
+      notes,
     }));
   }
 
   async function adjustWallet(user: User) {
-    const currency = window.prompt("Admin wallet credit: type coin or bean", "coin");
-    if (currency !== "coin" && currency !== "bean") return;
-    const amount = Number(window.prompt("Amount: use a negative number to deduct", "100"));
-    if (!amount) return;
-    const notes = window.prompt("Reason for adjustment, such as WhatsApp recharge confirmation");
-    if (!notes) return;
-    await run(user.id, async () => createClient().rpc("admin_adjust_wallet", { p_target_user: user.id, p_currency: currency, p_amount: amount, p_notes: notes }));
+    setMessage(null);
+    setProfileViewer(null);
+    setWalletAdjustment({
+      user,
+      currency: "coin",
+      amount: "100",
+      notes: "WhatsApp recharge confirmed",
+    });
+  }
+
+  async function submitWalletAdjustment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!walletAdjustment) return;
+
+    const amount = Number(walletAdjustment.amount);
+    const notes = walletAdjustment.notes.trim();
+    if (!Number.isFinite(amount) || amount === 0) {
+      setMessage("Enter a non-zero wallet amount.");
+      return;
+    }
+    if (notes.length < 3) {
+      setMessage("Enter a reason for this wallet adjustment.");
+      return;
+    }
+
+    const pendingId = `wallet-${walletAdjustment.user.id}`;
+    setPending(pendingId);
+    setMessage(null);
+    const response = await fetch("/api/admin/wallet/adjust", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: walletAdjustment.user.id,
+        currency: walletAdjustment.currency,
+        amount,
+        notes,
+      }),
+    });
+    const result = await response.json().catch(() => ({})) as { error?: string; balance?: number };
+    setPending(null);
+
+    if (!response.ok || typeof result.balance !== "number") {
+      setMessage(messageForError(result.error ?? "Wallet adjustment failed. Please try again."));
+      return;
+    }
+
+    setMessage(`${walletAdjustment.user.display_name} now has ${formatMoney(result.balance)} ${walletAdjustment.currency === "coin" ? "coins" : "beans"}.`);
+    setWalletAdjustment(null);
+    router.refresh();
   }
 
   async function reviewWithdrawal(withdrawal: Withdrawal, approve: boolean) {
-    const notes = window.prompt(approve ? "Payout reference or note" : "Reason for rejection") ?? "Reviewed by admin";
+    const response = window.prompt(
+      approve ? "Payout reference or note" : "Reason for rejection",
+      approve ? "Payment completed" : "",
+    );
+    if (response === null) return;
+    const cleaned = response.trim().slice(0, 2000);
+    const notes = cleaned.length >= 3
+      ? cleaned
+      : approve
+        ? "Payment completed"
+        : "Withdrawal rejected by admin";
     await run(withdrawal.id, async () => createClient().rpc("admin_review_withdrawal", { p_request_id: withdrawal.id, p_approve: approve, p_notes: notes }));
   }
 
   async function reviewHostRequest(request: HostRequest, approve: boolean) {
     const notes = window.prompt(approve ? "Approval note" : "Reason for rejection") ?? "";
-    await run(`host-${request.id}`, async () => createClient().rpc("admin_review_host_request", {
-      p_request_id: request.id,
-      p_approve: approve,
-      p_notes: notes,
+    await run(`host-${request.id}`, async () => postHostReview({
+      action: "review_request",
+      requestId: request.id,
+      approve,
+      notes,
     }));
   }
 
@@ -538,6 +601,86 @@ export function AdminDashboard({
             onToggleVerification={toggleVerification}
           />
         )}
+
+        {walletAdjustment && (
+          <form className="modal-backdrop admin-modal-backdrop" onSubmit={submitWalletAdjustment} onMouseDown={() => setWalletAdjustment(null)}>
+            <section className="modal wallet-adjust-modal" role="dialog" aria-modal="true" aria-labelledby="wallet-adjust-title" onMouseDown={(event) => event.stopPropagation()}>
+              <div className="modal-header">
+                <div>
+                  <span className="eyebrow">Admin wallet</span>
+                  <h2 id="wallet-adjust-title">Adjust balance</h2>
+                </div>
+                <button className="icon-button" type="button" onClick={() => setWalletAdjustment(null)} aria-label="Close wallet adjustment">
+                  <X size={21} />
+                </button>
+              </div>
+
+              <div className="wallet-adjust-target">
+                <div>
+                  <strong>{walletAdjustment.user.display_name}</strong>
+                  <span>@{walletAdjustment.user.username}</span>
+                </div>
+                <span>Current: {formatMoney(walletAdjustment.currency === "coin"
+                  ? walletMap.get(walletAdjustment.user.id)?.coins_balance
+                  : walletMap.get(walletAdjustment.user.id)?.beans_balance)} {walletAdjustment.currency === "coin" ? "coins" : "beans"}</span>
+              </div>
+
+              <fieldset className="wallet-adjust-currency">
+                <legend>Balance type</legend>
+                <div className="admin-segmented">
+                  {(["coin", "bean"] as const).map((currency) => (
+                    <button
+                      className={clsx(walletAdjustment.currency === currency && "active")}
+                      key={currency}
+                      type="button"
+                      onClick={() => setWalletAdjustment((current) => current ? { ...current, currency } : current)}
+                    >
+                      {currency === "coin" ? "Coins" : "Beans"}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <label className="field">
+                Amount
+                <input
+                  autoFocus
+                  inputMode="decimal"
+                  max="1000000"
+                  min="-1000000"
+                  name="amount"
+                  required
+                  step="0.01"
+                  type="number"
+                  value={walletAdjustment.amount}
+                  onChange={(event) => setWalletAdjustment((current) => current ? { ...current, amount: event.target.value } : current)}
+                />
+                <small>Use a negative number only when deducting a balance.</small>
+              </label>
+
+              <label className="field">
+                Reason
+                <textarea
+                  maxLength={2000}
+                  minLength={3}
+                  name="notes"
+                  required
+                  rows={3}
+                  value={walletAdjustment.notes}
+                  onChange={(event) => setWalletAdjustment((current) => current ? { ...current, notes: event.target.value } : current)}
+                />
+              </label>
+
+              <div className="wallet-adjust-actions">
+                <button className="button secondary" type="button" onClick={() => setWalletAdjustment(null)}>Cancel</button>
+                <button className="button primary" disabled={pending === `wallet-${walletAdjustment.user.id}`} type="submit">
+                  {pending === `wallet-${walletAdjustment.user.id}` ? <LoaderCircle className="spin" size={17} /> : <Check size={17} />}
+                  Apply adjustment
+                </button>
+              </div>
+            </section>
+          </form>
+        )}
       </main>
     </div>
   );
@@ -743,6 +886,18 @@ function configNumber(config: PlatformConfig[], key: string, fallback: number) {
   const value = config.find((item) => item.key === key)?.value;
   const parsed = jsonToNumber(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+async function postHostReview(body: Record<string, unknown>) {
+  const response = await fetch("/api/admin/hosts/review", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const payload = await response.json().catch(() => null) as { error?: string } | null;
+  return {
+    error: response.ok ? null : { message: payload?.error ?? "HOST_REVIEW_FAILED" },
+  };
 }
 
 function settingHelper(key: keyof typeof settingLabels, draft: Record<keyof typeof settingLabels, string>) {

@@ -19,6 +19,7 @@ import {
   ShieldAlert,
   SmilePlus,
   Sparkles,
+  Timer,
   Video,
   X,
 } from "lucide-react";
@@ -86,6 +87,8 @@ export function ChatRoom({
   const [showMedia, setShowMedia] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [typing, setTyping] = useState(false);
+  const [assuranceTyping, setAssuranceTyping] = useState(false);
+  const [nowTs, setNowTs] = useState(() => Date.now());
   const [coinWallet, setCoinWallet] = useState(initialCoins);
   const [beanWallet, setBeanWallet] = useState(initialBeans);
   const [activeCall, setActiveCall] = useState(initialCall);
@@ -105,6 +108,18 @@ export function ChatRoom({
   const isRandomRoom = room.room_type === "random";
   const messageBillingApplies = viewerGender === "male";
   const paywalled = messageBillingApplies && !isRandomRoom && count >= 10 && !profile.free_chat_enabled && Number(profile.chat_rate_coins) > 0;
+
+  const paidUntil = useMemo(() => {
+    let latest = 0;
+    for (const message of messages) {
+      if (!message.is_paid || message.sender_id !== viewerId) continue;
+      const expiresAt = new Date(message.created_at).getTime() + 60_000;
+      if (expiresAt > latest) latest = expiresAt;
+    }
+    return latest;
+  }, [messages, viewerId]);
+  const paidSecondsLeft = paywalled ? Math.max(0, Math.ceil((paidUntil - nowTs) / 1000)) : 0;
+  const paidMinuteActive = paidSecondsLeft > 0;
 
   const markRoomRead = useCallback(async () => {
     const { error: readError } = await createClient().rpc("mark_room_read", { p_room_id: room.id });
@@ -244,8 +259,34 @@ export function ChatRoom({
   }, [markRoomRead, other.id, room.id, router, viewerId]);
 
   useEffect(() => {
+    if (!paywalled || paidUntil <= Date.now()) return;
+    const tick = window.setInterval(() => setNowTs(Date.now()), 1000);
+    return () => window.clearInterval(tick);
+  }, [paywalled, paidUntil]);
+
+  useEffect(() => {
+    if (!paidMinuteActive || blocked) {
+      return;
+    }
+    let hideTimer: number | null = null;
+    function pulse() {
+      setAssuranceTyping(true);
+      hideTimer = window.setTimeout(() => setAssuranceTyping(false), 2600);
+    }
+    pulse();
+    const cycle = window.setInterval(pulse, 6500);
+    return () => {
+      window.clearInterval(cycle);
+      if (hideTimer) window.clearTimeout(hideTimer);
+      setAssuranceTyping(false);
+    };
+  }, [paidMinuteActive, blocked]);
+
+  const showTyping = typing || assuranceTyping;
+
+  useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, typing]);
+  }, [messages, showTyping]);
 
   function signalTyping(value: string) {
     setText(value);
@@ -424,7 +465,7 @@ export function ChatRoom({
         <Avatar name={otherAccount.display_name} src={primaryImage} size={42} />
         <div className="chat-person">
           <strong>{otherAccount.display_name}</strong>
-          <span>{typing ? "typing..." : otherPresence}</span>
+          <span>{showTyping ? "typing..." : otherPresence}</span>
         </div>
         {isRandomRoom && (
           <button className="random-end-button" type="button" onClick={disconnectRandom} disabled={randomDisconnecting} title="End random chat">
@@ -472,18 +513,26 @@ export function ChatRoom({
             </div>
           </div>
         ))}
-        {typing && <div className="typing-bubble"><span /><span /><span /></div>}
+        {showTyping && <div className="typing-bubble"><span /><span /><span /></div>}
         <div ref={endRef} />
       </div>
 
       <div className="chat-compose-wrap">
         {paywalled && !blocked && (
-          <div className="paywall-banner">
-            <Coins size={19} />
-            <span><strong>{Number(profile.chat_rate_coins)} coins</strong> unlocks 1 min chat</span>
-            <span className="wallet-inline">{coinWallet} left</span>
-            <button type="button" onClick={() => setTopupOpen(true)}>WhatsApp recharge</button>
-          </div>
+          paidMinuteActive ? (
+            <div className="paywall-banner paid-minute-active">
+              <Timer size={19} />
+              <span><strong>{formatCountdown(paidSecondsLeft)}</strong> left in your paid minute</span>
+              <span className="wallet-inline">{coinWallet} coins left</span>
+            </div>
+          ) : (
+            <div className="paywall-banner">
+              <Coins size={19} />
+              <span>Pay <strong>{Number(profile.chat_rate_coins)} coins</strong> to chat 1 more minute</span>
+              <span className="wallet-inline">{coinWallet} left</span>
+              <button type="button" onClick={() => setTopupOpen(true)}>WhatsApp recharge</button>
+            </div>
+          )
         )}
         {blocked && (
           <div className="chat-notice blocked-state" role="status">
@@ -553,6 +602,12 @@ function MessageReceipt({ message }: { message: Message }) {
   if (message.read_at) return <CheckCheck className="receipt-icon read" size={14} aria-label="Seen" />;
   if (message.delivered_at) return <CheckCheck className="receipt-icon delivered" size={14} aria-label="Delivered" />;
   return <Check className="receipt-icon sent" size={14} aria-label="Sent" />;
+}
+
+function formatCountdown(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
 function formatTipAmount(amount: number) {
@@ -674,6 +729,7 @@ function CallOverlay({
     document.documentElement.classList.add("call-overlay-open");
     return () => {
       document.documentElement.classList.remove("call-overlay-open");
+      document.documentElement.classList.remove("call-privacy-shielded");
       window.requestAnimationFrame(() => {
         const appMain = document.querySelector<HTMLElement>(".app-main");
         if (appMain) {
@@ -682,6 +738,59 @@ function CallOverlay({
         }
         window.scrollTo(0, 0);
       });
+    };
+  }, []);
+
+  useEffect(() => {
+    let releaseTimer: number | null = null;
+
+    function showPrivacyShield() {
+      if (releaseTimer) window.clearTimeout(releaseTimer);
+      document.documentElement.classList.add("call-privacy-shielded");
+    }
+
+    function releasePrivacyShield(delay = 350) {
+      if (releaseTimer) window.clearTimeout(releaseTimer);
+      releaseTimer = window.setTimeout(() => {
+        if (document.visibilityState === "visible" && document.hasFocus()) {
+          document.documentElement.classList.remove("call-privacy-shielded");
+        }
+      }, delay);
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "hidden") showPrivacyShield();
+      else releasePrivacyShield(500);
+    }
+
+    function handleFocus() {
+      releasePrivacyShield();
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "PrintScreen") return;
+      showPrivacyShield();
+      releasePrivacyShield(1500);
+    }
+
+    if (document.visibilityState !== "visible" || !document.hasFocus()) {
+      showPrivacyShield();
+    }
+
+    window.addEventListener("blur", showPrivacyShield);
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("pagehide", showPrivacyShield);
+    window.addEventListener("keydown", handleKeyDown, true);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      if (releaseTimer) window.clearTimeout(releaseTimer);
+      window.removeEventListener("blur", showPrivacyShield);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("pagehide", showPrivacyShield);
+      window.removeEventListener("keydown", handleKeyDown, true);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.documentElement.classList.remove("call-privacy-shielded");
     };
   }, []);
 
@@ -719,6 +828,10 @@ function CallOverlay({
 
   return (
     <div className={`call-overlay ${call.call_type}-call ${isRinging ? "ringing" : "ongoing"}`}>
+      <div className="call-privacy-shield" aria-hidden="true">
+        <ShieldAlert size={42} />
+        <strong>Private call hidden</strong>
+      </div>
       <div className="call-backdrop">{image && <Image src={image} alt="" fill sizes="100vw" />}</div>
       <div className="call-content">
         <div className="call-topbar">

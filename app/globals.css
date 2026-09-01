@@ -43,7 +43,14 @@ html.call-overlay-open body {
 }
 
 html.call-overlay-open .app-main {
+  margin-left: 0;
   overflow: hidden;
+}
+
+html.call-overlay-open .side-nav,
+html.call-overlay-open .bottom-nav,
+html.call-overlay-open .mobile-header-notifications {
+  display: none !important;
 }
 
 html.wetdreams-auth-recovering body {
@@ -2662,6 +2669,56 @@ a.header-balance:active {
   font-weight: 800;
 }
 
+.paywall-banner.paid-minute-active {
+  background: #e6f7ec;
+  color: #1a5c33;
+}
+
+.paywall-banner.paid-minute-active .wallet-inline {
+  color: #35784f;
+}
+
+.rate-receivables {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.rate-receivables > strong {
+  font-size: 13px;
+}
+
+.rate-receivables-grid {
+  display: grid;
+  gap: 6px;
+}
+
+.rate-receivable-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rate-receivable-row span {
+  min-width: 46px;
+  color: var(--muted, #777);
+}
+
+.rate-receivable-row em {
+  font-style: normal;
+  color: #1a5c33;
+  font-weight: 700;
+}
+
+.rate-receivables > small {
+  color: var(--muted, #777);
+}
+
 .chat-notice,
 .page-notice {
   display: flex;
@@ -2781,6 +2838,30 @@ a.header-balance:active {
     linear-gradient(180deg, rgb(11 20 17 / 92%) 0%, rgb(18 33 29 / 96%) 42%, rgb(10 12 11) 100%),
     #101412;
   color: white;
+}
+
+.call-privacy-shield {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  background: #000;
+  color: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0ms;
+}
+
+.call-privacy-shield strong {
+  font-size: 16px;
+}
+
+html.call-privacy-shielded .call-privacy-shield {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .incoming-call-overlay {
@@ -3613,6 +3694,16 @@ a.header-balance:active {
   padding: 18px;
 }
 
+body:has(.modal-backdrop) .global-back-button-fixed {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal-backdrop:has(.coin-topup-modal) {
+  background: rgb(4 7 10 / 78%);
+  backdrop-filter: blur(4px);
+}
+
 .modal {
   width: min(460px, 100%);
   max-height: calc(100vh - 36px);
@@ -3891,11 +3982,14 @@ a.header-balance:active {
   line-height: 1.1;
 }
 
-.coin-price-row del {
-  color: #747b76;
-  font-size: 12px;
-  font-weight: 700;
-  text-decoration-thickness: 2px;
+.coin-price-row > .coin-bonus {
+  border-radius: 999px;
+  background: rgb(64 215 204 / 12%);
+  color: var(--teal);
+  padding: 3px 6px;
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 1;
 }
 
 .conversion-note {
@@ -4267,6 +4361,7 @@ a.header-balance:active {
 }
 
 .settings-section {
+  scroll-margin-top: 24px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
@@ -4830,6 +4925,91 @@ a.header-balance:active {
   color: white;
 }
 
+.wallet-adjust-modal {
+  width: min(430px, 100%);
+  display: grid;
+  gap: 16px;
+}
+
+.wallet-adjust-modal .modal-header {
+  margin-bottom: 0;
+}
+
+.wallet-adjust-target {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: rgb(64 215 204 / 8%);
+  padding: 12px 14px;
+}
+
+.wallet-adjust-target > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.wallet-adjust-target strong,
+.wallet-adjust-target span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wallet-adjust-target > span,
+.wallet-adjust-target > div span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.wallet-adjust-currency {
+  min-width: 0;
+  border: 0;
+  display: grid;
+  gap: 7px;
+  padding: 0;
+}
+
+.wallet-adjust-currency legend {
+  color: var(--muted);
+  padding: 0;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.wallet-adjust-currency .admin-segmented {
+  width: 100%;
+}
+
+.wallet-adjust-currency .admin-segmented button {
+  flex: 1;
+}
+
+.wallet-adjust-modal .field {
+  gap: 7px;
+}
+
+.wallet-adjust-modal .field small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.wallet-adjust-modal textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.wallet-adjust-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .admin-row {
   min-height: 120px;
   display: flex;
@@ -5134,12 +5314,14 @@ a.header-balance:active {
   gap: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface);
+  color: var(--ink);
   padding: 14px;
 }
 
 .setting-row h3 {
   margin: 0 0 5px;
+  color: var(--ink);
   font-size: 14px;
 }
 
@@ -5165,6 +5347,7 @@ a.header-balance:active {
   height: 42px;
   border: 1px solid var(--line);
   border-radius: 7px;
+  background: #0c1117;
   padding: 0 10px;
   color: var(--ink);
   font-size: 15px;
@@ -6005,6 +6188,75 @@ select,
   }
   .coin-topup-modal {
     width: min(390px, 100%);
+    border-radius: 14px;
+    padding: 18px;
+  }
+  .coin-topup-modal .modal-header {
+    align-items: center;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 12px;
+  }
+  .coin-topup-modal .modal-header h2 {
+    font-size: 26px;
+    line-height: 1.05;
+  }
+  .coin-topup-modal .modal-header .eyebrow {
+    margin-bottom: 5px;
+    font-size: 10px;
+  }
+  .coin-topup-modal .modal-header .icon-button {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+  }
+  .coin-topup-modal .coin-offer-note {
+    margin-bottom: 12px;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .coin-topup-modal .coin-packages {
+    gap: 8px;
+  }
+  .coin-topup-modal .coin-packages button {
+    min-height: 116px;
+    border-radius: 10px;
+    gap: 4px;
+    padding: 30px 8px 10px;
+  }
+  .coin-topup-modal .coin-packages button:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    min-height: 108px;
+  }
+  .coin-topup-modal .coin-packages button > svg {
+    width: 17px;
+    height: 17px;
+  }
+  .coin-topup-modal .coin-packages strong {
+    margin-top: 1px;
+    font-size: 18px;
+    line-height: 1.15;
+  }
+  .coin-topup-modal .coin-price-row {
+    gap: 4px;
+  }
+  .coin-topup-modal .coin-price-row > span {
+    font-size: 14px;
+  }
+  .coin-topup-modal .coin-price-row > .coin-bonus {
+    font-size: 9px;
+  }
+  .coin-topup-modal .coin-packages .offer-label {
+    top: 7px;
+    right: 7px;
+    max-width: calc(100% - 14px);
+    padding: 4px 6px;
+    font-size: 9px;
+  }
+  .coin-topup-modal .coin-packages .discount-code {
+    margin-top: 1px;
+    padding: 4px 6px;
+    font-size: 9px;
   }
   .page-header h1,
   .profile-identity h1 { font-size: 29px; }
@@ -6309,6 +6561,22 @@ select,
     flex-direction: column;
   }
   .admin-profile-actions .button {
+    width: 100%;
+  }
+  .wallet-adjust-modal {
+    width: calc(100vw - 20px);
+    padding: 16px;
+  }
+  .wallet-adjust-target {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .wallet-adjust-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+  .wallet-adjust-actions .button {
     width: 100%;
   }
   .admin-mini-row { grid-template-columns: 18px minmax(0, 1fr); }

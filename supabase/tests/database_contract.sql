@@ -90,4 +90,57 @@ begin
 end;
 $ledger$;
 
+update public.users
+set role = 'admin'
+where id = '10000000-0000-4000-8000-000000000001';
+
+insert into public.withdrawal_requests (
+  id,
+  user_id,
+  beans_requested,
+  inr_amount,
+  payout_method,
+  payout_upi_id
+)
+values (
+  '20000000-0000-4000-8000-000000000001',
+  '10000000-0000-4000-8000-000000000002',
+  10,
+  8,
+  'upi',
+  'contract@upi'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select public.admin_review_withdrawal(
+  '20000000-0000-4000-8000-000000000001',
+  true,
+  'ok'
+);
+reset role;
+
+do $withdrawal_notes$
+declare
+  v_status text;
+  v_notes text;
+begin
+  select status into v_status
+  from public.withdrawal_requests
+  where id = '20000000-0000-4000-8000-000000000001';
+
+  select notes into v_notes
+  from public.admin_actions
+  where action_type = 'approve_withdrawal'
+    and target_user_id = '10000000-0000-4000-8000-000000000002'
+  order by created_at desc
+  limit 1;
+
+  if v_status <> 'complete' or v_notes <> 'Payment completed' then
+    raise exception 'withdrawal completion audit failed: status %, notes %', v_status, v_notes;
+  end if;
+end;
+$withdrawal_notes$;
+
 rollback;

@@ -62,10 +62,37 @@ export function ProfileSettings({
   const initialLocation = parseLocation(profile.location);
   const [locationState, setLocationState] = useState(initialLocation.state);
   const [locationCity, setLocationCity] = useState(initialLocation.city);
+  const [rates, setRates] = useState({
+    chat: Number(profile.chat_rate_coins),
+    audio: Number(profile.audio_call_rate_coins),
+    video: Number(profile.video_call_rate_coins),
+  });
+  const [payout, setPayout] = useState({ beanRatio: 0.8, beanInr: 0.8 });
 
   useEffect(() => {
     return () => {
       mediaPreviewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadPayoutConfig() {
+      const { data } = await createClient()
+        .from("platform_config")
+        .select("key, value")
+        .in("key", ["bean_payout_ratio", "bean_inr_value"]);
+      if (cancelled || !data) return;
+      const ratio = Number(data.find((row) => row.key === "bean_payout_ratio")?.value ?? 0.8);
+      const inr = Number(data.find((row) => row.key === "bean_inr_value")?.value ?? 0.8);
+      setPayout({
+        beanRatio: Number.isFinite(ratio) && ratio > 0 ? ratio : 0.8,
+        beanInr: Number.isFinite(inr) && inr > 0 ? inr : 0.8,
+      });
+    }
+    void loadPayoutConfig();
+    return () => {
+      cancelled = true;
     };
   }, []);
 
@@ -451,12 +478,21 @@ export function ProfileSettings({
           </div>
         </section>
 
-        <section className="settings-section">
+        <section className="settings-section" id="rates">
           <div className="section-heading"><div><span className="eyebrow">Money</span><h2>Rates</h2></div><IndianRupee size={22} /></div>
           <div className="rate-input-grid">
-            <label className="field">Chat / minute<input name="chat_rate_coins" type="number" min="0" max="10000" step="0.01" defaultValue={profile.chat_rate_coins} required /><span>coins</span></label>
-            <label className="field">Audio / minute<input name="audio_call_rate_coins" type="number" min="0" max="100000" step="0.01" defaultValue={profile.audio_call_rate_coins} required /><span>coins</span></label>
-            <label className="field">Video / minute<input name="video_call_rate_coins" type="number" min="0" max="100000" step="0.01" defaultValue={profile.video_call_rate_coins} required /><span>coins</span></label>
+            <label className="field">Chat / minute<input name="chat_rate_coins" type="number" min="0" max="10000" step="0.01" value={rates.chat} onChange={(event) => setRates((current) => ({ ...current, chat: Number(event.target.value) }))} required /><span>coins</span></label>
+            <label className="field">Audio / minute<input name="audio_call_rate_coins" type="number" min="0" max="100000" step="0.01" value={rates.audio} onChange={(event) => setRates((current) => ({ ...current, audio: Number(event.target.value) }))} required /><span>coins</span></label>
+            <label className="field">Video / minute<input name="video_call_rate_coins" type="number" min="0" max="100000" step="0.01" value={rates.video} onChange={(event) => setRates((current) => ({ ...current, video: Number(event.target.value) }))} required /><span>coins</span></label>
+          </div>
+          <div className="rate-receivables">
+            <strong>You receive per paid minute</strong>
+            <div className="rate-receivables-grid">
+              <ReceivableRow label="Chat" coins={rates.chat} beanRatio={payout.beanRatio} beanInr={payout.beanInr} />
+              <ReceivableRow label="Audio" coins={rates.audio} beanRatio={payout.beanRatio} beanInr={payout.beanInr} />
+              <ReceivableRow label="Video" coins={rates.video} beanRatio={payout.beanRatio} beanInr={payout.beanInr} />
+            </div>
+            <small>Spenders pay in coins. You earn beans: 1 coin = {payout.beanRatio} beans, 1 bean = ₹{payout.beanInr} on withdrawal.</small>
           </div>
           <div className="settings-toggles">
             <label className="toggle-row"><input name="free_chat_enabled" type="checkbox" defaultChecked={profile.free_chat_enabled} /><span className="toggle-control" /><span><strong>Allow free chat</strong><small>Chat stays free after the first ten messages.</small></span></label>
@@ -582,6 +618,19 @@ export function ProfileSettings({
 
 function splitList(value: string) {
   return value.split(",").map((item) => item.trim()).filter(Boolean).slice(0, 12);
+}
+
+function ReceivableRow({ label, coins, beanRatio, beanInr }: { label: string; coins: number; beanRatio: number; beanInr: number }) {
+  const safeCoins = Number.isFinite(coins) && coins > 0 ? coins : 0;
+  const beans = Math.round(safeCoins * beanRatio * 100) / 100;
+  const inr = Math.round(beans * beanInr * 100) / 100;
+  return (
+    <div className="rate-receivable-row">
+      <span>{label}</span>
+      <strong>{beans.toLocaleString("en-IN", { maximumFractionDigits: 2 })} beans</strong>
+      <em>≈ ₹{inr.toLocaleString("en-IN", { maximumFractionDigits: 2 })}/min</em>
+    </div>
+  );
 }
 
 async function fileFromUrl(url: string, name: string) {

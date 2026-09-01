@@ -59,11 +59,11 @@ export async function displayRemoteMessage(message: RemoteMessage) {
   const isCall = data.type === 'incoming_call';
   const notification: Notification = {
     id: isCall && data.callId ? `call-${data.callId}` : message.messageId,
-    title: message.notification?.title || (isCall ? `Incoming ${data.callType || ''} call` : data.senderName || 'New message'),
-    body: message.notification?.body || (isCall ? data.callerName || 'Kizo call' : 'You have a new message'),
+    title: message.notification?.title || data.title || (isCall ? `Incoming ${data.callType || ''} call` : data.senderName || 'New message'),
+    body: message.notification?.body || data.body || (isCall ? data.callerName || 'Kizo call' : 'You have a new message'),
     data,
     android: {
-      channelId: isCall ? 'incoming_calls' : 'messages',
+      channelId: isCall ? 'incoming_calls' : data.channelId || 'messages',
       smallIcon: 'ic_stat_wetdreams',
       color: colors.coral,
       importance: AndroidImportance.HIGH,

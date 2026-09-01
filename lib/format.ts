@@ -42,6 +42,13 @@ export function messageForError(message: string) {
     MATCH_RETRY: "The queue moved quickly. Trying again now.",
     MEDIA_LIMIT_REACHED: "You have reached the media limit for this profile.",
     MEDIA_UPLOAD_REQUIRED: "Upload the media before sending it.",
+    INVALID_WALLET_ADJUSTMENT: "Enter a valid non-zero wallet amount and a reason.",
+    ADJUSTMENT_OVERDRAFT: "This deduction would make the wallet balance negative.",
+    NOTES_REQUIRED: "Enter a reason of at least 3 characters.",
+    WALLET_NOT_FOUND: "This account does not have a wallet yet.",
+    WALLET_ADJUSTMENT_NOT_VERIFIED: "The wallet update could not be verified. No success was reported.",
+    WALLET_LEDGER_NOT_VERIFIED: "The balance changed but its ledger entry could not be verified. Check the audit log.",
+    ADMIN_REQUIRED: "Administrator access is required for this action.",
   };
 
   const key = Object.keys(known).find((candidate) => message.includes(candidate));

@@ -183,6 +183,7 @@ export function WalletView({
               {coinPackages.map((packageItem, index) => {
                 const regularCoins = regularCoinsFor(packageItem);
                 const hasBonus = packageItem.coins > regularCoins;
+                const bonusCoins = Math.max(0, packageItem.coins - regularCoins);
                 return (
                   <button key={packageItem.priceInr} type="button" onClick={() => topup(index)} disabled={pending !== null}>
                     <span className="offer-label">{packageItem.label}</span>
@@ -190,7 +191,7 @@ export function WalletView({
                     <strong>{formatMoney(packageItem.coins)} coins</strong>
                     <span className="coin-price-row">
                       <span>₹{formatMoney(packageItem.priceInr)}</span>
-                      {hasBonus && <del>{formatMoney(regularCoins)} coins</del>}
+                      {hasBonus && <span className="coin-bonus">+{formatMoney(bonusCoins)} bonus</span>}
                     </span>
                     <span className="discount-code">{packageItem.code}</span>
                     <MessageCircle size={17} />

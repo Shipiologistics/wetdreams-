@@ -17,5 +17,5 @@ export type MainTabParamList = {
   Chats: undefined;
   Random: undefined;
   Wallet: undefined;
-  Profile: undefined;
+  Profile: {focus?: 'rates'} | undefined;
 };

@@ -4,6 +4,7 @@ import type {RootStackParamList} from '../types/navigation';
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 type PendingRoute =
+  | {name: 'Main'; params: RootStackParamList['Main']}
   | {name: 'ChatRoom'; params: RootStackParamList['ChatRoom']}
   | {name: 'Call'; params: RootStackParamList['Call']}
   | {name: 'Notifications'; params: undefined};
@@ -28,7 +29,8 @@ export function flushPendingRoute() {
 }
 
 function navigateRoute(route: PendingRoute) {
-  if (route.name === 'ChatRoom') navigationRef.navigate('ChatRoom', route.params);
+  if (route.name === 'Main') navigationRef.navigate('Main', route.params);
+  else if (route.name === 'ChatRoom') navigationRef.navigate('ChatRoom', route.params);
   else if (route.name === 'Call') navigationRef.navigate('Call', route.params);
   else navigationRef.navigate('Notifications');
 }
@@ -42,6 +44,9 @@ function notificationRoute(data?: Record<string, string>): PendingRoute | null {
       name: 'ChatRoom',
       params: {roomId: data.roomId, title: data.senderName || 'Chat'},
     };
+  }
+  if (data?.type === 'host_approved' || data?.destination === 'host_rates') {
+    return {name: 'Main', params: {screen: 'Profile', params: {focus: 'rates'}}};
   }
   return {name: 'Notifications', params: undefined};
 }
