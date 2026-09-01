@@ -5,9 +5,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type ReviewBody =
-  | { action: "review_request"; requestId: string; approve: boolean; notes?: string }
-  | { action: "set_verification"; userId: string; verified: boolean; notes?: string };
+type ReviewBody = { action: "set_verification"; userId: string; verified: boolean; notes?: string };
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null) as ReviewBody | null;
@@ -20,21 +18,9 @@ export async function POST(request: Request) {
 
   const notes =
     typeof body.notes === "string" ? body.notes.trim().slice(0, 1000) : "";
-  let targetUserId: string | null = body.action === "set_verification" ? body.userId : null;
-  const approving = body.action === "review_request" ? body.approve : body.verified;
+  const targetUserId = body.userId;
+  const approving = body.verified;
   const admin = createServiceClient();
-
-  if (body.action === "review_request") {
-    const { data: hostRequest, error: hostRequestError } = await admin
-      .from("host_requests")
-      .select("user_id")
-      .eq("id", body.requestId)
-      .maybeSingle();
-    if (hostRequestError) {
-      return Response.json({ error: hostRequestError.message }, { status: 500 });
-    }
-    targetUserId = hostRequest?.user_id ?? null;
-  }
 
   const { data: currentHost, error: currentHostError } = targetUserId
     ? await admin
@@ -47,21 +33,12 @@ export async function POST(request: Request) {
     return Response.json({ error: currentHostError.message }, { status: 500 });
   }
 
-  if (body.action === "review_request") {
-    const { error } = await auth.client.rpc("admin_review_host_request", {
-      p_request_id: body.requestId,
-      p_approve: body.approve,
-      p_notes: notes,
-    });
-    if (error) return Response.json({ error: error.message }, { status: 400 });
-  } else {
-    const { error } = await auth.client.rpc("admin_set_user_verification", {
-      p_target_user: body.userId,
-      p_verified: body.verified,
-      p_notes: notes,
-    });
-    if (error) return Response.json({ error: error.message }, { status: 400 });
-  }
+  const { error } = await auth.client.rpc("admin_set_user_verification", {
+    p_target_user: body.userId,
+    p_verified: body.verified,
+    p_notes: notes,
+  });
+  if (error) return Response.json({ error: error.message }, { status: 400 });
 
   const notification = approving && currentHost?.is_verified === false && targetUserId
     ? await notifyHostApproval(admin, targetUserId)
@@ -71,13 +48,10 @@ export async function POST(request: Request) {
 }
 
 function isReviewBody(body: ReviewBody) {
-  if (body.action === "review_request") {
-    return typeof body.requestId === "string" && body.requestId.length > 0 && typeof body.approve === "boolean";
-  }
-  if (body.action === "set_verification") {
-    return typeof body.userId === "string" && body.userId.length > 0 && typeof body.verified === "boolean";
-  }
-  return false;
+  return body.action === "set_verification"
+    && typeof body.userId === "string"
+    && body.userId.length > 0
+    && typeof body.verified === "boolean";
 }
 
 async function notifyHostApproval(admin: ReturnType<typeof createServiceClient>, userId: string) {
@@ -87,7 +61,7 @@ async function notifyHostApproval(admin: ReturnType<typeof createServiceClient>,
     .eq("id", userId)
     .maybeSingle();
 
-  if (!host || host.role !== "user" || host.gender !== "female" || host.is_guest || !host.is_verified) {
+  if (!host || host.role !== "user" || host.is_guest || !host.is_verified) {
     return { notified: false, sent: 0, disabled: 0 };
   }
 

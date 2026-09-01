@@ -3324,6 +3324,10 @@ html.call-privacy-shielded .call-privacy-shield {
   gap: 16px;
 }
 
+.balance-grid.single-balance {
+  grid-template-columns: 1fr;
+}
+
 .balance-card {
   min-height: 255px;
   border-radius: 8px;

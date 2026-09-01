@@ -38,11 +38,13 @@ export function WalletView({
   transactions,
   withdrawals,
   beanInrValue,
+  isHost,
 }: {
   wallet: Wallet;
   transactions: Transaction[];
   withdrawals: Withdrawal[];
   beanInrValue: number;
+  isHost: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -51,6 +53,9 @@ export function WalletView({
   const [payoutMethod, setPayoutMethod] = useState<PayoutMethod>("upi");
   const [pending, setPending] = useState<"withdraw" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const visibleTransactions = isHost
+    ? transactions
+    : transactions.filter((transaction) => transaction.currency === "coin");
 
   function closeTopup() {
     setTopupOpen(false);
@@ -92,12 +97,12 @@ export function WalletView({
     <div className="page-shell wallet-page">
       <header className="page-header app-page-header">
         <div>
-          <span className="eyebrow">Balances and earnings</span>
+          <span className="eyebrow">{isHost ? "Balances and earnings" : "Coin balance"}</span>
           <h1>Wallet</h1>
         </div>
       </header>
 
-      <section className="balance-grid">
+      <section className={`balance-grid ${isHost ? "" : "single-balance"}`}>
         <article className="balance-card coins-card">
           <div className="balance-icon"><Coins size={24} /></div>
           <span>Coins</span>
@@ -105,7 +110,7 @@ export function WalletView({
           <p>Recharge through WhatsApp</p>
           <button className="button light" type="button" onClick={() => setTopupOpen(true)}><Plus size={18} /> Add coins</button>
         </article>
-        <article className="balance-card beans-card">
+        {isHost && <article className="balance-card beans-card">
           <div className="balance-icon"><Bean size={24} /></div>
           <span>Beans</span>
           <strong>{formatMoney(wallet.beans_balance)}</strong>
@@ -113,28 +118,28 @@ export function WalletView({
           <button className="button dark" type="button" onClick={() => setWithdrawOpen(true)} disabled={Number(wallet.beans_balance) < 1}>
             <ArrowUpRight size={18} /> Withdraw
           </button>
-        </article>
+        </article>}
       </section>
 
-      <section className="withdrawal-policy-card" aria-label="Withdrawal processing policy">
+      {isHost && <section className="withdrawal-policy-card" aria-label="Withdrawal processing policy">
         <div><Clock3 size={20} /><span>Processed within 24 hours</span></div>
         <div><CalendarX2 size={20} /><span>No payouts on Sundays or government holidays</span></div>
         <Link href="/host-policy">Read host payout policy</Link>
-      </section>
+      </section>}
 
       <section className="wallet-summary">
         <div><span>Coins credited</span><strong>{formatMoney(wallet.lifetime_coins_purchased)}</strong></div>
-        <div><span>Beans earned</span><strong>{formatMoney(wallet.lifetime_beans_earned)}</strong></div>
-        <div><span>Beans withdrawn</span><strong>{formatMoney(wallet.lifetime_beans_withdrawn)}</strong></div>
+        {isHost && <div><span>Beans earned</span><strong>{formatMoney(wallet.lifetime_beans_earned)}</strong></div>}
+        {isHost && <div><span>Beans withdrawn</span><strong>{formatMoney(wallet.lifetime_beans_withdrawn)}</strong></div>}
       </section>
 
       {message && <div className="page-notice" role="status">{message}<button onClick={() => setMessage(null)} title="Dismiss"><X size={15} /></button></div>}
 
       <section className="ledger-section">
-        <div className="section-heading"><div><History size={20} /><h2>Activity</h2></div><span>{transactions.length} entries</span></div>
-        {transactions.length ? (
+        <div className="section-heading"><div><History size={20} /><h2>Activity</h2></div><span>{visibleTransactions.length} entries</span></div>
+        {visibleTransactions.length ? (
           <div className="transaction-list">
-            {transactions.map((transaction) => {
+            {visibleTransactions.map((transaction) => {
               const positive = Number(transaction.amount) > 0;
               return (
                 <div className="transaction-row" key={transaction.id}>
@@ -155,7 +160,7 @@ export function WalletView({
         )}
       </section>
 
-      {withdrawals.length > 0 && (
+      {isHost && withdrawals.length > 0 && (
         <section className="withdrawal-section">
           <div className="section-heading"><div><Clock3 size={20} /><h2>Withdrawals</h2></div><span>{withdrawalPolicy}</span></div>
           <div className="simple-table">
@@ -203,7 +208,7 @@ export function WalletView({
         </div>
       )}
 
-      {withdrawOpen && (
+      {isHost && withdrawOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setWithdrawOpen(false)}>
           <form className="modal" role="dialog" aria-modal="true" aria-labelledby="withdraw-title" onSubmit={withdraw} onMouseDown={(event) => event.stopPropagation()}>
             <div className="modal-header"><div><span className="eyebrow">Manual payout</span><h2 id="withdraw-title">Withdraw beans</h2></div><button className="icon-button" type="button" title="Close" onClick={() => setWithdrawOpen(false)}><X size={20} /></button></div>

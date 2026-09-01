@@ -108,12 +108,12 @@ export default async function PublicProfilePage({ params }: Params) {
           <HostProfileActions hostId={account.id} username={username} viewerId={viewer?.id ?? null} busy={busy} />
         </div>
       </section>
-      <section className="public-rates">
+      {account.is_verified && <section className="public-rates">
         <div><MessageCircle size={20} /><span>Chat</span><strong>{profile.free_chat_enabled ? "Free" : `${Number(profile.chat_rate_coins)} coins`}</strong><small>per minute after 10 messages</small></div>
         <div><Phone size={20} /><span>Audio</span><strong>{Number(profile.audio_call_rate_coins)} coins</strong><small>per minute</small></div>
         <div><Video size={20} /><span>Video</span><strong>{Number(profile.video_call_rate_coins)} coins</strong><small>per minute</small></div>
         <div><Coins size={20} /><span>First messages</span><strong>10 free</strong><small>in every new chat</small></div>
-      </section>
+      </section>}
       {(media ?? []).length > 1 && (
         <section className="public-gallery">
           {(media ?? []).slice(1).map((item) => item.media_type === "image" && (
@@ -121,14 +121,14 @@ export default async function PublicProfilePage({ params }: Params) {
           ))}
         </section>
       )}
-      <HostReviewWidget
+      {account.is_verified && <HostReviewWidget
         hostId={account.id}
         reviews={reviews}
         average={rating}
         viewerId={viewer?.id ?? null}
         canReview={canReview}
         existingReview={existingReview}
-      />
+      />}
     </main>
   );
 }

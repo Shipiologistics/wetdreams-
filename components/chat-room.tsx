@@ -56,6 +56,7 @@ type BlockState = {
 export function ChatRoom({
   viewerId,
   viewerGender,
+  viewerIsHost,
   initialCoins,
   initialBeans,
   room,
@@ -68,6 +69,7 @@ export function ChatRoom({
 }: {
   viewerId: string;
   viewerGender: string | null;
+  viewerIsHost: boolean;
   initialCoins: number;
   initialBeans: number;
   room: Room;
@@ -123,7 +125,7 @@ export function ChatRoom({
   const count = Math.max(room.message_count, messages.length);
   const blocked = blockState.viewerBlockedOther || blockState.otherBlockedViewer;
   const isRandomRoom = room.room_type === "random";
-  const messageBillingApplies = viewerGender === "male";
+  const messageBillingApplies = viewerGender === "male" && otherAccount.is_verified;
   const paywalled = messageBillingApplies && !isRandomRoom && count >= 10 && !profile.free_chat_enabled && Number(profile.chat_rate_coins) > 0;
 
   const paidUntil = useMemo(() => {
@@ -446,7 +448,7 @@ export function ChatRoom({
   const grouped = useMemo(() => messages, [messages]);
   const otherBusy = otherAccount.status === "busy" || otherAccount.status === "in_call";
   const callDisabled = blocked || otherBusy;
-  const canTipOther = !blocked && otherAccount.role === "user" && !otherAccount.is_guest;
+  const canTipOther = !blocked && otherAccount.role === "user" && !otherAccount.is_guest && otherAccount.is_verified;
   const otherPresence = otherBusy ? "busy" : otherAccount.status === "online" ? "online" : `seen ${formatRelativeTime(otherAccount.last_seen)}`;
 
   if (isRandomRoom && randomEnded) {
@@ -599,6 +601,7 @@ export function ChatRoom({
           image={primaryImage}
           coins={coinWallet}
           beans={beanWallet}
+          viewerIsHost={viewerIsHost}
           onChange={setActiveCall}
           onClose={() => {
             setActiveCall(null);
@@ -722,6 +725,7 @@ function CallOverlay({
   image,
   coins,
   beans,
+  viewerIsHost,
   onChange,
   onClose,
   onWalletChange,
@@ -735,6 +739,7 @@ function CallOverlay({
   image?: string;
   coins: number;
   beans: number;
+  viewerIsHost: boolean;
   onChange: (call: Call) => void;
   onClose: () => void;
   onWalletChange: (balance: number) => void;
@@ -749,7 +754,7 @@ function CallOverlay({
     : isReceiver
       ? `Incoming ${call.call_type} call`
       : "Ringing...";
-  const canTipOther = other.role === "user" && !other.is_guest;
+  const canTipOther = other.role === "user" && !other.is_guest && other.is_verified;
 
   useEffect(() => {
     document.documentElement.classList.add("call-overlay-open");
@@ -873,7 +878,7 @@ function CallOverlay({
           </div>
           <div className="call-wallet-pills" aria-label="Wallet balance">
             <span><Coins size={14} /> {formatTipAmount(coins)} coins</span>
-            <span><Gift size={14} /> {formatTipAmount(beans)} beans</span>
+            {viewerIsHost && <span><Gift size={14} /> {formatTipAmount(beans)} beans</span>}
           </div>
         </div>
 

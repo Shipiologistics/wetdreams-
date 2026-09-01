@@ -21,13 +21,12 @@ import {
   RotateCcw,
   RotateCw,
   Save,
-  Send,
   Settings,
   Star,
   Trash2,
   X,
 } from "lucide-react";
-import type { Account, HostRequest, Profile, ProfileMedia } from "@/lib/view-models";
+import type { Account, Profile, ProfileMedia } from "@/lib/view-models";
 import { createClient } from "@/lib/supabase/client";
 import { formatLocation, parseLocation } from "@/lib/location-options";
 import { messageForError } from "@/lib/format";
@@ -41,17 +40,14 @@ export function ProfileSettings({
   account,
   profile,
   media,
-  hostRequest,
 }: {
   account: Account;
   profile: Profile;
   media: ProfileMedia[];
-  hostRequest: HostRequest | null;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [mediaOpen, setMediaOpen] = useState(false);
-  const [hostRequestOpen, setHostRequestOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [selectedMedia, setSelectedMedia] = useState<SelectedMedia[]>([]);
   const [activeMediaId, setActiveMediaId] = useState<string | null>(null);
@@ -102,23 +98,26 @@ export function ProfileSettings({
     setMessage(null);
     const data = new FormData(event.currentTarget);
     const supabase = createClient();
-    const [accountResult, profileResult] = await Promise.all([
-      supabase.from("users").update({
-        display_name: String(data.get("display_name") ?? "").trim(),
-        gender: (String(data.get("gender") ?? "") || null) as "male" | "female" | "other" | null,
-      }).eq("id", account.id),
-      supabase.from("profiles").update({
-        bio: String(data.get("bio") ?? "").trim(),
-        age: data.get("age") ? Number(data.get("age")) : null,
-        location: String(data.get("location") ?? "").trim() || null,
-        languages: splitList(String(data.get("languages") ?? "")),
-        tags: splitList(String(data.get("tags") ?? "")),
+    const profileUpdates = {
+      bio: String(data.get("bio") ?? "").trim(),
+      age: data.get("age") ? Number(data.get("age")) : null,
+      location: String(data.get("location") ?? "").trim() || null,
+      languages: splitList(String(data.get("languages") ?? "")),
+      tags: splitList(String(data.get("tags") ?? "")),
+      ...(account.is_verified ? {
         real_meet_available: data.get("real_meet_available") === "on",
         free_chat_enabled: data.get("free_chat_enabled") === "on",
         chat_rate_coins: Number(data.get("chat_rate_coins")),
         audio_call_rate_coins: Number(data.get("audio_call_rate_coins")),
         video_call_rate_coins: Number(data.get("video_call_rate_coins")),
-      }).eq("user_id", account.id),
+      } : {}),
+    };
+    const [accountResult, profileResult] = await Promise.all([
+      supabase.from("users").update({
+        display_name: String(data.get("display_name") ?? "").trim(),
+        gender: (String(data.get("gender") ?? "") || null) as "male" | "female" | "other" | null,
+      }).eq("id", account.id),
+      supabase.from("profiles").update(profileUpdates).eq("user_id", account.id),
     ]);
     setPending(false);
     const error = accountResult.error ?? profileResult.error;
@@ -220,28 +219,13 @@ export function ProfileSettings({
     profile.tags.length > 0,
   ];
   const completion = Math.round((completeItems.filter(Boolean).length / completeItems.length) * 100);
-  const earningMode = profile.free_chat_enabled ? "Free chat" : `${Number(profile.chat_rate_coins)} coins/min`;
-  const canRequestHostFeature = account.role === "user" && account.gender === "female" && !account.is_guest && !account.is_verified;
-  const hasPendingHostRequest = hostRequest?.status === "pending";
+  const earningMode = account.is_verified
+    ? profile.free_chat_enabled ? "Free chat" : `${Number(profile.chat_rate_coins)} coins/min`
+    : "Not hosting";
 
   async function copyProfileLink() {
     await navigator.clipboard.writeText(`${window.location.origin}${publicUrl}`);
     setMessage("Profile link copied.");
-  }
-
-  async function submitHostRequest(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const phone = String(data.get("phone") ?? "").trim();
-    const note = String(data.get("note") ?? "").trim();
-    setPending(true);
-    setMessage(null);
-    const { error } = await createClient().rpc("submit_host_request", { p_phone: phone, p_note: note });
-    setPending(false);
-    if (error) return setMessage(messageForError(error.message));
-    setHostRequestOpen(false);
-    setMessage("Host request sent. Admin will review it.");
-    router.refresh();
   }
 
   function chooseMedia(files: FileList | File[] | null) {
@@ -408,20 +392,6 @@ export function ProfileSettings({
         </div>
       </section>
 
-      {canRequestHostFeature && (
-        <section className={`host-feature-cta ${hasPendingHostRequest ? "pending" : ""}`}>
-          <div>
-            <span className="eyebrow">Become host</span>
-            <h2>Earn real cash</h2>
-            <p>{hasPendingHostRequest ? "Your request is waiting for admin verification." : "Apply to get featured on Discover and start earning from chats and calls."}</p>
-          </div>
-          <button className="button primary" type="button" onClick={() => setHostRequestOpen(true)} disabled={hasPendingHostRequest}>
-            {hasPendingHostRequest ? <Clock3 size={18} /> : <IndianRupee size={18} />}
-            {hasPendingHostRequest ? "Request pending" : "Apply now"}
-          </button>
-        </section>
-      )}
-
       <section className="profile-dashboard" aria-label="Profile summary">
         <div>
           <span>Ready</span>
@@ -478,7 +448,7 @@ export function ProfileSettings({
           </div>
         </section>
 
-        <section className="settings-section" id="rates">
+        {account.is_verified && <section className="settings-section" id="rates">
           <div className="section-heading"><div><span className="eyebrow">Money</span><h2>Rates</h2></div><IndianRupee size={22} /></div>
           <div className="rate-input-grid">
             <label className="field">Chat / minute<input name="chat_rate_coins" type="number" min="0" max="10000" step="0.01" value={rates.chat} onChange={(event) => setRates((current) => ({ ...current, chat: Number(event.target.value) }))} required /><span>coins</span></label>
@@ -498,7 +468,7 @@ export function ProfileSettings({
             <label className="toggle-row"><input name="free_chat_enabled" type="checkbox" defaultChecked={profile.free_chat_enabled} /><span className="toggle-control" /><span><strong>Allow free chat</strong><small>Chat stays free after the first ten messages.</small></span></label>
             <label className="toggle-row"><input name="real_meet_available" type="checkbox" defaultChecked={profile.real_meet_available} /><span className="toggle-control" /><span><strong>Available to meet</strong><small>Show this preference on your profile.</small></span></label>
           </div>
-        </section>
+        </section>}
 
         {message && <div className="page-notice" role="status">{message}<button type="button" onClick={() => setMessage(null)} title="Dismiss"><X size={15} /></button></div>}
         <div className="settings-actions">
@@ -595,23 +565,6 @@ export function ProfileSettings({
         </div>
       )}
 
-      {hostRequestOpen && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={() => setHostRequestOpen(false)}>
-          <form className="modal compact-modal host-request-modal" role="dialog" aria-modal="true" aria-labelledby="host-request-title" onSubmit={submitHostRequest} onMouseDown={(event) => event.stopPropagation()}>
-            <div className="modal-header">
-              <div><span className="eyebrow">Host application</span><h2 id="host-request-title">Earn real cash</h2></div>
-              <button className="icon-button" type="button" title="Close" onClick={() => setHostRequestOpen(false)}><X size={20} /></button>
-            </div>
-            <label className="field">WhatsApp or phone<input name="phone" inputMode="tel" autoComplete="tel" minLength={6} maxLength={30} placeholder="+91 98765 43210" required /></label>
-            <label className="field">Short note<textarea name="note" maxLength={500} rows={4} placeholder="City, available hours, language" /></label>
-            <p className="host-request-note">Use your real profile image. Fake images can get the account banned.</p>
-            <button className="button primary wide" type="submit" disabled={pending}>
-              {pending ? <LoaderCircle className="spin" size={18} /> : <Send size={18} />}
-              Send request
-            </button>
-          </form>
-        </div>
-      )}
     </div>
   );
 }

@@ -193,13 +193,13 @@ export function ChatRoomScreen({route, navigation}: Props) {
       {blocked ? <View style={styles.blocked}><Text style={styles.blockedText}>{viewerBlocked ? 'You blocked this user.' : 'Messaging and calls are unavailable.'}</Text></View> : (
         <View style={[styles.composer, {paddingBottom: keyboardVisible ? spacing.xs : Math.max(insets.bottom, spacing.sm)}]}>
           <Pressable onPress={() => void addPhoto()} style={styles.composerIcon}><ImagePlus size={25} color={colors.ink} /></Pressable>
-          <Pressable onPress={() => setTipOpen(true)} style={styles.composerIcon}><Gift size={24} color={colors.ink} /></Pressable>
+          {other?.is_verified ? <Pressable onPress={() => setTipOpen(true)} style={styles.composerIcon}><Gift size={24} color={colors.ink} /></Pressable> : null}
           <TextInput value={text} onChangeText={setText} placeholder="Write a message" placeholderTextColor={colors.muted} multiline style={styles.input} />
           <Pressable disabled={sending || !text.trim()} onPress={() => void sendMessage('text')} style={[styles.send, (sending || !text.trim()) && styles.sendDisabled]}><Send size={23} color={colors.white} /></Pressable>
         </View>
       )}
       <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}><Pressable style={styles.modalBackdrop} onPress={() => setMenuOpen(false)}><View style={styles.menu}><WetButton title={viewerBlocked ? 'Unblock user' : 'Block user'} variant={viewerBlocked ? 'outline' : 'danger'} onPress={() => void blockOrUnblock()} /><WetButton title="Report user" variant="outline" onPress={() => void report()} /></View></Pressable></Modal>
-      <TipSheet visible={tipOpen} balance={Number(viewer?.wallet.coins_balance || 0)} onClose={() => setTipOpen(false)} onSend={sendTip} />
+      <TipSheet visible={Boolean(other?.is_verified && tipOpen)} balance={Number(viewer?.wallet.coins_balance || 0)} onClose={() => setTipOpen(false)} onSend={sendTip} />
     </KeyboardAvoidingView>
   );
 }

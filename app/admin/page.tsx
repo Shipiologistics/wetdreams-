@@ -19,7 +19,6 @@ export default async function AdminPage() {
     { data: platformConfig },
     { data: visitors },
     { data: wallets },
-    { data: hostRequests },
     { data: profiles },
     { data: media },
     { data: authUsers },
@@ -33,7 +32,6 @@ export default async function AdminPage() {
     supabase.from("platform_config").select("*").order("key", { ascending: true }),
     supabase.from("visitor_sessions").select("*").order("last_seen_at", { ascending: false }).limit(300),
     supabase.from("wallets").select("*"),
-    supabase.from("host_requests").select("*").order("created_at", { ascending: false }),
     supabase.from("profiles").select("*"),
     supabase.from("profile_media").select("*").order("position", { ascending: true }),
     supabase.auth.admin.listUsers({ page: 1, perPage: 1000 }),
@@ -57,7 +55,6 @@ export default async function AdminPage() {
       platformConfig={platformConfig ?? []}
       visitors={visitors ?? []}
       wallets={wallets ?? []}
-      hostRequests={hostRequests ?? []}
       profiles={profiles ?? []}
       media={media ?? []}
       contactNumbers={contactNumbers}

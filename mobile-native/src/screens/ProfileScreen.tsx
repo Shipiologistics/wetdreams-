@@ -1,10 +1,10 @@
 import {useFocusEffect, useNavigation, useRoute} from '@react-navigation/native';
 import type {NavigationProp, RouteProp} from '@react-navigation/native';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {Alert, FlatList, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Alert, FlatList, Image, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 import ImagePicker, {type Image as PickerImage} from 'react-native-image-crop-picker';
 import ReactNativeBlobUtil from 'react-native-blob-util';
-import {BadgeCheck, Camera, CircleDollarSign, Edit3, MapPin, Save, Settings, Sparkles, X} from 'lucide-react-native';
+import {BadgeCheck, Camera, Edit3, MapPin, Save, Settings, Sparkles} from 'lucide-react-native';
 import {FormField} from '../components/FormField';
 import {ScreenHeader} from '../components/ScreenHeader';
 import {SelectField} from '../components/SelectField';
@@ -18,7 +18,6 @@ import type {Database} from '../types/database';
 import type {MainTabParamList, RootStackParamList} from '../types/navigation';
 
 type Media = Database['public']['Tables']['profile_media']['Row'];
-type HostRequest = Database['public']['Tables']['host_requests']['Row'];
 
 export function ProfileScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -28,13 +27,8 @@ export function ProfileScreen() {
   const {viewer, unreadNotifications, refreshViewer} = useApp();
   const location = parseLocation(viewer?.profile.location);
   const [media, setMedia] = useState<Media[]>([]);
-  const [hostRequest, setHostRequest] = useState<HostRequest | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [hostOpen, setHostOpen] = useState(false);
-  const [phone, setPhone] = useState('');
-  const [note, setNote] = useState('');
-  const [hostLoading, setHostLoading] = useState(false);
   const [name, setName] = useState(viewer?.account.display_name || '');
   const [age, setAge] = useState(viewer?.profile.age?.toString() || '');
   const [state, setState] = useState(location.state);
@@ -66,11 +60,8 @@ export function ProfileScreen() {
 
   const load = useCallback(async () => {
     if (!userId) return;
-    const [{data: mediaRows}, {data: request}] = await Promise.all([
-      supabase.from('profile_media').select('*').eq('user_id', userId).order('position'),
-      supabase.from('host_requests').select('*').eq('user_id', userId).order('created_at', {ascending: false}).limit(1).maybeSingle(),
-    ]);
-    setMedia(mediaRows || []); setHostRequest(request || null); await refreshViewer();
+    const {data: mediaRows} = await supabase.from('profile_media').select('*').eq('user_id', userId).order('position');
+    setMedia(mediaRows || []); await refreshViewer();
   }, [refreshViewer, userId]);
   useFocusEffect(useCallback(() => { void load(); }, [load]));
 
@@ -83,7 +74,7 @@ export function ProfileScreen() {
     setSaving(true);
     const [{error: userError}, {error: profileError}] = await Promise.all([
       supabase.from('users').update({display_name: name.trim()}).eq('id', viewer.account.id),
-      supabase.from('profiles').update({age: nextAge, location: formatLocation(city, state), bio: bio.trim(), languages: commaList(languages), tags: commaList(tags), chat_rate_coins: viewer.account.gender === 'female' ? Math.max(0, Number(chatRate) || 0) : viewer.profile.chat_rate_coins, audio_call_rate_coins: viewer.account.gender === 'female' ? Math.max(0, Number(audioRate) || 0) : viewer.profile.audio_call_rate_coins, video_call_rate_coins: viewer.account.gender === 'female' ? Math.max(0, Number(videoRate) || 0) : viewer.profile.video_call_rate_coins}).eq('user_id', viewer.account.id),
+      supabase.from('profiles').update({age: nextAge, location: formatLocation(city, state), bio: bio.trim(), languages: commaList(languages), tags: commaList(tags), chat_rate_coins: viewer.account.is_verified ? Math.max(0, Number(chatRate) || 0) : viewer.profile.chat_rate_coins, audio_call_rate_coins: viewer.account.is_verified ? Math.max(0, Number(audioRate) || 0) : viewer.profile.audio_call_rate_coins, video_call_rate_coins: viewer.account.is_verified ? Math.max(0, Number(videoRate) || 0) : viewer.profile.video_call_rate_coins}).eq('user_id', viewer.account.id),
     ]);
     setSaving(false);
     if (userError || profileError) return Alert.alert('Save failed', userError?.message || profileError?.message || 'Please try again.');
@@ -114,23 +105,18 @@ export function ProfileScreen() {
   }
   async function makePrimary(item: Media) { if (!viewer || item.is_primary) return; await supabase.from('profile_media').update({is_primary: false}).eq('user_id', viewer.account.id); await supabase.from('profile_media').update({is_primary: true}).eq('id', item.id); await load(); }
   async function remove(item: Media) { Alert.alert('Remove photo?', 'This removes it from your profile.', [{text: 'Cancel', style: 'cancel'}, {text: 'Remove', style: 'destructive', onPress: async () => { await supabase.from('profile_media').delete().eq('id', item.id); await load(); }}]); }
-  async function submitHostRequest() { if (phone.trim().length < 8) return Alert.alert('Phone required', 'Enter a number where our team can contact you.'); setHostLoading(true); const {error} = await supabase.rpc('submit_host_request', {p_phone: phone.trim(), p_note: note.trim()}); setHostLoading(false); if (error) return Alert.alert('Request failed', error.message); setHostOpen(false); await load(); Alert.alert('Request sent', 'Your profile is pending admin review.'); }
-
   const main = media.find(item => item.is_primary) || media[0];
-  const showHostCta = viewer?.account.gender === 'female' && !viewer.account.is_verified;
   return <View style={styles.root}>
     <ScreenHeader title="My profile" eyebrow="Your creator space" unreadNotifications={unreadNotifications} onNotifications={() => navigation.navigate('Notifications')} action={<Pressable accessibilityLabel="Account settings" onPress={() => navigation.navigate('Settings')} style={styles.settings}><Settings size={21} color={colors.ink} /></Pressable>} />
     <ScrollView ref={scrollRef} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <View style={styles.gallery}>{main ? <Image source={{uri: main.cloudinary_url}} style={styles.hero} /> : <View style={[styles.hero, styles.fallback]}><Text style={styles.initial}>{viewer?.account.display_name.charAt(0)}</Text></View>}<View style={styles.galleryTop}><View style={styles.photoCount}><Camera size={14} color={colors.white} /><Text style={styles.photoCountText}>{media.length}/10</Text></View>{main ? <Pressable accessibilityLabel="Edit main photo" onPress={() => void editMedia(main)} style={styles.edit}><Edit3 size={18} color={colors.ink} /></Pressable> : null}</View><Pressable onPress={() => void addMedia()} disabled={uploading} style={styles.add}><Camera size={18} color={colors.white} /><Text style={styles.addText}>{uploading ? 'Working...' : 'Add photos'}</Text></Pressable></View>
       {media.length ? <FlatList horizontal data={media} keyExtractor={item => item.id} contentContainerStyle={styles.thumbnails} showsHorizontalScrollIndicator={false} renderItem={({item}) => <Pressable onPress={() => void makePrimary(item)} onLongPress={() => void remove(item)} style={[styles.thumbWrap, item.is_primary && styles.thumbPrimary]}><Image source={{uri: item.cloudinary_url}} style={styles.thumb} /></Pressable>} /> : null}
       <View style={styles.identity}><View style={styles.nameRow}><Text style={styles.name}>{viewer?.account.display_name}</Text>{viewer?.account.is_verified ? <BadgeCheck size={21} color={colors.teal} /> : null}</View><Text style={styles.username}>@{viewer?.account.username}</Text><View style={styles.pills}><Text style={[styles.pill, viewer?.account.status === 'online' && styles.onlinePill]}>{viewer?.account.status === 'online' ? 'Available' : 'Away'}</Text>{viewer?.profile.location ? <Text style={styles.pill}><MapPin size={13} color={colors.teal} /> {viewer.profile.location}</Text> : null}</View><Text style={styles.bio}>{viewer?.profile.bio || 'Add a short introduction so people know what you enjoy talking about.'}</Text></View>
-      {showHostCta ? <View style={styles.hostCta}><View style={styles.hostIcon}><CircleDollarSign size={25} color={colors.warning} /></View><View style={styles.hostCopy}><Text style={styles.hostTitle}>Become a verified host</Text><Text style={styles.hostText}>{hostRequest?.status === 'pending' ? 'Your verification request is being reviewed.' : 'Get featured in Discover and earn from calls, chats and tips.'}</Text></View><WetButton title={hostRequest?.status === 'pending' ? 'Verification pending' : 'Apply now'} disabled={hostRequest?.status === 'pending'} onPress={() => setHostOpen(true)} /></View> : null}
       <View style={styles.sectionHeading}><View><Text style={styles.eyebrow}>PUBLIC PROFILE</Text><Text style={styles.sectionTitle}>What people see</Text></View><Sparkles size={22} color={colors.violet} /></View>
       <View style={styles.formSection}><FormField label="Display name" value={name} onChangeText={setName} maxLength={60} /><View style={styles.twoColumns}><View style={styles.fieldHalf}><FormField label="Age" value={age} onChangeText={setAge} keyboardType="number-pad" maxLength={2} /></View><View style={styles.fieldHalf}><SelectField label="State" value={state} placeholder="Select" options={indianLocations.map(item => item.state)} onChange={value => {setState(value); setCity('');}} /></View></View><SelectField label="City" value={city} placeholder="Select city" options={cities} onChange={setCity} disabled={!state} /><FormField label="About me" value={bio} onChangeText={setBio} multiline maxLength={500} placeholder="A short introduction" /><FormField label="Languages" value={languages} onChangeText={setLanguages} placeholder="Hindi, English" /><FormField label="Interests" value={tags} onChangeText={setTags} placeholder="Music, travel, movies" /></View>
-      {viewer?.account.gender === 'female' ? <View onLayout={event => setRatesY(event.nativeEvent.layout.y)} style={styles.rateTools}><View style={styles.sectionHeading}><View><Text style={styles.eyebrow}>HOST TOOLS</Text><Text style={styles.sectionTitle}>Conversation rates</Text></View><Text style={styles.perMinute}>coins / min</Text></View><View style={styles.rateSection}><RateInput label="Chat" value={chatRate} onChange={setChatRate} /><RateInput label="Audio" value={audioRate} onChange={setAudioRate} /><RateInput label="Video" value={videoRate} onChange={setVideoRate} /></View></View> : null}
+      {viewer?.account.is_verified ? <View onLayout={event => setRatesY(event.nativeEvent.layout.y)} style={styles.rateTools}><View style={styles.sectionHeading}><View><Text style={styles.eyebrow}>HOST TOOLS</Text><Text style={styles.sectionTitle}>Conversation rates</Text></View><Text style={styles.perMinute}>coins / min</Text></View><View style={styles.rateSection}><RateInput label="Chat" value={chatRate} onChange={setChatRate} /><RateInput label="Audio" value={audioRate} onChange={setAudioRate} /><RateInput label="Video" value={videoRate} onChange={setVideoRate} /></View></View> : null}
       <WetButton title="Save public profile" onPress={() => void saveProfile()} loading={saving} icon={<Save size={19} color={colors.white} />} />
     </ScrollView>
-    <Modal visible={hostOpen} transparent animationType="slide" onRequestClose={() => setHostOpen(false)}><Pressable style={styles.backdrop} onPress={() => setHostOpen(false)}><Pressable style={styles.modal} onPress={() => undefined}><View style={styles.modalHeader}><View><Text style={styles.eyebrow}>CREATOR ONBOARDING</Text><Text style={styles.modalTitle}>Become a host</Text></View><Pressable onPress={() => setHostOpen(false)} style={styles.settings}><X size={24} color={colors.ink} /></Pressable></View><FormField label="Phone number" value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="Your contact number" /><FormField label="Tell us about yourself" value={note} onChangeText={setNote} multiline placeholder="Languages, availability, experience" /><WetButton title="Submit for verification" onPress={() => void submitHostRequest()} loading={hostLoading} /></Pressable></Pressable></Modal>
   </View>;
 }
 

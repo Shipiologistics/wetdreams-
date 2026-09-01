@@ -4,9 +4,11 @@ insert into auth.users (id, aud, role, email, raw_app_meta_data, raw_user_meta_d
 values
   ('10000000-0000-4000-8000-000000000001', 'authenticated', 'authenticated', 'contract-a@example.test', '{"provider":"email","providers":["email"]}', '{"display_name":"Contract A","username":"contract_a"}', now(), now()),
   ('10000000-0000-4000-8000-000000000002', 'authenticated', 'authenticated', 'contract-b@example.test', '{"provider":"email","providers":["email"]}', '{"display_name":"Contract B","username":"contract_b"}', now(), now()),
-  ('10000000-0000-4000-8000-000000000003', 'authenticated', 'authenticated', 'contract-bot@example.test', '{"provider":"email","providers":["email"]}', '{"display_name":"Contract Bot","username":"contract_bot"}', now(), now());
+  ('10000000-0000-4000-8000-000000000003', 'authenticated', 'authenticated', 'contract-bot@example.test', '{"provider":"email","providers":["email"]}', '{"display_name":"Contract Bot","username":"contract_bot"}', now(), now()),
+  ('10000000-0000-4000-8000-000000000004', 'authenticated', 'authenticated', 'contract-unverified@example.test', '{"provider":"email","providers":["email"]}', '{"display_name":"Contract Unverified","username":"contract_unverified"}', now(), now());
 
 update public.users set role = 'bot' where id = '10000000-0000-4000-8000-000000000003';
+update public.users set is_verified = true where id = '10000000-0000-4000-8000-000000000002';
 update public.profiles set chat_rate_coins = 2, audio_call_rate_coins = 10
 where user_id = '10000000-0000-4000-8000-000000000003';
 
@@ -17,6 +19,7 @@ select set_config('request.jwt.claim.role', 'authenticated', true);
 do $contract$
 declare
   v_room uuid;
+  v_unverified_room uuid;
   v_bot_room uuid;
   v_intent uuid;
   v_call uuid;
@@ -34,6 +37,19 @@ begin
   v_intent := public.create_payment_intent(100);
   v_balance := public.complete_dummy_payment(v_intent);
   if v_balance <> 100 then raise exception 'dummy topup failed: %', v_balance; end if;
+
+  v_unverified_room := public.create_or_get_direct_room('10000000-0000-4000-8000-000000000004');
+  for i in 1..11 loop
+    perform public.send_message(v_unverified_room, 'text', 'free unverified message ' || i, null);
+  end loop;
+  select coins_balance into v_balance from public.wallets where user_id = auth.uid();
+  if v_balance <> 100 then raise exception 'unverified receiver charged sender: %', v_balance; end if;
+  begin
+    perform public.send_tip(v_unverified_room, 1, null);
+    raise exception 'unverified receiver accepted a tip';
+  exception when sqlstate 'P0001' then
+    if sqlerrm <> 'RECIPIENT_NOT_HOST' then raise; end if;
+  end;
 
   v_room := public.create_or_get_direct_room('10000000-0000-4000-8000-000000000002');
   for i in 1..11 loop

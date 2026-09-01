@@ -34,6 +34,21 @@ export async function POST(request: Request) {
     return Response.json({ error: "ADMIN_REQUIRED" }, { status: 403 });
   }
 
+  if (currency === "bean") {
+    const service = createServiceClient();
+    const { data: target, error: targetError } = await service
+      .from("users")
+      .select("role, is_guest, is_banned, is_verified")
+      .eq("id", userId)
+      .maybeSingle();
+    if (targetError || !target) {
+      return Response.json({ error: targetError?.message ?? "USER_NOT_FOUND" }, { status: 404 });
+    }
+    if (target.role !== "user" || target.is_guest || target.is_banned || !target.is_verified) {
+      return Response.json({ error: "HOST_VERIFICATION_REQUIRED" }, { status: 403 });
+    }
+  }
+
   const { data: returnedBalance, error: adjustmentError } = await auth.client.rpc("admin_adjust_wallet", {
     p_target_user: userId,
     p_currency: currency,

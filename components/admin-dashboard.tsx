@@ -30,7 +30,6 @@ import { formatMoney, formatRelativeTime, messageForError } from "@/lib/format";
 type Report = Database["public"]["Tables"]["reports"]["Row"];
 type User = Database["public"]["Tables"]["users"]["Row"];
 type Withdrawal = Database["public"]["Tables"]["withdrawal_requests"]["Row"];
-type HostRequest = Database["public"]["Tables"]["host_requests"]["Row"];
 type Action = Database["public"]["Tables"]["admin_actions"]["Row"];
 type Block = Database["public"]["Tables"]["blocks"]["Row"];
 type BlockEvent = Database["public"]["Tables"]["block_events"]["Row"];
@@ -85,7 +84,6 @@ export function AdminDashboard({
   platformConfig,
   visitors,
   wallets,
-  hostRequests,
   profiles,
   media,
   contactNumbers,
@@ -99,7 +97,6 @@ export function AdminDashboard({
   platformConfig: PlatformConfig[];
   visitors: VisitorSession[];
   wallets: Wallet[];
-  hostRequests: HostRequest[];
   profiles: Profile[];
   media: ProfileMedia[];
   contactNumbers: Record<string, string>;
@@ -146,7 +143,9 @@ export function AdminDashboard({
   const liveVisitors = visitors.filter((visitor) => visitor.presence === "online" && new Date(visitor.last_seen_at).getTime() >= liveCutoff);
   const openReports = reports.filter((report) => ["open", "reviewing"].includes(report.status)).length;
   const pendingWithdrawals = withdrawals.filter((withdrawal) => withdrawal.status === "pending").length;
-  const pendingHostRequests = hostRequests.filter((request) => request.status === "pending").length;
+  const verifiedHosts = users.filter((user) => (
+    user.role === "user" && !user.is_guest && user.is_verified && !user.is_banned
+  ));
   const pendingApprovals = users.filter((user) => user.role === "user" && !user.is_guest && !user.is_verified && !user.is_banned).length;
   const bannedUsers = users.filter((user) => user.is_banned).length;
   const filteredUsers = users.filter((user) => {
@@ -177,7 +176,7 @@ export function AdminDashboard({
 
   async function toggleVerification(user: User) {
     const approve = !user.is_verified;
-    const notes = window.prompt(approve ? "Approval note" : "Reason for hiding from Discover") ?? "";
+    const notes = window.prompt(approve ? "Host approval note" : "Reason for removing host access") ?? "";
     await run(`verify-${user.id}`, async () => postHostReview({
       action: "set_verification",
       userId: user.id,
@@ -253,16 +252,6 @@ export function AdminDashboard({
     await run(withdrawal.id, async () => createClient().rpc("admin_review_withdrawal", { p_request_id: withdrawal.id, p_approve: approve, p_notes: notes }));
   }
 
-  async function reviewHostRequest(request: HostRequest, approve: boolean) {
-    const notes = window.prompt(approve ? "Approval note" : "Reason for rejection") ?? "";
-    await run(`host-${request.id}`, async () => postHostReview({
-      action: "review_request",
-      requestId: request.id,
-      approve,
-      notes,
-    }));
-  }
-
   async function saveSetting(key: keyof typeof settingsDraft) {
     const value = Number(settingsDraft[key]);
     if (!Number.isFinite(value)) return setMessage("Enter a valid number.");
@@ -284,7 +273,7 @@ export function AdminDashboard({
     { key: "overview", label: "Overview", icon: Radio },
     { key: "visitors", label: "Visitors", icon: Eye, count: liveVisitors.length },
     { key: "reports", label: "Reports", icon: ShieldAlert, count: openReports },
-    { key: "hosts", label: "Host requests", icon: UserRoundCog, count: pendingHostRequests },
+    { key: "hosts", label: "Hosts", icon: UserRoundCog, count: verifiedHosts.length },
     { key: "users", label: "Users", icon: UsersRound, count: users.length },
     { key: "blocks", label: "Blocks", icon: ShieldBan, count: blocks.length },
     { key: "withdrawals", label: "Payouts", icon: BadgeIndianRupee, count: pendingWithdrawals },
@@ -334,7 +323,7 @@ export function AdminDashboard({
               <Metric icon={Eye} label="Live visitors" value={liveVisitors.length} />
               <Metric icon={UsersRound} label="Total visitors" value={visitors.length} />
               <Metric icon={ShieldAlert} label="Open reports" value={openReports} />
-              <Metric icon={UserRoundCog} label="Host requests" value={pendingHostRequests} />
+              <Metric icon={UserRoundCog} label="Verified hosts" value={verifiedHosts.length} />
               <Metric icon={Check} label="Pending approvals" value={pendingApprovals} />
               <Metric icon={UserRoundCog} label="Accounts" value={users.length} />
               <Metric icon={Ban} label="Suspended" value={bannedUsers} />
@@ -349,9 +338,9 @@ export function AdminDashboard({
                 {visitors.slice(0, 6).map((visitor) => <VisitorLine key={visitor.session_id} visitor={visitor} userMap={userMap} />)}
                 {!visitors.length && <div className="inline-empty">No visitors yet.</div>}
               </Panel>
-              <Panel title="Recent host requests">
-                {hostRequests.slice(0, 5).map((request) => <HostRequestLine key={request.id} request={request} userMap={userMap} />)}
-                {!hostRequests.length && <div className="inline-empty">No host requests yet.</div>}
+              <Panel title="Recently verified hosts">
+                {verifiedHosts.slice(0, 5).map((host) => <HostLine key={host.id} host={host} />)}
+                {!verifiedHosts.length && <div className="inline-empty">No verified hosts yet.</div>}
               </Panel>
             </section>
           </>
@@ -399,41 +388,33 @@ export function AdminDashboard({
 
         {section === "hosts" && (
           <div className="admin-list">
-            {hostRequests.map((request) => {
-              const user = userMap.get(request.user_id);
+            {verifiedHosts.map((host) => {
+              const profile = profileMap.get(host.id);
+              const wallet = walletMap.get(host.id);
               return (
-                <article className="admin-row compact-row" key={request.id}>
+                <article className="admin-row compact-row" key={host.id}>
                   <div className="admin-row-main">
-                    <span className={`status-label ${request.status}`}>{request.status}</span>
-                    <h3>{user?.display_name ?? "User"}</h3>
-                    <p>@{user?.username ?? "unknown"} · {user?.gender ?? "unknown"} · {user?.status ?? "offline"}</p>
+                    <span className="status-label approved">verified host</span>
+                    <h3>{host.display_name}</h3>
+                    <p>@{host.username} · {host.gender ?? "unknown"} · {host.status}</p>
                     <dl className="admin-facts">
-                      <div><dt>Phone</dt><dd>{request.phone}</dd></div>
-                      <div><dt>Applied</dt><dd>{formatRelativeTime(request.created_at)}</dd></div>
-                      <div><dt>Reviewed</dt><dd>{request.reviewed_at ? formatRelativeTime(request.reviewed_at) : "not yet"}</dd></div>
+                      <div><dt>Location</dt><dd>{profile?.location ?? "not added"}</dd></div>
+                      <div><dt>Beans</dt><dd>{formatMoney(wallet?.beans_balance ?? 0)}</dd></div>
+                      <div><dt>Joined</dt><dd>{formatRelativeTime(host.created_at)}</dd></div>
                     </dl>
-                    {request.note && <p className="admin-note">Note: {request.note}</p>}
-                    {request.admin_notes && <p className="admin-note">Admin: {request.admin_notes}</p>}
                   </div>
                   <div className="admin-row-actions">
-                    {user && (
-                      <button className="button secondary small" type="button" onClick={() => setProfileViewer(user)}>
-                        <Eye size={16} /> View profile
-                      </button>
-                    )}
-                    {request.status === "pending" && (
-                      <>
-                      <button className="button secondary small" disabled={pending === `host-${request.id}`} onClick={() => reviewHostRequest(request, false)}><X size={16} /> Reject</button>
-                      <button className="button primary small" disabled={pending === `host-${request.id}`} onClick={() => reviewHostRequest(request, true)}>
-                        {pending === `host-${request.id}` ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />} Approve
-                      </button>
-                      </>
-                    )}
+                    <button className="button secondary small" type="button" onClick={() => setProfileViewer(host)}>
+                      <Eye size={16} /> View profile
+                    </button>
+                    <button className="button secondary small" disabled={pending === `verify-${host.id}`} type="button" onClick={() => toggleVerification(host)}>
+                      {pending === `verify-${host.id}` ? <LoaderCircle className="spin" size={16} /> : <X size={16} />} Remove host
+                    </button>
                   </div>
                 </article>
               );
             })}
-            {!hostRequests.length && <div className="inline-empty">No host requests yet.</div>}
+            {!verifiedHosts.length && <div className="inline-empty">No verified hosts yet.</div>}
           </div>
         )}
 
@@ -463,7 +444,7 @@ export function AdminDashboard({
                       <span className={`status-label ${user.is_banned ? "rejected" : "resolved"}`}>{user.is_banned ? "suspended" : "active"}</span>
                       {user.role === "user" && !user.is_guest && (
                         <span className={`status-label ${user.is_verified ? "approved" : "pending"}`}>
-                          {user.is_verified ? "discover approved" : "verification pending"}
+                          {user.is_verified ? "verified host" : "not a host"}
                         </span>
                       )}
                       <h3>{user.display_name}</h3>
@@ -480,7 +461,7 @@ export function AdminDashboard({
                       {user.role === "user" && !user.is_guest && (
                         <button className="button secondary small" disabled={pending === `verify-${user.id}`} onClick={() => toggleVerification(user)}>
                           {pending === `verify-${user.id}` ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />}
-                          {user.is_verified ? "Hide" : "Approve"}
+                          {user.is_verified ? "Remove host" : "Verify as host"}
                         </button>
                       )}
                       {user.role !== "admin" && <button className="button danger small" onClick={() => toggleBan(user)}><Ban size={16} /> {user.is_banned ? "Restore" : "Suspend"}</button>}
@@ -631,7 +612,7 @@ export function AdminDashboard({
               <fieldset className="wallet-adjust-currency">
                 <legend>Balance type</legend>
                 <div className="admin-segmented">
-                  {(["coin", "bean"] as const).map((currency) => (
+                  {(["coin", ...(walletAdjustment.user.is_verified ? ["bean" as const] : [])] as const).map((currency) => (
                     <button
                       className={clsx(walletAdjustment.currency === currency && "active")}
                       key={currency}
@@ -642,6 +623,7 @@ export function AdminDashboard({
                     </button>
                   ))}
                 </div>
+                {!walletAdjustment.user.is_verified && <small>Verify this account as a host before assigning beans.</small>}
               </fieldset>
 
               <label className="field">
@@ -745,7 +727,7 @@ function AdminProfileModal({
               <span className={`status-label ${user.is_banned ? "rejected" : "resolved"}`}>{user.is_banned ? "suspended" : "active"}</span>
               {user.role === "user" && !user.is_guest && (
                 <span className={`status-label ${user.is_verified ? "approved" : "pending"}`}>
-                  {user.is_verified ? "discover approved" : "verification pending"}
+                  {user.is_verified ? "verified host" : "not a host"}
                 </span>
               )}
             </div>
@@ -795,7 +777,7 @@ function AdminProfileModal({
           {user.role === "user" && !user.is_guest && (
             <button className="button primary" disabled={pending === `verify-${user.id}`} type="button" onClick={() => onToggleVerification(user)}>
               {pending === `verify-${user.id}` ? <LoaderCircle className="spin" size={17} /> : <Check size={17} />}
-              {user.is_verified ? "Hide from Discover" : "Approve for Discover"}
+              {user.is_verified ? "Remove host access" : "Verify as host"}
             </button>
           )}
           {user.role !== "admin" && (
@@ -837,13 +819,12 @@ function VisitorLine({ visitor, userMap }: { visitor: VisitorSession; userMap: M
   );
 }
 
-function HostRequestLine({ request, userMap }: { request: HostRequest; userMap: Map<string, User> }) {
-  const user = userMap.get(request.user_id);
+function HostLine({ host }: { host: User }) {
   return (
     <div className="admin-mini-row">
-      <span className={`status-dot ${request.status}`} />
-      <div><strong>{user?.display_name ?? "User"}</strong><span>{request.phone}</span></div>
-      <time>{formatRelativeTime(request.created_at)}</time>
+      <span className="status-dot resolved" />
+      <div><strong>{host.display_name}</strong><span>@{host.username}</span></div>
+      <time>{formatRelativeTime(host.updated_at)}</time>
     </div>
   );
 }
@@ -940,7 +921,7 @@ function titleForSection(section: Section) {
     overview: "Control center",
     visitors: "Visitor sessions",
     reports: "Reports queue",
-    hosts: "Host requests",
+    hosts: "Verified hosts",
     users: "Account management",
     blocks: "Blocks and device risk",
     withdrawals: "Bean payouts",

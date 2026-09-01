@@ -43,6 +43,7 @@ export function CallScreen({route, navigation}: Props) {
   const [call, setCall] = useState<Call | null>(null);
   const [otherName, setOtherName] = useState('Kizo user');
   const [otherAvatar, setOtherAvatar] = useState<string | null>(null);
+  const [otherIsHost, setOtherIsHost] = useState(false);
   const [joining, setJoining] = useState(false);
   const [joined, setJoined] = useState(false);
   const [remoteUid, setRemoteUid] = useState<number | null>(null);
@@ -71,10 +72,11 @@ export function CallScreen({route, navigation}: Props) {
     setCall(nextCall);
     const otherId = nextCall.caller_id === viewer.account.id ? nextCall.receiver_id : nextCall.caller_id;
     const [{data: account}, {data: media}] = await Promise.all([
-      supabase.from('users').select('display_name').eq('id', otherId).single(),
+      supabase.from('users').select('display_name, is_verified').eq('id', otherId).single(),
       supabase.from('profile_media').select('cloudinary_url').eq('user_id', otherId).eq('is_primary', true).maybeSingle(),
     ]);
     setOtherName(account?.display_name || 'Kizo user');
+    setOtherIsHost(account?.is_verified === true);
     setOtherAvatar(media?.cloudinary_url || null);
   }, [callId, viewer]);
 
@@ -287,12 +289,12 @@ export function CallScreen({route, navigation}: Props) {
             <CallControl icon={<Volume2 size={25} color={colors.white} />} label={speaker ? 'Speaker' : 'Earpiece'} onPress={toggleSpeaker} />
             {video ? <CallControl icon={cameraOff ? <CameraOff size={25} color={colors.white} /> : <Camera size={25} color={colors.white} />} label={cameraOff ? 'Camera on' : 'Camera off'} onPress={toggleVideo} /> : null}
             {video ? <CallControl icon={<RotateCcw size={25} color={colors.white} />} label="Flip" onPress={() => engineRef.current?.switchCamera()} /> : null}
-            <CallControl icon={<Gift size={25} color={colors.white} />} label="Tip" onPress={() => setTipOpen(true)} />
+            {otherIsHost ? <CallControl icon={<Gift size={25} color={colors.white} />} label="Tip" onPress={() => setTipOpen(true)} /> : null}
           </View>
           <Pressable onPress={() => void endCall()} style={styles.end}><PhoneOff size={31} color={colors.white} /></Pressable>
         </View>
       )}
-      <TipSheet visible={tipOpen} balance={Number(viewer?.wallet.coins_balance || 0)} onClose={() => setTipOpen(false)} onSend={sendTip} />
+      <TipSheet visible={otherIsHost && tipOpen} balance={Number(viewer?.wallet.coins_balance || 0)} onClose={() => setTipOpen(false)} onSend={sendTip} />
     </View>
   );
 }

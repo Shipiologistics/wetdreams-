@@ -21,6 +21,7 @@ export default async function WalletPage() {
       transactions={transactions ?? []}
       withdrawals={withdrawals ?? []}
       beanInrValue={beanInrValue}
+      isHost={viewer.account.is_verified}
     />
   );
 }

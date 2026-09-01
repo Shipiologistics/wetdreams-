@@ -31,6 +31,8 @@ export function WalletScreen() {
   const [account, setAccount] = useState('');
   const [ifsc, setIfsc] = useState('');
   const [loading, setLoading] = useState(false);
+  const isHost = viewer?.account.is_verified === true;
+  const visibleTransactions = isHost ? transactions : transactions.filter(item => item.currency === 'coin');
 
   const load = useCallback(async () => {
     if (!viewer) return;
@@ -71,17 +73,17 @@ export function WalletScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenHeader title="Wallet" eyebrow="Coins and earnings" unreadNotifications={unreadNotifications} onNotifications={() => navigation.navigate('Notifications')} />
+      <ScreenHeader title="Wallet" eyebrow={isHost ? 'Coins and earnings' : 'Coin balance'} unreadNotifications={unreadNotifications} onNotifications={() => navigation.navigate('Notifications')} />
       <FlatList
-        data={transactions}
+        data={visibleTransactions}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.content}
         ListHeaderComponent={<>
-          <View style={styles.walletHero}><View style={styles.heroHeading}><View style={styles.walletIcon}><WalletCards size={22} color={colors.white} /></View><Text style={styles.heroLabel}>AVAILABLE COINS</Text></View><Text style={styles.coinValue}>{Number(viewer?.wallet.coins_balance || 0).toLocaleString('en-IN')}</Text><Text style={styles.heroCopy}>Use coins for messages, calls and tips.</Text><View style={styles.beanBalance}><View><Text style={styles.beanLabel}>CREATOR EARNINGS</Text><Text style={styles.beanValue}>{Number(viewer?.wallet.beans_balance || 0).toLocaleString('en-IN')} beans</Text></View><Text style={styles.beanRupees}>₹{(Number(viewer?.wallet.beans_balance || 0) * beanValue).toLocaleString('en-IN')}</Text></View></View>
-          <View style={styles.walletActions}><Pressable onPress={() => setTopupOpen(true)} style={[styles.walletAction, styles.addAction]}><View style={styles.actionIcon}><Plus size={21} color={colors.coral} /></View><View><Text style={styles.actionTitle}>Add coins</Text><Text style={styles.actionCopy}>Recharge on WhatsApp</Text></View></Pressable><Pressable disabled={Number(viewer?.wallet.beans_balance || 0) < 1} onPress={() => setWithdrawOpen(true)} style={[styles.walletAction, Number(viewer?.wallet.beans_balance || 0) < 1 && styles.actionDisabled]}><View style={[styles.actionIcon, styles.beanActionIcon]}><Bean size={21} color={colors.teal} /></View><View><Text style={styles.actionTitle}>Withdraw</Text><Text style={styles.actionCopy}>₹{beanValue} per bean</Text></View></Pressable></View>
+          <View style={styles.walletHero}><View style={styles.heroHeading}><View style={styles.walletIcon}><WalletCards size={22} color={colors.white} /></View><Text style={styles.heroLabel}>AVAILABLE COINS</Text></View><Text style={styles.coinValue}>{Number(viewer?.wallet.coins_balance || 0).toLocaleString('en-IN')}</Text><Text style={styles.heroCopy}>Use coins for messages, calls and tips.</Text>{isHost ? <View style={styles.beanBalance}><View><Text style={styles.beanLabel}>CREATOR EARNINGS</Text><Text style={styles.beanValue}>{Number(viewer?.wallet.beans_balance || 0).toLocaleString('en-IN')} beans</Text></View><Text style={styles.beanRupees}>₹{(Number(viewer?.wallet.beans_balance || 0) * beanValue).toLocaleString('en-IN')}</Text></View> : null}</View>
+          <View style={styles.walletActions}><Pressable onPress={() => setTopupOpen(true)} style={[styles.walletAction, styles.addAction]}><View style={styles.actionIcon}><Plus size={21} color={colors.coral} /></View><View><Text style={styles.actionTitle}>Add coins</Text><Text style={styles.actionCopy}>Recharge on WhatsApp</Text></View></Pressable>{isHost ? <Pressable disabled={Number(viewer?.wallet.beans_balance || 0) < 1} onPress={() => setWithdrawOpen(true)} style={[styles.walletAction, Number(viewer?.wallet.beans_balance || 0) < 1 && styles.actionDisabled]}><View style={[styles.actionIcon, styles.beanActionIcon]}><Bean size={21} color={colors.teal} /></View><View><Text style={styles.actionTitle}>Withdraw</Text><Text style={styles.actionCopy}>₹{beanValue} per bean</Text></View></Pressable> : null}</View>
           <Pressable onPress={() => setTopupOpen(true)} style={styles.offer}><View style={styles.offerIcon}><Gift size={21} color={colors.warning} /></View><View style={styles.offerCopy}><Text style={styles.offerTitle}>Recharge through WhatsApp</Text><Text style={styles.offerText}>Send a pack request. Admin credits coins after payment confirmation.</Text></View><Text style={styles.offerCta}>Open</Text></Pressable>
-          <View style={styles.policy}><View style={styles.policyRow}><Clock3 size={18} color={colors.teal} /><Text style={styles.policyText}>Processed within 24 hours</Text></View><View style={styles.policyRow}><CalendarX2 size={18} color={colors.teal} /><Text style={styles.policyText}>No payouts on Sundays or government holidays</Text></View></View>
-          {withdrawals.length ? <View style={styles.section}><Text style={styles.sectionTitle}>Withdrawals</Text>{withdrawals.map(item => <View key={item.id} style={styles.withdrawal}><View><Text style={styles.withdrawalAmount}>{item.beans_requested} beans · ₹{item.inr_amount}</Text><Text style={styles.txTime}>{new Date(item.created_at).toLocaleDateString('en-IN')}</Text></View><Text style={[styles.status, completeStatus(item.status) && styles.complete]}>{completeStatus(item.status) ? 'Complete' : item.status}</Text></View>)}</View> : null}
+          {isHost ? <View style={styles.policy}><View style={styles.policyRow}><Clock3 size={18} color={colors.teal} /><Text style={styles.policyText}>Processed within 24 hours</Text></View><View style={styles.policyRow}><CalendarX2 size={18} color={colors.teal} /><Text style={styles.policyText}>No payouts on Sundays or government holidays</Text></View></View> : null}
+          {isHost && withdrawals.length ? <View style={styles.section}><Text style={styles.sectionTitle}>Withdrawals</Text>{withdrawals.map(item => <View key={item.id} style={styles.withdrawal}><View><Text style={styles.withdrawalAmount}>{item.beans_requested} beans · ₹{item.inr_amount}</Text><Text style={styles.txTime}>{new Date(item.created_at).toLocaleDateString('en-IN')}</Text></View><Text style={[styles.status, completeStatus(item.status) && styles.complete]}>{completeStatus(item.status) ? 'Complete' : item.status}</Text></View>)}</View> : null}
           <Text style={styles.sectionTitle}>Activity</Text>
         </>}
         renderItem={({item}) => {
@@ -91,7 +93,7 @@ export function WalletScreen() {
         ListEmptyComponent={<Text style={styles.empty}>Your wallet activity will appear here.</Text>}
       />
       <CoinTopupModal visible={topupOpen} onClose={() => setTopupOpen(false)} onComplete={() => void load()} />
-      <Modal visible={withdrawOpen} transparent animationType="slide" onRequestClose={() => setWithdrawOpen(false)}>
+      <Modal visible={isHost && withdrawOpen} transparent animationType="slide" onRequestClose={() => setWithdrawOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setWithdrawOpen(false)}><Pressable style={styles.modal} onPress={() => undefined}><ScrollView contentContainerStyle={styles.modalContent} keyboardShouldPersistTaps="handled">
           <View style={styles.modalHeader}><View><Text style={styles.modalEyebrow}>Manual payout</Text><Text style={styles.modalTitle}>Withdraw beans</Text></View><Pressable onPress={() => setWithdrawOpen(false)} style={styles.close}><X size={25} color={colors.ink} /></Pressable></View>
           <FormField label="Beans" value={beans} onChangeText={setBeans} keyboardType="decimal-pad" placeholder={`Up to ${Number(viewer?.wallet.beans_balance || 0)}`} />
