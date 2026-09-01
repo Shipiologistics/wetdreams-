@@ -793,6 +793,7 @@ export type Database = {
           created_at: string
           id: string
           reason: string
+          related_rating_id: string | null
           reported_user_id: string
           reporter_id: string
           resolved_at: string | null
@@ -805,6 +806,7 @@ export type Database = {
           created_at?: string
           id?: string
           reason: string
+          related_rating_id?: string | null
           reported_user_id: string
           reporter_id: string
           resolved_at?: string | null
@@ -817,6 +819,7 @@ export type Database = {
           created_at?: string
           id?: string
           reason?: string
+          related_rating_id?: string | null
           reported_user_id?: string
           reporter_id?: string
           resolved_at?: string | null
@@ -1230,6 +1233,10 @@ export type Database = {
       }
       report_user: {
         Args: { p_reason: string; p_reported_user: string; p_room_id: string }
+        Returns: string
+      }
+      report_host_review: {
+        Args: { p_rating_id: string; p_reason: string }
         Returns: string
       }
       refresh_stale_presence: { Args: never; Returns: number }

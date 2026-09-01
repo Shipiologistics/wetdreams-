@@ -2,7 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LoaderCircle, Star } from "lucide-react";
+import { Flag, LoaderCircle, Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatRelativeTime, messageForError } from "@/lib/format";
 
@@ -58,6 +58,27 @@ export function HostReviewWidget({
     router.refresh();
   }
 
+  async function reportReview(review: HostReview) {
+    const reason = window.prompt("Why are you reporting this review?", "Spam or not matching what happened");
+    if (!reason) return;
+    setPending(true);
+    setError(null);
+    const response = await fetch("/api/reviews/report", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ratingId: review.id, reason }),
+    });
+    const payload = await response.json().catch(() => null) as { error?: string } | null;
+    setPending(false);
+    if (!response.ok) {
+      setError(messageForError(payload?.error ?? "REPORT_FAILED"));
+      return;
+    }
+    router.refresh();
+  }
+
+  const canReportReviews = Boolean(viewerId && viewerId === hostId);
+
   return (
     <section className="host-reviews-section">
       <div className="host-review-header">
@@ -105,6 +126,11 @@ export function HostReviewWidget({
             </div>
             <span className="rating"><Star size={14} fill="currentColor" /> {review.score.toFixed(1)}</span>
             {review.comment && <p>{review.comment}</p>}
+            {canReportReviews && review.rater_id !== viewerId && (
+              <button className="button secondary small" type="button" disabled={pending} onClick={() => reportReview(review)}>
+                <Flag size={14} /> Report review
+              </button>
+            )}
           </article>
         ))}
         {!reviews.length && <div className="inline-empty">No reviews yet.</div>}

@@ -314,6 +314,7 @@ export function AdminDashboard({
                       <div><dt>Reporter</dt><dd>@{reporter?.username ?? "unknown"}</dd></div>
                       <div><dt>Reported</dt><dd>@{reported?.username ?? "unknown"}</dd></div>
                       <div><dt>Room</dt><dd>{shortId(report.room_id)}</dd></div>
+                      {report.related_rating_id && <div><dt>Review</dt><dd>{shortId(report.related_rating_id)}</dd></div>}
                     </dl>
                     {report.admin_notes && <p className="admin-note">Note: {report.admin_notes}</p>}
                     <time>{formatRelativeTime(report.created_at)}</time>

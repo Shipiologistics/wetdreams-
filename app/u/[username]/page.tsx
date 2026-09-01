@@ -50,8 +50,7 @@ export default async function PublicProfilePage({ params }: Params) {
       ? supabase
           .from("calls")
           .select("id")
-          .eq("caller_id", viewer.id)
-          .eq("receiver_id", account.id)
+          .or(`and(caller_id.eq.${viewer.id},receiver_id.eq.${account.id}),and(caller_id.eq.${account.id},receiver_id.eq.${viewer.id})`)
           .eq("status", "ended")
           .gt("duration_seconds", 0)
           .limit(1)

@@ -1,7 +1,7 @@
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {Alert, FlatList, Image, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
-import {BadgeCheck, MapPin, MessageCircle, Phone, Star, Video} from 'lucide-react-native';
+import {BadgeCheck, Flag, MapPin, MessageCircle, Phone, Star, Video} from 'lucide-react-native';
 import {ScreenHeader} from '../components/ScreenHeader';
 import {authenticatedPost} from '../lib/api';
 import {supabase} from '../lib/supabase';
@@ -85,7 +85,20 @@ export function HostProfileScreen({route, navigation}: Props) {
     Alert.alert('Rating saved', 'Thanks for sharing your experience.');
   }
 
+  async function reportReview(ratingId: string) {
+    try {
+      await authenticatedPost('/api/reviews/report', {
+        ratingId,
+        reason: 'Spam or not matching what happened',
+      });
+      Alert.alert('Review reported', 'Admin will review it.');
+    } catch (error) {
+      Alert.alert('Report failed', error instanceof Error ? error.message : 'Please try again.');
+    }
+  }
+
   const main = media.find(item => item.is_primary) || media[0];
+  const canReportReviews = viewer?.account.id === route.params.userId;
   return (
     <View style={styles.root}>
       <ScreenHeader back title={account?.display_name || 'Profile'} eyebrow="Host profile" coins={Number(viewer?.wallet.coins_balance || 0)} unreadNotifications={unreadNotifications} onNotifications={() => navigation.navigate('Notifications')} />
@@ -103,7 +116,7 @@ export function HostProfileScreen({route, navigation}: Props) {
         <View style={styles.reviewSection}>
           <View style={styles.reviewHeading}><View><Text style={styles.reviewTitle}>Caller ratings</Text><Text style={styles.reviewNote}>Only people who completed a call can rate.</Text></View>{average ? <View style={styles.average}><Star size={18} color="#74510A" fill="#74510A" /><Text style={styles.averageText}>{average.toFixed(1)}</Text></View> : null}</View>
           <View style={styles.rateButtons}>{[1, 2, 3, 4, 5].map(score => <Pressable key={score} onPress={() => void rate(score)} style={styles.starButton}><Star size={23} color={colors.mustard} fill={score <= Math.round(average || 0) ? colors.mustard : 'transparent'} /></Pressable>)}</View>
-          {ratings.length ? ratings.map(item => <View key={item.id} style={styles.ratingRow}><View style={styles.raterAvatar}><Text style={styles.raterInitial}>{(raterNames[item.rater_id] || 'Verified caller').charAt(0)}</Text></View><View style={styles.ratingCopy}><Text style={styles.raterName}>{raterNames[item.rater_id] || 'Verified caller'}</Text><View style={styles.stars}>{Array.from({length: 5}, (_, index) => <Star key={index} size={13} color={colors.mustard} fill={index < item.score ? colors.mustard : 'transparent'} />)}</View></View></View>) : <Text style={styles.noReviews}>No ratings yet.</Text>}
+          {ratings.length ? ratings.map(item => <View key={item.id} style={styles.ratingRow}><View style={styles.raterAvatar}><Text style={styles.raterInitial}>{(raterNames[item.rater_id] || 'Verified caller').charAt(0)}</Text></View><View style={styles.ratingCopy}><Text style={styles.raterName}>{raterNames[item.rater_id] || 'Verified caller'}</Text><View style={styles.stars}>{Array.from({length: 5}, (_, index) => <Star key={index} size={13} color={colors.mustard} fill={index < item.score ? colors.mustard : 'transparent'} />)}</View></View>{canReportReviews && item.rater_id !== viewer?.account.id ? <Pressable onPress={() => void reportReview(item.id)} style={styles.reportReview}><Flag size={14} color={colors.danger} /><Text style={styles.reportReviewText}>Report</Text></Pressable> : null}</View>) : <Text style={styles.noReviews}>No ratings yet.</Text>}
         </View>
       </ScrollView>
     </View>
@@ -120,5 +133,5 @@ const styles = StyleSheet.create({
   actions: {flexDirection: 'row', gap: spacing.xs, marginTop: spacing.xs}, action: {height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, borderRadius: radii.md}, message: {flex: 1, backgroundColor: colors.coral}, actionLabel: {fontSize: 17, fontWeight: '900', color: colors.white}, iconAction: {width: 54, height: 52, borderRadius: radii.md, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center'},
   reviewSection: {padding: spacing.lg, gap: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md}, reviewHeading: {flexDirection: 'row', justifyContent: 'space-between'}, reviewTitle: {fontSize: 21, fontWeight: '900', color: colors.ink}, reviewNote: {fontSize: 12, color: colors.muted}, average: {flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: spacing.sm, borderRadius: radii.round, backgroundColor: colors.mustardSoft}, averageText: {fontSize: 18, fontWeight: '900', color: '#74510A'},
   rateButtons: {flexDirection: 'row', gap: spacing.xs}, starButton: {width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radii.sm, backgroundColor: colors.canvas},
-  ratingRow: {minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line}, raterAvatar: {width: 38, height: 38, borderRadius: 19, backgroundColor: colors.tealSoft, alignItems: 'center', justifyContent: 'center'}, raterInitial: {fontWeight: '900', color: colors.teal}, ratingCopy: {gap: 3}, raterName: {fontWeight: '900', color: colors.ink}, stars: {flexDirection: 'row'}, noReviews: {color: colors.muted},
+  ratingRow: {minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line}, raterAvatar: {width: 38, height: 38, borderRadius: 19, backgroundColor: colors.tealSoft, alignItems: 'center', justifyContent: 'center'}, raterInitial: {fontWeight: '900', color: colors.teal}, ratingCopy: {flex: 1, gap: 3}, raterName: {fontWeight: '900', color: colors.ink}, stars: {flexDirection: 'row'}, reportReview: {height: 34, paddingHorizontal: spacing.xs, flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: radii.sm, backgroundColor: colors.coralSoft}, reportReviewText: {fontSize: 11, fontWeight: '900', color: colors.danger}, noReviews: {color: colors.muted},
 });
