@@ -16,7 +16,7 @@ export default function LandingPage() {
       <header className="landing-nav">
         <Link href="/landing" className="landing-logo" aria-label="Kizo landing page">
           <span>
-            <Image src="/brand/kizo-logo.png" alt="" fill sizes="36px" priority />
+            <Image src="/brand/kizo-ribbon-logo.png" alt="" fill sizes="36px" priority />
           </span>
           Kizo
         </Link>
@@ -57,7 +57,7 @@ export default function LandingPage() {
           </div>
           <div className="landing-card-preview">
             <div className="landing-avatar-ring">
-              <Image src="/brand/kizo-logo.png" alt="" fill sizes="96px" priority />
+              <Image src="/brand/kizo-ribbon-logo.png" alt="" fill sizes="96px" priority />
             </div>
             <h2>Neelam</h2>
             <p>Online now</p>
