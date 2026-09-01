@@ -60,6 +60,7 @@ export function AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [coinBalance, setCoinBalance] = useState(viewer.coins);
   const [unreadChatCount, setUnreadChatCount] = useState(viewer.unreadChatCount);
   const [chatRoomIds, setChatRoomIds] = useState(() => new Set(viewer.chatRoomIds));
   const chatRoomIdsRef = useRef(chatRoomIds);
@@ -82,6 +83,16 @@ export function AppShell({
     window.sessionStorage.removeItem(recoveryKey);
     window.sessionStorage.removeItem(justAuthenticatedKey);
     document.documentElement.classList.remove("wetdreams-auth-recovering");
+  }, []);
+
+  useEffect(() => {
+    function handleWalletUpdate(event: Event) {
+      const detail = (event as CustomEvent<{ coins?: number }>).detail;
+      if (Number.isFinite(detail?.coins)) setCoinBalance(Number(detail.coins));
+    }
+
+    window.addEventListener("wetdreams:wallet-updated", handleWalletUpdate);
+    return () => window.removeEventListener("wetdreams:wallet-updated", handleWalletUpdate);
   }, []);
 
   useEffect(() => {
@@ -189,12 +200,24 @@ export function AppShell({
           }
         },
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "wallets", filter: `user_id=eq.${viewer.id}` },
+        (payload) => {
+          const wallet = payload.new as { coins_balance?: number | string; beans_balance?: number | string };
+          const coins = Number(wallet.coins_balance ?? 0);
+          const beans = Number(wallet.beans_balance ?? 0);
+          setCoinBalance(coins);
+          window.dispatchEvent(new CustomEvent("wetdreams:wallet-updated", { detail: { coins, beans } }));
+          router.refresh();
+        },
+      )
       .subscribe();
 
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [shellChannelSuffix, viewer.id]);
+  }, [router, shellChannelSuffix, viewer.id]);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -275,7 +298,7 @@ export function AppShell({
             <strong>{viewer.name}</strong>
             <span>@{viewer.username}</span>
           </div>
-          <span className="coin-pill">{formatMoney(viewer.coins)}</span>
+          <span className="coin-pill">{formatMoney(coinBalance)}</span>
         </div>
       </aside>
 

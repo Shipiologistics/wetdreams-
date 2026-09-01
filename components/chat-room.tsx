@@ -102,6 +102,23 @@ export function ChatRoom({
   const burstTimerRef = useRef<number | null>(null);
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null);
 
+  const refreshWallet = useCallback(async () => {
+    const { data: wallet } = await createClient()
+      .from("wallets")
+      .select("coins_balance, beans_balance")
+      .eq("user_id", viewerId)
+      .single();
+
+    if (wallet) {
+      const coins = Number(wallet.coins_balance);
+      const beans = Number(wallet.beans_balance);
+      setCoinWallet(coins);
+      setBeanWallet(beans);
+      window.dispatchEvent(new CustomEvent("wetdreams:wallet-updated", { detail: { coins, beans } }));
+    }
+    router.refresh();
+  }, [router, viewerId]);
+
   const primaryImage = media.find((item) => item.is_primary)?.cloudinary_url ?? media[0]?.cloudinary_url;
   const count = Math.max(room.message_count, messages.length);
   const blocked = blockState.viewerBlockedOther || blockState.otherBlockedViewer;
@@ -205,7 +222,13 @@ export function ChatRoom({
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "calls", filter: `room_id=eq.${room.id}` },
-        (payload) => setActiveCall(payload.new as Call),
+        (payload) => {
+          const nextCall = payload.new as Call;
+          setActiveCall(nextCall);
+          if (["ended", "declined", "missed", "failed"].includes(nextCall.status)) {
+            void refreshWallet();
+          }
+        },
       )
       .on(
         "postgres_changes",
@@ -256,7 +279,7 @@ export function ChatRoom({
       if (burstTimerRef.current) window.clearTimeout(burstTimerRef.current);
       void supabase.removeChannel(channel);
     };
-  }, [markRoomRead, other.id, room.id, router, viewerId]);
+  }, [markRoomRead, other.id, refreshWallet, room.id, router, viewerId]);
 
   useEffect(() => {
     if (!paywalled || paidUntil <= Date.now()) return;
@@ -577,7 +600,10 @@ export function ChatRoom({
           coins={coinWallet}
           beans={beanWallet}
           onChange={setActiveCall}
-          onClose={() => setActiveCall(null)}
+          onClose={() => {
+            setActiveCall(null);
+            void refreshWallet();
+          }}
           onWalletChange={setCoinWallet}
           onMessage={setError}
           onTipSent={(amount) => showTipBurst(`${formatTipAmount(amount)} coins sent`)}
@@ -810,7 +836,12 @@ function CallOverlay({
 
   async function endCall() {
     setPendingAction("end");
-    await createClient().rpc("end_call", { p_call_id: call.id });
+    const { error } = await createClient().rpc("end_call", { p_call_id: call.id });
+    if (error) {
+      setPendingAction(null);
+      onMessage(messageForError(error.message));
+      return;
+    }
     onClose();
   }
 
