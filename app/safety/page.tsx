@@ -4,7 +4,7 @@ import { safetySections } from "@/lib/legal-content";
 
 export const metadata: Metadata = {
   title: "Safety Rules",
-  description: "WetDreams community, blocking, reporting, and safety rules.",
+  description: "Kizo community, blocking, reporting, and safety rules.",
 };
 
 export default function SafetyPage() {
@@ -12,7 +12,7 @@ export default function SafetyPage() {
     <LegalPage
       eyebrow="Safety"
       title="Safety Rules"
-      intro="WetDreams is for adult, consensual, respectful conversations. These rules help protect users, hosts, and the platform."
+      intro="Kizo is for adult, consensual, respectful conversations. These rules help protect users, hosts, and the platform."
       sections={safetySections}
     />
   );

@@ -306,7 +306,7 @@ export function ChatRoom({
       if (callError.message.includes("USER_BLOCKED")) setBlockState((current) => ({ ...current, otherBlockedViewer: true }));
       if (callError.message.includes("INSUFFICIENT_BALANCE")) {
         setTopupOpen(true);
-        return setError("Add coins to start this call.");
+        return setError("Request coins on WhatsApp to start this call.");
       }
       return setError(messageForError(callError.message));
     }
@@ -482,7 +482,7 @@ export function ChatRoom({
             <Coins size={19} />
             <span><strong>{Number(profile.chat_rate_coins)} coins</strong> unlocks 1 min chat</span>
             <span className="wallet-inline">{coinWallet} left</span>
-            <button type="button" onClick={() => setTopupOpen(true)}>Buy coins</button>
+            <button type="button" onClick={() => setTopupOpen(true)}>WhatsApp recharge</button>
           </div>
         )}
         {blocked && (
@@ -543,10 +543,7 @@ export function ChatRoom({
       <CoinTopupModal
         open={topupOpen}
         onClose={() => setTopupOpen(false)}
-        onComplete={(balance, coins) => {
-          setCoinWallet(balance);
-          setError(`${coins} coins added.`);
-        }}
+        onComplete={() => setError("WhatsApp opened. Admin will credit coins after payment confirmation.")}
       />
     </div>
   );

@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       await sendFcmMessage({
         token,
         title: `Incoming ${call.call_type} call`,
-        body: caller?.display_name ?? "WetDreams call",
+        body: caller?.display_name ?? "Kizo call",
         channelId: "incoming_calls",
         collapseKey: `call:${call.id}`,
         notification: false,
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
           roomId: call.room_id,
           url: `/chat/${call.room_id}`,
           callType: call.call_type,
-          callerName: caller?.display_name ?? "WetDreams",
+          callerName: caller?.display_name ?? "Kizo",
           callerImage: callerMedia?.cloudinary_url ?? "",
         },
       });

@@ -1,10 +1,10 @@
-# WetDreams Android Build
+# Kizo Android Build
 
-The Android app is a Capacitor shell for the production WetDreams web app.
+The Android app is a Capacitor shell for the production Kizo web app.
 
 ## App Identity
 
-- App name: `WetDreams`
+- App name: `Kizo`
 - Package id: `com.wetdreams.app`
 - Version name: `1.0.0`
 - Version code: `1`

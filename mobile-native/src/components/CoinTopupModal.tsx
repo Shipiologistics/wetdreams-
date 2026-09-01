@@ -1,8 +1,6 @@
 import {useState} from 'react';
-import {Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
-import {Coins, X} from 'lucide-react-native';
-import {supabase} from '../lib/supabase';
-import {useApp} from '../state/AppProvider';
+import {Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Coins, MessageCircle, X} from 'lucide-react-native';
 import {colors, radii, spacing} from '../theme';
 import {WetButton} from './WetButton';
 
@@ -15,33 +13,31 @@ export const coinPackages = [
 ] as const;
 
 export function CoinTopupModal({visible, onClose, onComplete}: {visible: boolean; onClose: () => void; onComplete?: (coins: number) => void}) {
-  const {refreshViewer} = useApp();
   const [selected, setSelected] = useState(3);
   const [loading, setLoading] = useState(false);
   const pack = coinPackages[selected];
 
-  async function pay() {
+  async function requestOnWhatsApp() {
     setLoading(true);
-    const {data: intent, error: intentError} = await supabase.rpc('create_payment_intent', {p_coins: pack.coins, p_amount_inr: pack.price});
-    if (intentError || !intent) {
+    const text = `Hi Kizo support, I want to buy ${pack.coins} coins for Rs ${pack.price}. Code: ${pack.code}. Please credit after payment confirmation.`;
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    try {
+      await Linking.openURL(url);
+      onComplete?.(pack.coins);
+      onClose();
+    } catch {
+      Alert.alert('WhatsApp unavailable', 'Install WhatsApp or contact support to recharge coins.');
+    } finally {
       setLoading(false);
-      return Alert.alert('Could not start payment', intentError?.message || 'Please try again.');
     }
-    const {error} = await supabase.rpc('complete_dummy_payment', {p_intent_id: intent});
-    setLoading(false);
-    if (error) return Alert.alert('Payment failed', error.message);
-    await refreshViewer();
-    onComplete?.(pack.coins);
-    onClose();
-    Alert.alert('Coins added', `${pack.coins} coins are now in your wallet.`);
   }
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={styles.modal} onPress={() => undefined}>
-          <View style={styles.header}><View><Text style={styles.eyebrow}>Offers applied</Text><Text style={styles.title}>Add coins</Text></View><Pressable onPress={onClose} style={styles.close}><X size={25} color={colors.ink} /></Pressable></View>
-          <Text style={styles.note}>Lowest recharge: ₹50 gets 45 coins. Bigger packs include bonus coins.</Text>
+          <View style={styles.header}><View><Text style={styles.eyebrow}>WhatsApp recharge</Text><Text style={styles.title}>Add coins</Text></View><Pressable onPress={onClose} style={styles.close}><X size={25} color={colors.ink} /></Pressable></View>
+          <Text style={styles.note}>Choose a pack and continue on WhatsApp. Coins are credited manually by admin after payment confirmation.</Text>
           <ScrollView contentContainerStyle={styles.packages} showsVerticalScrollIndicator={false}>
             {coinPackages.map((item, index) => (
               <Pressable key={item.price} onPress={() => setSelected(index)} style={[styles.pack, selected === index && styles.packSelected]}>
@@ -52,7 +48,7 @@ export function CoinTopupModal({visible, onClose, onComplete}: {visible: boolean
               </Pressable>
             ))}
           </ScrollView>
-          <WetButton title={`Pay ₹${pack.price}`} onPress={() => void pay()} loading={loading} />
+          <WetButton title={`Request on WhatsApp`} onPress={() => void requestOnWhatsApp()} loading={loading} icon={<MessageCircle size={19} color={colors.white} />} />
         </Pressable>
       </Pressable>
     </Modal>

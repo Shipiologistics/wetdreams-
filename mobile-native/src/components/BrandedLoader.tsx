@@ -4,7 +4,7 @@ import {colors, spacing} from '../theme';
 export function BrandedLoader({label = 'Loading'}: {label?: string}) {
   return (
     <View style={styles.root}>
-      <Image source={require('../assets/wetdreams-logo.png')} style={styles.logo} resizeMode="contain" />
+      <Image source={require('../assets/kizo-logo.png')} style={styles.logo} resizeMode="contain" />
       <Text style={styles.label}>{label}</Text>
     </View>
   );

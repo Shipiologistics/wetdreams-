@@ -4,7 +4,7 @@ import { privacySections } from "@/lib/legal-content";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: "How WetDreams collects, uses, protects, and retains user, host, payout, and safety data.",
+  description: "How Kizo collects, uses, protects, and retains user, host, payout, and safety data.",
 };
 
 export default function PrivacyPage() {
@@ -12,7 +12,7 @@ export default function PrivacyPage() {
     <LegalPage
       eyebrow="Privacy"
       title="Privacy Policy"
-      intro="This policy explains what information WetDreams collects, why we collect it, how we use it, and what choices users and hosts have."
+      intro="This policy explains what information Kizo collects, why we collect it, how we use it, and what choices users and hosts have."
       sections={privacySections}
     />
   );

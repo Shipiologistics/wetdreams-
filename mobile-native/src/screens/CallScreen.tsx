@@ -39,7 +39,7 @@ export function CallScreen({route, navigation}: Props) {
   const {callId} = route.params;
   const {viewer, refreshViewer} = useApp();
   const [call, setCall] = useState<Call | null>(null);
-  const [otherName, setOtherName] = useState('WetDreams user');
+  const [otherName, setOtherName] = useState('Kizo user');
   const [otherAvatar, setOtherAvatar] = useState<string | null>(null);
   const [joining, setJoining] = useState(false);
   const [joined, setJoined] = useState(false);
@@ -72,7 +72,7 @@ export function CallScreen({route, navigation}: Props) {
       supabase.from('users').select('display_name').eq('id', otherId).single(),
       supabase.from('profile_media').select('cloudinary_url').eq('user_id', otherId).eq('is_primary', true).maybeSingle(),
     ]);
-    setOtherName(account?.display_name || 'WetDreams user');
+    setOtherName(account?.display_name || 'Kizo user');
     setOtherAvatar(media?.cloudinary_url || null);
   }, [callId, viewer]);
 
@@ -231,7 +231,7 @@ export function CallScreen({route, navigation}: Props) {
   async function sendTip(amount: number) {
     if (!call) return false;
     const {error} = await supabase.rpc('send_tip', {p_amount: amount, p_room_id: call.room_id, p_call_id: call.id});
-    if (error) { Alert.alert(error.message.includes('INSUFFICIENT') ? 'Not enough coins' : 'Tip failed', error.message.includes('INSUFFICIENT') ? 'Add coins in Wallet after the call.' : error.message); return false; }
+    if (error) { Alert.alert(error.message.includes('INSUFFICIENT') ? 'Not enough coins' : 'Tip failed', error.message.includes('INSUFFICIENT') ? 'Request coins from Wallet on WhatsApp after the call.' : error.message); return false; }
     await refreshViewer();
     setTipText(`${amount} coin tip sent!`);
     tipScale.setValue(0);

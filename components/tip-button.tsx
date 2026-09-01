@@ -114,7 +114,7 @@ export function TipButton({
               </button>
             </div>
             <button className="button secondary wide" type="button" onClick={() => setTopupOpen(true)} disabled={pending !== null}>
-              <Coins size={18} /> Buy coins
+              <Coins size={18} /> WhatsApp recharge
             </button>
             {error && <p className="card-error" role="alert">{error}</p>}
           </div>
@@ -124,10 +124,7 @@ export function TipButton({
       <CoinTopupModal
         open={topupOpen}
         onClose={() => setTopupOpen(false)}
-        onComplete={(balance, coins) => {
-          onWalletChange(balance);
-          onMessage?.(`${coins} coins added.`);
-        }}
+        onComplete={() => onMessage?.("WhatsApp opened. Admin will credit coins after payment confirmation.")}
       />
     </>
   );

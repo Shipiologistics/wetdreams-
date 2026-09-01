@@ -4,7 +4,7 @@ import { refundSections } from "@/lib/legal-content";
 
 export const metadata: Metadata = {
   title: "Refund Policy",
-  description: "WetDreams refund, wallet, chargeback, and digital beans policy.",
+  description: "Kizo refund, wallet, chargeback, and digital beans policy.",
 };
 
 export default function RefundPolicyPage() {

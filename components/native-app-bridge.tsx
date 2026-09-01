@@ -31,7 +31,7 @@ export function NativeAppBridge() {
       await PushNotifications.createChannel({
         id: "incoming_calls",
         name: "Incoming calls",
-        description: "WetDreams incoming call alerts",
+        description: "Kizo incoming call alerts",
         importance: 5,
         visibility: 1,
         sound: "default",
@@ -40,7 +40,7 @@ export function NativeAppBridge() {
       await PushNotifications.createChannel({
         id: "messages",
         name: "Messages",
-        description: "WetDreams chat message alerts",
+        description: "Kizo chat message alerts",
         importance: 4,
         visibility: 1,
         sound: "default",

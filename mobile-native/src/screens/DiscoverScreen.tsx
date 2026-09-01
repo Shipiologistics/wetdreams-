@@ -106,7 +106,7 @@ export function DiscoverScreen() {
   useFocusEffect(useCallback(() => {
     void load();
     const back = BackHandler.addEventListener('hardwareBackPress', () => {
-      Alert.alert('Exit WetDreams?', 'Do you want to close the app?', [
+      Alert.alert('Exit Kizo?', 'Do you want to close the app?', [
         {text: 'Stay', style: 'cancel'},
         {text: 'Exit', onPress: () => BackHandler.exitApp()},
       ]);
@@ -154,7 +154,7 @@ export function DiscoverScreen() {
     if (roomError || !roomId) return Alert.alert('Could not start call', roomError?.message || 'Please try again.');
     const {data: callId, error} = await supabase.rpc('start_call', {p_room_id: roomId, p_call_type: type});
     if (error || !callId) {
-      if (error?.message.includes('INSUFFICIENT_BALANCE')) return Alert.alert('Add coins first', 'Open Wallet and choose a coin pack.');
+      if (error?.message.includes('INSUFFICIENT_BALANCE')) return Alert.alert('Add coins first', 'Open Wallet and request coins on WhatsApp.');
       return Alert.alert('Could not start call', error?.message || 'Please try again.');
     }
     void authenticatedPost('/api/calls/notify', {callId}).catch(() => undefined);

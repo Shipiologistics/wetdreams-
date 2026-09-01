@@ -4,7 +4,7 @@ import { hostSections } from "@/lib/legal-content";
 
 export const metadata: Metadata = {
   title: "Host Payout Policy",
-  description: "WetDreams host rewards, withdrawal, payout, tax, and review policy.",
+  description: "Kizo host rewards, withdrawal, payout, tax, and review policy.",
 };
 
 export default function HostPolicyPage() {

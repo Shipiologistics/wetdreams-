@@ -4,7 +4,7 @@ import Link from "next/link";
 import { BadgeCheck, Download, LockKeyhole, MessageCircle, PhoneCall, ShieldCheck, Sparkles } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "WetDreams | Private Adult Chat",
+  title: "Kizo | Private Adult Chat",
   description: "A private 18+ chat and calling platform for verified hosts and respectful adult conversations.",
 };
 
@@ -14,11 +14,11 @@ export default function LandingPage() {
   return (
     <main className="landing-page">
       <header className="landing-nav">
-        <Link href="/landing" className="landing-logo" aria-label="WetDreams landing page">
+        <Link href="/landing" className="landing-logo" aria-label="Kizo landing page">
           <span>
-            <Image src="/brand/wetdreams-dna-logo.png" alt="" fill sizes="36px" priority />
+            <Image src="/brand/kizo-logo.png" alt="" fill sizes="36px" priority />
           </span>
-          WetDreams
+          Kizo
         </Link>
         <nav aria-label="Landing navigation">
           <Link href="/discover">Explore</Link>
@@ -32,7 +32,7 @@ export default function LandingPage() {
           <span className="landing-kicker"><ShieldCheck size={16} /> Adults only, respectful by design</span>
           <h1>Private adult chat with verified hosts.</h1>
           <p>
-            WetDreams is built for safe, paid conversations, live calls, and real-time connection without public explicit content.
+            Kizo is built for safe, paid conversations, live calls, and real-time connection without public explicit content.
           </p>
           <div className="landing-actions">
             <Link className="button primary large" href="/discover">
@@ -49,15 +49,15 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <div className="landing-phone" aria-label="WetDreams app preview">
+        <div className="landing-phone" aria-label="Kizo app preview">
           <div className="landing-phone-top">
             <span />
-            <strong>WetDreams</strong>
+            <strong>Kizo</strong>
             <span />
           </div>
           <div className="landing-card-preview">
             <div className="landing-avatar-ring">
-              <Image src="/brand/wetdreams-dna-logo.png" alt="" fill sizes="96px" priority />
+              <Image src="/brand/kizo-logo.png" alt="" fill sizes="96px" priority />
             </div>
             <h2>Neelam</h2>
             <p>Online now</p>
@@ -73,7 +73,7 @@ export default function LandingPage() {
         <div>
           <span className="landing-kicker">Host App</span>
           <h2>For approved hosts on Android</h2>
-          <p>Receive calls, reply to chats, and manage your host experience from the WetDreams Host App.</p>
+          <p>Receive calls, reply to chats, and manage your host experience from the Kizo Host App.</p>
         </div>
         <a className="button primary large" href={hostAppDownload} download>
           <Download size={20} /> Download APK
@@ -99,7 +99,7 @@ export default function LandingPage() {
       </section>
 
       <footer className="landing-footer">
-        <span>WetDreams is for adults 18+ only.</span>
+        <span>Kizo is for adults 18+ only.</span>
         <div>
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>

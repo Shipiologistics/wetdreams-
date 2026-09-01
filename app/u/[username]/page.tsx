@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (!account) return { title: "Profile not found" };
   return {
     title: `${account.display_name} (@${account.username})`,
-    description: `Chat with ${account.display_name} on WetDreams. The first ten messages are free, then chat is billed by the minute.`,
+    description: `Chat with ${account.display_name} on Kizo. The first ten messages are free, then chat is billed by the minute.`,
     alternates: { canonical: `/u/${account.username}` },
   };
 }

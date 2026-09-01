@@ -45,7 +45,7 @@ export const termsSections: LegalSection[] = [
   {
     title: "Eligibility",
     body: [
-      "You must be at least 18 years old to use WetDreams. By using the service, you confirm that the information you provide is accurate and that you are legally allowed to use the app.",
+      "You must be at least 18 years old to use Kizo. By using the service, you confirm that the information you provide is accurate and that you are legally allowed to use the app.",
       "We may suspend or remove accounts that appear fake, unsafe, underage, abusive, fraudulent, or in violation of these terms.",
     ],
   },
@@ -60,14 +60,14 @@ export const termsSections: LegalSection[] = [
   {
     title: "Wallet, beans, and rewards",
     body: [
-      "Beans, coins, credits, rewards, or balances are app records used for WetDreams features. They are not bank deposits, securities, stored-value instruments, or guaranteed cash unless a withdrawal is approved under the host payout rules.",
+      "Beans, coins, credits, rewards, or balances are app records used for Kizo features. They are not bank deposits, securities, stored-value instruments, or guaranteed cash unless a withdrawal is approved under the host payout rules.",
       "Balances may be adjusted for refunds, chargebacks, fraud, technical errors, duplicate transactions, abuse, policy violations, or legal requirements.",
     ],
   },
   {
     title: "Calls and content",
     body: [
-      "WetDreams provides chat and calling tools. We do not guarantee that any user will respond, stay online, accept a call, or provide a particular conversation experience.",
+      "Kizo provides chat and calling tools. We do not guarantee that any user will respond, stay online, accept a call, or provide a particular conversation experience.",
       "Users must not record, distribute, threaten, blackmail, or misuse another person's content, images, voice, video, or personal information.",
     ],
   },
@@ -152,7 +152,7 @@ export const safetySections: LegalSection[] = [
   {
     title: "Respect and consent",
     body: [
-      "Use WetDreams respectfully. Do not pressure users, threaten users, share private information, record without permission, or continue contacting someone who has blocked or refused you.",
+      "Use Kizo respectfully. Do not pressure users, threaten users, share private information, record without permission, or continue contacting someone who has blocked or refused you.",
       "Sexual, romantic, or personal conversations must stay legal, consensual, and between adults.",
     ],
   },
@@ -174,13 +174,13 @@ export const safetySections: LegalSection[] = [
     title: "Location and privacy",
     body: [
       "Use city/state location features honestly, but do not share your exact address, private workplace, documents, or sensitive personal details with strangers.",
-      "Meetings outside the app are not supervised by WetDreams. Users are responsible for their own choices and safety.",
+      "Meetings outside the app are not supervised by Kizo. Users are responsible for their own choices and safety.",
     ],
   },
   {
     title: "Emergency",
     body: [
-      "WetDreams is not an emergency service. If you are in immediate danger, contact local emergency services or trusted local help.",
+      "Kizo is not an emergency service. If you are in immediate danger, contact local emergency services or trusted local help.",
     ],
   },
 ];

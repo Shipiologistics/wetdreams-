@@ -175,11 +175,11 @@ export function AdminDashboard({
   }
 
   async function adjustWallet(user: User) {
-    const currency = window.prompt("Currency: coin or bean", "coin");
+    const currency = window.prompt("Admin wallet credit: type coin or bean", "coin");
     if (currency !== "coin" && currency !== "bean") return;
     const amount = Number(window.prompt("Amount: use a negative number to deduct", "100"));
     if (!amount) return;
-    const notes = window.prompt("Reason for adjustment");
+    const notes = window.prompt("Reason for adjustment, such as WhatsApp recharge confirmation");
     if (!notes) return;
     await run(user.id, async () => createClient().rpc("admin_adjust_wallet", { p_target_user: user.id, p_currency: currency, p_amount: amount, p_notes: notes }));
   }
@@ -410,7 +410,7 @@ export function AdminDashboard({
                     </div>
                     <div className="admin-row-actions">
                       <button className="button secondary small" type="button" onClick={() => setProfileViewer(user)}><Eye size={16} /> View profile</button>
-                      <button className="button secondary small" onClick={() => adjustWallet(user)}><BadgeIndianRupee size={16} /> Wallet</button>
+                      <button className="button secondary small" onClick={() => adjustWallet(user)}><BadgeIndianRupee size={16} /> Add coins</button>
                       {user.role === "user" && !user.is_guest && (
                         <button className="button secondary small" disabled={pending === `verify-${user.id}`} onClick={() => toggleVerification(user)}>
                           {pending === `verify-${user.id}` ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />}
@@ -641,7 +641,7 @@ function AdminProfileModal({
         )}
 
         <div className="admin-profile-actions">
-          <button className="button secondary" type="button" onClick={() => onAdjustWallet(user)}><BadgeIndianRupee size={17} /> Wallet</button>
+          <button className="button secondary" type="button" onClick={() => onAdjustWallet(user)}><BadgeIndianRupee size={17} /> Add coins</button>
           {user.role === "user" && !user.is_guest && (
             <button className="button primary" disabled={pending === `verify-${user.id}`} type="button" onClick={() => onToggleVerification(user)}>
               {pending === `verify-${user.id}` ? <LoaderCircle className="spin" size={17} /> : <Check size={17} />}

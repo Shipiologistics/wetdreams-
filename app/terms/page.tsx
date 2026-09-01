@@ -4,7 +4,7 @@ import { termsSections } from "@/lib/legal-content";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
-  description: "WetDreams account, wallet, content, chat, call, and platform rules.",
+  description: "Kizo account, wallet, content, chat, call, and platform rules.",
 };
 
 export default function TermsPage() {
@@ -12,7 +12,7 @@ export default function TermsPage() {
     <LegalPage
       eyebrow="Terms"
       title="Terms of Service"
-      intro="These terms describe the basic rules for using WetDreams. If you do not agree with them, do not use the service."
+      intro="These terms describe the basic rules for using Kizo. If you do not agree with them, do not use the service."
       sections={termsSections}
     />
   );

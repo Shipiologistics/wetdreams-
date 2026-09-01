@@ -1,8 +1,8 @@
-# WetDreams Android Release Notes
+# Kizo Android Release Notes
 
 ## 1.0.0 - Initial sideload release
 
-- User-facing Android app shell for WetDreams.
+- User-facing Android app shell for Kizo.
 - Loads the production app at `https://wetdreams.vercel.app`.
 - Requests camera and microphone access for Agora audio/video calling.
 - Requests Android notification permission for push alerts and incoming-call notifications.

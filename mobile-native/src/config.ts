@@ -1,5 +1,5 @@
 export const config = {
-  appName: 'WetDreams',
+  appName: 'Kizo',
   appUrl: 'https://wetdreams.vercel.app',
   supabaseUrl: 'https://fysmfrfxbgnpvqgbmlmx.supabase.co',
   supabasePublishableKey: 'sb_publishable_s4M1sDBu6oOdujxtiCfgJw_AVhlNE6B',

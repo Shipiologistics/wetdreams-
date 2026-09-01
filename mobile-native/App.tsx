@@ -73,7 +73,7 @@ function MainTabs() {
 
 function AppNavigator() {
   const {session, viewer, loading, deviceBanned} = useApp();
-  if (loading || (session && !viewer)) return <BrandedLoader label="Preparing WetDreams" />;
+  if (loading || (session && !viewer)) return <BrandedLoader label="Preparing Kizo" />;
   if (deviceBanned) return <BannedScreen />;
 
   return (
@@ -136,7 +136,7 @@ function tabIcon(name: keyof MainTabParamList, color: string, size: number, focu
 }
 
 function BannedScreen() {
-  return <View style={styles.banned}><Text style={styles.bannedTitle}>Device blocked</Text><Text style={styles.bannedText}>This device cannot use WetDreams because it reached the platform safety block limit.</Text></View>;
+  return <View style={styles.banned}><Text style={styles.bannedTitle}>Device blocked</Text><Text style={styles.bannedText}>This device cannot use Kizo because it reached the platform safety block limit.</Text></View>;
 }
 
 const styles = StyleSheet.create({

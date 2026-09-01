@@ -1,6 +1,6 @@
-# WetDreams Host Native
+# Kizo Host Native
 
-Bare React Native Android app for WetDreams hosts. It shares the production Supabase project and web API contracts with `https://wetdreams.vercel.app`.
+Bare React Native Android app for Kizo hosts. It shares the production Supabase project and web API contracts with `https://wetdreams.vercel.app`.
 
 ## Development
 

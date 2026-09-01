@@ -160,7 +160,7 @@ export function IncomingCallListener() {
             <Avatar name={incoming.caller.display_name} src={incoming.image} size={132} />
           </div>
           <h2>{incoming.caller.display_name}</h2>
-          <p>WetDreams {incoming.call.call_type} call</p>
+          <p>Kizo {incoming.call.call_type} call</p>
         </div>
         <div className="call-bottom-controls incoming-call-actions">
           <div className="call-control-stack">

@@ -1,6 +1,6 @@
-# WetDreams
+# Kizo
 
-WetDreams is a mobile-first paid social chat platform built with Next.js 16 and Supabase. The repository implements the product described in `pay2chat-platform-spec.md`, including authentication, discoverable public profiles, realtime direct chat, the ten-message free allowance, wallet accounting, random matching, creator earnings, call billing state, moderation tools, and synthetic companion profiles.
+Kizo is a mobile-first paid social chat platform built with Next.js 16 and Supabase. The repository implements the product described in `pay2chat-platform-spec.md`, including authentication, discoverable public profiles, realtime direct chat, the ten-message free allowance, wallet accounting, random matching, creator earnings, call billing state, moderation tools, and synthetic companion profiles.
 
 The live Supabase project is named **wet dreams**. Local secrets are stored in `.env.local` and are intentionally ignored by Git.
 

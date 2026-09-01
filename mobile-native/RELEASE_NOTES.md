@@ -1,4 +1,4 @@
-# WetDreams Host 2.0.0 (5)
+# Kizo Host 2.0.0 (5)
 
 - Rebuilt as a native React Native Android application instead of a WebView wrapper.
 - Added native email registration and login, profile completion, host verification status, profile gallery crop/rotate controls, and account settings.

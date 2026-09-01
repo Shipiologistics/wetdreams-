@@ -3,11 +3,11 @@ import Link from "next/link";
 
 export function Logo({ compact = false }: { compact?: boolean }) {
   return (
-    <Link href="/discover" className="logo" aria-label="WetDreams home">
+    <Link href="/discover" className="logo" aria-label="Kizo home">
       <span className="logo-mark" aria-hidden="true">
-        <Image src="/brand/wetdreams-dna-logo.png" alt="" fill sizes="34px" priority />
+        <Image src="/brand/kizo-logo.png" alt="" fill sizes="34px" priority />
       </span>
-      {!compact && <span>WetDreams</span>}
+      {!compact && <span>Kizo</span>}
     </Link>
   );
 }

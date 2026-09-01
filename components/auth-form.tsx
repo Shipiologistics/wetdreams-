@@ -230,7 +230,7 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
   return (
     <div className="auth-panel modern-auth-panel quick-start-panel">
       <div className="auth-panel-heading compact">
-        <span className="auth-kicker">WetDreams access</span>
+        <span className="auth-kicker">Kizo access</span>
         <h2>Start now</h2>
         <p>Quick guest access, or login with your registered email.</p>
       </div>

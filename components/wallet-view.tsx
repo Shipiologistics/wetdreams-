@@ -12,6 +12,7 @@ import {
   Coins,
   History,
   LoaderCircle,
+  MessageCircle,
   Plus,
   WalletCards,
   X,
@@ -48,7 +49,7 @@ export function WalletView({
   const [topupOpen, setTopupOpen] = useState(() => searchParams.get("buy") === "coins");
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [payoutMethod, setPayoutMethod] = useState<PayoutMethod>("upi");
-  const [pending, setPending] = useState<number | "withdraw" | null>(null);
+  const [pending, setPending] = useState<"withdraw" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   function closeTopup() {
@@ -56,26 +57,13 @@ export function WalletView({
     if (searchParams.get("buy") === "coins") router.replace("/wallet", { scroll: false });
   }
 
-  async function topup(packageIndex: number) {
+  function topup(packageIndex: number) {
     const packageItem = coinPackages[packageIndex];
-    setPending(packageIndex);
     setMessage(null);
-    const supabase = createClient();
-    const { data: intent, error: intentError } = await supabase.rpc("create_payment_intent", {
-      p_coins: packageItem.coins,
-      p_amount_inr: packageItem.priceInr,
-    });
-    if (intentError || !intent) {
-      setMessage(messageForError(intentError?.message ?? "Could not create payment."));
-      setPending(null);
-      return;
-    }
-    const { error } = await supabase.rpc("complete_dummy_payment", { p_intent_id: intent });
-    setPending(null);
-    if (error) return setMessage(messageForError(error.message));
+    const text = `Hi Kizo support, I want to buy ${packageItem.coins} coins for Rs ${packageItem.priceInr}. Code: ${packageItem.code}. Please credit after payment confirmation.`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
     closeTopup();
-    setMessage(`${formatMoney(packageItem.coins)} coins added.`);
-    router.refresh();
+    setMessage("WhatsApp opened. Coins will be credited by admin after payment confirmation.");
   }
 
   async function withdraw(event: React.FormEvent<HTMLFormElement>) {
@@ -114,7 +102,7 @@ export function WalletView({
           <div className="balance-icon"><Coins size={24} /></div>
           <span>Coins</span>
           <strong>{formatMoney(wallet.coins_balance)}</strong>
-          <p>₹1 per coin</p>
+          <p>Recharge through WhatsApp</p>
           <button className="button light" type="button" onClick={() => setTopupOpen(true)}><Plus size={18} /> Add coins</button>
         </article>
         <article className="balance-card beans-card">
@@ -135,7 +123,7 @@ export function WalletView({
       </section>
 
       <section className="wallet-summary">
-        <div><span>Coins purchased</span><strong>{formatMoney(wallet.lifetime_coins_purchased)}</strong></div>
+        <div><span>Coins credited</span><strong>{formatMoney(wallet.lifetime_coins_purchased)}</strong></div>
         <div><span>Beans earned</span><strong>{formatMoney(wallet.lifetime_beans_earned)}</strong></div>
         <div><span>Beans withdrawn</span><strong>{formatMoney(wallet.lifetime_beans_withdrawn)}</strong></div>
       </section>
@@ -189,8 +177,8 @@ export function WalletView({
       {topupOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={closeTopup}>
           <div className="modal coin-topup-modal" role="dialog" aria-modal="true" aria-labelledby="topup-title" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="modal-header"><div><span className="eyebrow">Offers applied</span><h2 id="topup-title">Add coins</h2></div><button className="icon-button" title="Close" onClick={closeTopup}><X size={20} /></button></div>
-            <p className="coin-offer-note">Lowest recharge: ₹50 gets 45 coins. Bigger packs include bonus coins.</p>
+            <div className="modal-header"><div><span className="eyebrow">WhatsApp recharge</span><h2 id="topup-title">Add coins</h2></div><button className="icon-button" title="Close" onClick={closeTopup}><X size={20} /></button></div>
+            <p className="coin-offer-note">Choose a pack and continue on WhatsApp. Coins are credited manually by admin after payment confirmation.</p>
             <div className="coin-packages">
               {coinPackages.map((packageItem, index) => {
                 const regularCoins = regularCoinsFor(packageItem);
@@ -205,7 +193,7 @@ export function WalletView({
                       {hasBonus && <del>{formatMoney(regularCoins)} coins</del>}
                     </span>
                     <span className="discount-code">{packageItem.code}</span>
-                    {pending === index && <LoaderCircle className="spin" size={17} />}
+                    <MessageCircle size={17} />
                   </button>
                 );
               })}

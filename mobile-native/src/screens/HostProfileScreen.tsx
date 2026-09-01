@@ -67,7 +67,7 @@ export function HostProfileScreen({route, navigation}: Props) {
       navigation.navigate('Call', {callId});
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Please try again.';
-      Alert.alert(errorMessage.includes('INSUFFICIENT') ? 'Add coins first' : 'Call failed', errorMessage);
+      Alert.alert(errorMessage.includes('INSUFFICIENT') ? 'Add coins first' : 'Call failed', errorMessage.includes('INSUFFICIENT') ? 'Open Wallet and request coins on WhatsApp.' : errorMessage);
     }
   }
 

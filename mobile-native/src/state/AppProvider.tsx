@@ -159,7 +159,7 @@ export function AppProvider({children}: {children: ReactNode}) {
         p_device_id: deviceId,
         p_path: '/native',
         p_presence: presence,
-        p_user_agent: 'WetDreams React Native Android',
+        p_user_agent: 'Kizo React Native Android',
       });
     };
     const setState = (state: AppStateStatus) => {
@@ -187,7 +187,7 @@ export function AppProvider({children}: {children: ReactNode}) {
       p_device_id: deviceId,
       p_path: '/native',
       p_presence: 'offline',
-      p_user_agent: 'WetDreams React Native Android',
+      p_user_agent: 'Kizo React Native Android',
     });
     await supabase.auth.signOut();
   }, []);

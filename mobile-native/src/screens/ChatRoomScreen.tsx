@@ -132,7 +132,7 @@ export function ChatRoomScreen({route, navigation}: Props) {
     if (other.status === 'busy' || other.status === 'in_call') return Alert.alert('Busy', `${other.display_name} is on another call.`);
     const {data: callId, error} = await supabase.rpc('start_call', {p_room_id: roomId, p_call_type: type});
     if (error || !callId) {
-      if (error?.message.includes('INSUFFICIENT_BALANCE')) return Alert.alert('Add coins first', 'Open Wallet and choose a coin pack.');
+      if (error?.message.includes('INSUFFICIENT_BALANCE')) return Alert.alert('Add coins first', 'Open Wallet and request coins on WhatsApp.');
       return Alert.alert('Could not start call', error?.message || 'Please try again.');
     }
     void authenticatedPost('/api/calls/notify', {callId}).catch(() => undefined);
@@ -158,7 +158,7 @@ export function ChatRoomScreen({route, navigation}: Props) {
 
   async function sendTip(amount: number) {
     const {error} = await supabase.rpc('send_tip', {p_amount: amount, p_room_id: roomId, p_call_id: null});
-    if (error) { Alert.alert(error.message.includes('INSUFFICIENT') ? 'Not enough coins' : 'Tip failed', error.message.includes('INSUFFICIENT') ? 'Add coins in Wallet and try again.' : error.message); return false; }
+    if (error) { Alert.alert(error.message.includes('INSUFFICIENT') ? 'Not enough coins' : 'Tip failed', error.message.includes('INSUFFICIENT') ? 'Request coins from Wallet on WhatsApp and try again after admin credit.' : error.message); return false; }
     await refreshViewer();
     Alert.alert('Tip sent', `${amount} coins sent to ${other?.display_name || 'host'}.`);
     return true;

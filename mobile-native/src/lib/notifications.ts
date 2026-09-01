@@ -60,7 +60,7 @@ export async function displayRemoteMessage(message: RemoteMessage) {
   const notification: Notification = {
     id: isCall && data.callId ? `call-${data.callId}` : message.messageId,
     title: message.notification?.title || (isCall ? `Incoming ${data.callType || ''} call` : data.senderName || 'New message'),
-    body: message.notification?.body || (isCall ? data.callerName || 'WetDreams call' : 'You have a new message'),
+    body: message.notification?.body || (isCall ? data.callerName || 'Kizo call' : 'You have a new message'),
     data,
     android: {
       channelId: isCall ? 'incoming_calls' : 'messages',

@@ -6,7 +6,7 @@ import { VisitorTracker } from "@/components/visitor-tracker";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "WetDreams", template: "%s | WetDreams" },
+  title: { default: "Kizo", template: "%s | Kizo" },
   description: "Discover people, start conversations, and reward great company.",
 };
 
