@@ -9,6 +9,7 @@ test-artifacts/
 .turbo/
 .swc/
 .cache/
+supabase/.temp/
 .env*
 !.env.example
 *.log
