@@ -144,11 +144,12 @@ export function AdminDashboard({
   const openReports = reports.filter((report) => ["open", "reviewing"].includes(report.status)).length;
   const pendingWithdrawals = withdrawals.filter((withdrawal) => withdrawal.status === "pending").length;
   const verifiedHosts = users.filter((user) => (
-    user.role === "user" && !user.is_guest && user.is_verified && !user.is_banned
+    user.role === "user" && !user.is_guest && user.is_verified
   ));
   const pendingApprovals = users.filter((user) => user.role === "user" && !user.is_guest && !user.is_verified && !user.is_banned).length;
   const bannedUsers = users.filter((user) => user.is_banned).length;
-  const filteredUsers = users.filter((user) => {
+  const nonHostUsers = users.filter((user) => !(user.role === "user" && !user.is_guest && user.is_verified));
+  const filteredUsers = nonHostUsers.filter((user) => {
     const matchesSearch = `${user.display_name} ${user.username} ${user.role} ${user.gender ?? ""}`.toLowerCase().includes(search.toLowerCase());
     const matchesGender = genderFilter === "all" || user.gender === genderFilter;
     return matchesSearch && matchesGender;
@@ -274,7 +275,7 @@ export function AdminDashboard({
     { key: "visitors", label: "Visitors", icon: Eye, count: liveVisitors.length },
     { key: "reports", label: "Reports", icon: ShieldAlert, count: openReports },
     { key: "hosts", label: "Hosts", icon: UserRoundCog, count: verifiedHosts.length },
-    { key: "users", label: "Users", icon: UsersRound, count: users.length },
+    { key: "users", label: "Users", icon: UsersRound, count: nonHostUsers.length },
     { key: "blocks", label: "Blocks", icon: ShieldBan, count: blocks.length },
     { key: "withdrawals", label: "Payouts", icon: BadgeIndianRupee, count: pendingWithdrawals },
     { key: "settings", label: "Settings", icon: Settings },
@@ -394,7 +395,9 @@ export function AdminDashboard({
               return (
                 <article className="admin-row compact-row" key={host.id}>
                   <div className="admin-row-main">
-                    <span className="status-label approved">verified host</span>
+                    <span className={`status-label ${host.is_banned ? "rejected" : "approved"}`}>
+                      {host.is_banned ? "suspended host" : "verified host"}
+                    </span>
                     <h3>{host.display_name}</h3>
                     <p>@{host.username} · {host.gender ?? "unknown"} · {host.status}</p>
                     <dl className="admin-facts">
@@ -409,6 +412,9 @@ export function AdminDashboard({
                     </button>
                     <button className="button secondary small" disabled={pending === `verify-${host.id}`} type="button" onClick={() => toggleVerification(host)}>
                       {pending === `verify-${host.id}` ? <LoaderCircle className="spin" size={16} /> : <X size={16} />} Remove host
+                    </button>
+                    <button className="button danger small" type="button" onClick={() => toggleBan(host)}>
+                      <Ban size={16} /> {host.is_banned ? "Restore" : "Suspend"}
                     </button>
                   </div>
                 </article>
