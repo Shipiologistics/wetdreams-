@@ -27,6 +27,7 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
   const [signupStep, setSignupStep] = useState<SignupStep>(1);
   const [signupFieldError, setSignupFieldError] = useState<SignupFieldError>(null);
   const [signupName, setSignupName] = useState("");
+  const [signupContactNumber, setSignupContactNumber] = useState("");
   const [guestName, setGuestName] = useState("");
   const [signupGender, setSignupGender] = useState<"male" | "female" | "">("");
   const [signupState, setSignupState] = useState("");
@@ -125,6 +126,7 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
     if (!validateSignupStep(3)) return;
     announceInlineAuth();
     const cleanLocation = formatLocation(signupCity, signupState);
+    const cleanContactNumber = normalizeIndianContactNumber(signupContactNumber);
     setPending("signup");
     setError(null);
     setNotice(null);
@@ -134,7 +136,11 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
       password: signupPassword,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-        data: { display_name: signupName.trim(), gender: signupGender },
+        data: {
+          display_name: signupName.trim(),
+          gender: signupGender,
+          ...(signupGender === "female" && cleanContactNumber ? { contact_number: cleanContactNumber } : {}),
+        },
       },
     });
 
@@ -196,9 +202,16 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
   }
 
   function validateSignupStep(step: SignupStep) {
-    if (step === 1 && (signupName.trim().length < 2 || !signupGender)) {
+    if (
+      step === 1
+      && (
+        signupName.trim().length < 2
+        || !signupGender
+        || (signupGender === "female" && !normalizeIndianContactNumber(signupContactNumber))
+      )
+    ) {
       setSignupFieldError("basic");
-      setError("Please fill basic info.");
+      setError("Please complete the required details.");
       return false;
     }
     if (step === 2 && !formatLocation(signupCity, signupState)) {
@@ -305,8 +318,7 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
             {signupStep === 1 && (
               <>
                 <div className="auth-step-title">
-                  <strong>Please fill in the</strong>
-                  <h2 id="signup-step-title">Basic info</h2>
+                  <h2 id="signup-step-title">I am</h2>
                 </div>
                 <div className={`signup-gender-cards ${signupFieldError === "basic" && !signupGender ? "field-error" : ""}`}>
                   <button className={signupGender === "male" ? "active male" : "male"} type="button" onClick={() => setSignupGender("male")}>
@@ -322,7 +334,27 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
                   Nickname
                   <input value={signupName} onChange={(event) => setSignupName(event.target.value)} autoComplete="name" minLength={2} maxLength={60} placeholder="Your name" />
                 </label>
-                {signupFieldError === "basic" && <p className="field-required-message">Gender and nickname required</p>}
+                {signupGender === "female" && (
+                  <label className={`step-field ${signupFieldError === "basic" && !normalizeIndianContactNumber(signupContactNumber) ? "field-error" : ""}`}>
+                    Contact number
+                    <input
+                      value={signupContactNumber}
+                      onChange={(event) => setSignupContactNumber(event.target.value)}
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      maxLength={14}
+                      placeholder="Mobile number"
+                    />
+                  </label>
+                )}
+                {signupFieldError === "basic" && (
+                  <p className="field-required-message">
+                    {signupGender === "female" && !normalizeIndianContactNumber(signupContactNumber)
+                      ? "Gender, nickname and valid contact number required"
+                      : "Gender and nickname required"}
+                  </p>
+                )}
                 <button className="button primary wide step-next-button" type="button" onClick={nextSignupStep}>1/3 Next</button>
               </>
             )}
@@ -376,4 +408,10 @@ export function AuthForm({ next = "/discover", onSuccess }: AuthFormProps) {
       )}
     </div>
   );
+}
+
+function normalizeIndianContactNumber(value: string) {
+  const digits = value.replace(/\D/g, "");
+  const nationalNumber = digits.length === 12 && digits.startsWith("91") ? digits.slice(2) : digits;
+  return /^[6-9]\d{9}$/.test(nationalNumber) ? `+91${nationalNumber}` : null;
 }

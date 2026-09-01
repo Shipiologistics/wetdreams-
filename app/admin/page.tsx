@@ -22,6 +22,7 @@ export default async function AdminPage() {
     { data: hostRequests },
     { data: profiles },
     { data: media },
+    { data: authUsers },
   ] = await Promise.all([
     supabase.from("reports").select("*").order("created_at", { ascending: false }),
     supabase.from("users").select("*").order("created_at", { ascending: false }),
@@ -35,7 +36,15 @@ export default async function AdminPage() {
     supabase.from("host_requests").select("*").order("created_at", { ascending: false }),
     supabase.from("profiles").select("*"),
     supabase.from("profile_media").select("*").order("position", { ascending: true }),
+    supabase.auth.admin.listUsers({ page: 1, perPage: 1000 }),
   ]);
+
+  const contactNumbers = Object.fromEntries(
+    (authUsers?.users ?? []).flatMap((user) => {
+      const contactNumber = user.user_metadata?.contact_number;
+      return typeof contactNumber === "string" && contactNumber ? [[user.id, contactNumber]] : [];
+    }),
+  );
 
   return (
     <AdminDashboard
@@ -51,6 +60,7 @@ export default async function AdminPage() {
       hostRequests={hostRequests ?? []}
       profiles={profiles ?? []}
       media={media ?? []}
+      contactNumbers={contactNumbers}
     />
   );
 }

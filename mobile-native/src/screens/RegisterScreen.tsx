@@ -29,6 +29,7 @@ export function RegisterScreen({navigation}: Props) {
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [gender, setGender] = useState<Gender>('');
+  const [contactNumber, setContactNumber] = useState('');
   const [state, setState] = useState('');
   const [city, setCity] = useState('');
   const [age, setAge] = useState('');
@@ -39,7 +40,11 @@ export function RegisterScreen({navigation}: Props) {
   const cities = useMemo(() => getCitiesForState(state), [state]);
 
   function valid(current = step) {
-    if (current === 1) return name.trim().length >= 2 && !!gender;
+    if (current === 1) {
+      return name.trim().length >= 2
+        && !!gender
+        && (gender !== 'female' || !!normalizeIndianContactNumber(contactNumber));
+    }
     if (current === 2) return !!formatLocation(city, state) && Number(age) >= 18 && Number(age) <= 99;
     return /.+@.+\..+/.test(email.trim()) && password.length >= 8;
   }
@@ -62,10 +67,17 @@ export function RegisterScreen({navigation}: Props) {
     if (!valid(3)) return;
     setLoading(true);
     const location = formatLocation(city, state);
+    const cleanContactNumber = normalizeIndianContactNumber(contactNumber);
     const result = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: {data: {display_name: name.trim(), gender}},
+      options: {
+        data: {
+          display_name: name.trim(),
+          gender,
+          ...(gender === 'female' && cleanContactNumber ? {contact_number: cleanContactNumber} : {}),
+        },
+      },
     });
     if (result.error) {
       setLoading(false);
@@ -102,7 +114,7 @@ export function RegisterScreen({navigation}: Props) {
       <ScrollView contentContainerStyle={[styles.content, {paddingBottom: Math.max(insets.bottom + spacing.md, spacing.xl)}]} keyboardShouldPersistTaps="handled">
         {step === 1 ? (
           <>
-            <View style={styles.heading}><Text style={styles.aqua}>STEP ONE</Text><Text style={styles.title}>Create your profile</Text><Text style={styles.headingCopy}>Choose how you want to appear in the community.</Text></View>
+            <View style={styles.heading}><Text style={styles.aqua}>STEP ONE</Text><Text style={styles.title}>I am</Text><Text style={styles.headingCopy}>Choose your gender.</Text></View>
             <View style={styles.genderRow}>
               {(['male', 'female'] as const).map(option => (
                 <Pressable key={option} onPress={() => setGender(option)} style={[styles.gender, gender === option && styles.genderActive]}>
@@ -113,6 +125,17 @@ export function RegisterScreen({navigation}: Props) {
             </View>
             {submitted && !gender ? <Text style={styles.error}>Gender is required.</Text> : null}
             <FormField label="Nickname" value={name} onChangeText={setName} placeholder="Your display name" maxLength={60} error={submitted && name.trim().length < 2 ? 'Nickname is required.' : undefined} />
+            {gender === 'female' ? (
+              <FormField
+                label="Contact number"
+                value={contactNumber}
+                onChangeText={setContactNumber}
+                placeholder="10-digit mobile number"
+                keyboardType="phone-pad"
+                maxLength={14}
+                error={submitted && !normalizeIndianContactNumber(contactNumber) ? 'Enter a valid 10-digit mobile number.' : undefined}
+              />
+            ) : null}
           </>
         ) : null}
 
@@ -140,6 +163,12 @@ export function RegisterScreen({navigation}: Props) {
       </ScrollView>
     </KeyboardAvoidingView>
   );
+}
+
+function normalizeIndianContactNumber(value: string) {
+  const digits = value.replace(/\D/g, '');
+  const nationalNumber = digits.length === 12 && digits.startsWith('91') ? digits.slice(2) : digits;
+  return /^[6-9]\d{9}$/.test(nationalNumber) ? `+91${nationalNumber}` : null;
 }
 
 const styles = StyleSheet.create({

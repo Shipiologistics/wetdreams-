@@ -88,6 +88,7 @@ export function AdminDashboard({
   hostRequests,
   profiles,
   media,
+  contactNumbers,
 }: {
   reports: Report[];
   users: User[];
@@ -101,6 +102,7 @@ export function AdminDashboard({
   hostRequests: HostRequest[];
   profiles: Profile[];
   media: ProfileMedia[];
+  contactNumbers: Record<string, string>;
 }) {
   const router = useRouter();
   const [section, setSection] = useState<Section>("overview");
@@ -594,6 +596,7 @@ export function AdminDashboard({
             profile={profileMap.get(profileViewer.id) ?? null}
             media={mediaMap.get(profileViewer.id) ?? []}
             wallet={walletMap.get(profileViewer.id) ?? null}
+            contactNumber={contactNumbers[profileViewer.id]}
             pending={pending}
             onClose={() => setProfileViewer(null)}
             onAdjustWallet={adjustWallet}
@@ -691,6 +694,7 @@ function AdminProfileModal({
   profile,
   media,
   wallet,
+  contactNumber,
   pending,
   onClose,
   onAdjustWallet,
@@ -701,6 +705,7 @@ function AdminProfileModal({
   profile: Profile | null;
   media: ProfileMedia[];
   wallet: Wallet | null;
+  contactNumber?: string;
   pending: string | null;
   onClose: () => void;
   onAdjustWallet: (user: User) => void;
@@ -749,6 +754,7 @@ function AdminProfileModal({
 
             <dl className="admin-profile-facts">
               <div><dt>Gender</dt><dd>{user.gender ?? "unknown"}</dd></div>
+              {user.gender === "female" && <div><dt>Contact number</dt><dd>{contactNumber ?? "not added"}</dd></div>}
               <div><dt>Age</dt><dd>{profile?.age ?? "not added"}</dd></div>
               <div><dt>Location</dt><dd>{profile?.location ?? "not added"}</dd></div>
               <div><dt>Status</dt><dd>{user.status}</dd></div>
