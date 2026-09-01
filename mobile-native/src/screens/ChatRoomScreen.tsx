@@ -132,7 +132,10 @@ export function ChatRoomScreen({route, navigation}: Props) {
     if (other.status === 'busy' || other.status === 'in_call') return Alert.alert('Busy', `${other.display_name} is on another call.`);
     const {data: callId, error} = await supabase.rpc('start_call', {p_room_id: roomId, p_call_type: type});
     if (error || !callId) {
-      if (error?.message.includes('INSUFFICIENT_BALANCE')) return Alert.alert('Add coins first', 'Open Wallet and request coins on WhatsApp.');
+      if (error?.message.includes('INSUFFICIENT_BALANCE')) return Alert.alert('Add coins first', 'Open Wallet and request coins on WhatsApp.', [
+        {text: 'Cancel', style: 'cancel'},
+        {text: 'Open Wallet', onPress: () => navigation.navigate('Main', {screen: 'Wallet'})},
+      ]);
       return Alert.alert('Could not start call', error?.message || 'Please try again.');
     }
     void authenticatedPost('/api/calls/notify', {callId}).catch(() => undefined);
