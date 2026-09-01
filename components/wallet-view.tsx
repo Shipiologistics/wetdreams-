@@ -141,7 +141,7 @@ export function WalletView({
                   <span className={`transaction-icon ${positive ? "positive" : "negative"}`}>
                     {positive ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
                   </span>
-                  <div><strong>{labelForTransaction(transaction.type)}</strong><span>{formatRelativeTime(transaction.created_at)}</span></div>
+                  <div><strong>{labelForTransaction(transaction)}</strong><span>{formatRelativeTime(transaction.created_at)}</span></div>
                   <div className="transaction-amount">
                     <strong>{positive ? "+" : ""}{formatMoney(transaction.amount)}</strong>
                     <span>{transaction.currency === "coin" ? "coins" : "beans"}</span>
@@ -241,7 +241,10 @@ export function WalletView({
   );
 }
 
-function labelForTransaction(type: string) {
+function labelForTransaction(transaction: Transaction) {
+  if (transaction.type === "topup" && transaction.payment_gateway_ref === "signup_bonus") {
+    return "Signup bonus";
+  }
   return ({
     topup: "Coin top-up",
     chat_spend: "Chat time",
@@ -252,7 +255,7 @@ function labelForTransaction(type: string) {
     bean_withdrawal: "Withdrawal request",
     refund: "Refund",
     admin_adjustment: "Balance adjustment",
-  } as Record<string, string>)[type] ?? type;
+  } as Record<string, string>)[transaction.type] ?? transaction.type;
 }
 
 function payoutLabel(withdrawal: Withdrawal) {

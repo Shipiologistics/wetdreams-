@@ -63,6 +63,7 @@ export function AppShell({
   const [unreadChatCount, setUnreadChatCount] = useState(viewer.unreadChatCount);
   const [chatRoomIds, setChatRoomIds] = useState(() => new Set(viewer.chatRoomIds));
   const chatRoomIdsRef = useRef(chatRoomIds);
+  const signupBonusClaimRef = useRef<string | null>(null);
   const navItems = useMemo(
     () => {
       const allowedItems = viewer.isGuest ? items.filter((item) => item.href !== "/settings") : items;
@@ -86,6 +87,20 @@ export function AppShell({
   useEffect(() => {
     navItems.forEach((item) => router.prefetch(item.href));
   }, [navItems, router]);
+
+  useEffect(() => {
+    if (signupBonusClaimRef.current === viewer.id) return;
+    signupBonusClaimRef.current = viewer.id;
+
+    async function claimSignupBonus() {
+      const response = await fetch("/api/wallet/signup-bonus", { method: "POST" }).catch(() => null);
+      if (!response?.ok) return;
+      const payload = await response.json().catch(() => null) as { credited?: boolean } | null;
+      if (payload?.credited) router.refresh();
+    }
+
+    void claimSignupBonus();
+  }, [router, viewer.id]);
 
   useEffect(() => {
     chatRoomIdsRef.current = chatRoomIds;

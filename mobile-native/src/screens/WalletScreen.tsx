@@ -86,7 +86,7 @@ export function WalletScreen() {
         </>}
         renderItem={({item}) => {
           const positive = Number(item.amount) > 0;
-          return <View style={styles.tx}><View style={[styles.txIcon, positive ? styles.txPositive : styles.txNegative]}>{positive ? <ArrowDownLeft size={19} color={colors.success} /> : <ArrowUpRight size={19} color={colors.danger} />}</View><View style={styles.txCopy}><Text style={styles.txName}>{transactionLabel(item.type)}</Text><Text style={styles.txTime}>{new Date(item.created_at).toLocaleString('en-IN')}</Text></View><View><Text style={[styles.txAmount, positive ? styles.positive : styles.negative]}>{positive ? '+' : ''}{item.amount}</Text><Text style={styles.txCurrency}>{item.currency === 'coin' ? 'coins' : 'beans'}</Text></View></View>;
+          return <View style={styles.tx}><View style={[styles.txIcon, positive ? styles.txPositive : styles.txNegative]}>{positive ? <ArrowDownLeft size={19} color={colors.success} /> : <ArrowUpRight size={19} color={colors.danger} />}</View><View style={styles.txCopy}><Text style={styles.txName}>{transactionLabel(item)}</Text><Text style={styles.txTime}>{new Date(item.created_at).toLocaleString('en-IN')}</Text></View><View><Text style={[styles.txAmount, positive ? styles.positive : styles.negative]}>{positive ? '+' : ''}{item.amount}</Text><Text style={styles.txCurrency}>{item.currency === 'coin' ? 'coins' : 'beans'}</Text></View></View>;
         }}
         ListEmptyComponent={<Text style={styles.empty}>Your wallet activity will appear here.</Text>}
       />
@@ -106,7 +106,10 @@ export function WalletScreen() {
 }
 
 function completeStatus(status: string) { return status === 'paid' || status === 'approved'; }
-function transactionLabel(type: string) { return ({topup: 'Coin top-up', chat_spend: 'Chat time', call_spend: 'Call time', tip_spend: 'Tip sent', tip_earn: 'Tip received', bean_credit: 'Creator earning', bean_withdrawal: 'Withdrawal request', refund: 'Refund'} as Record<string, string>)[type] || type.replaceAll('_', ' '); }
+function transactionLabel(transaction: Transaction) {
+  if (transaction.type === 'topup' && transaction.payment_gateway_ref === 'signup_bonus') return 'Signup bonus';
+  return ({topup: 'Coin top-up', chat_spend: 'Chat time', call_spend: 'Call time', tip_spend: 'Tip sent', tip_earn: 'Tip received', bean_credit: 'Creator earning', bean_withdrawal: 'Withdrawal request', refund: 'Refund'} as Record<string, string>)[transaction.type] || transaction.type.replaceAll('_', ' ');
+}
 
 const styles = StyleSheet.create({
   root: {flex: 1, backgroundColor: colors.canvas},

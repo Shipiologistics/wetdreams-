@@ -20,6 +20,7 @@ import {
   listenForForegroundMessages,
   registerPushToken,
 } from '../lib/notifications';
+import {authenticatedPost} from '../lib/api';
 import {supabase} from '../lib/supabase';
 import type {Database} from '../types/database';
 
@@ -55,6 +56,7 @@ export function AppProvider({children}: {children: ReactNode}) {
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [unreadChats, setUnreadChats] = useState(0);
   const sessionRef = useRef<Session | null>(null);
+  const signupBonusClaimRef = useRef<string | null>(null);
   sessionRef.current = session;
 
   const refreshViewer = useCallback(async () => {
@@ -129,6 +131,15 @@ export function AppProvider({children}: {children: ReactNode}) {
 
   useEffect(() => {
     if (!session) return;
+    if (signupBonusClaimRef.current !== session.user.id) {
+      signupBonusClaimRef.current = session.user.id;
+      authenticatedPost<{credited: boolean}>('/api/wallet/signup-bonus', {})
+        .then((result) => {
+          if (result.credited) void refreshViewer();
+        })
+        .catch(() => undefined);
+    }
+
     registerCurrentDevice()
       .then(({banned}) => {
         setDeviceBanned(banned);
