@@ -43,6 +43,16 @@ export function AgoraCallSession({
   const videoEnabled = call.call_type === "video";
 
   useEffect(() => {
+    if (!videoEnabled || typeof navigator === "undefined" || !navigator.mediaDevices?.getDisplayMedia) return;
+    const originalGetDisplayMedia = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices);
+    navigator.mediaDevices.getDisplayMedia = (() => Promise.reject(new DOMException("Private video calls cannot be screen recorded from this browser tab.", "NotAllowedError"))) as typeof navigator.mediaDevices.getDisplayMedia;
+
+    return () => {
+      navigator.mediaDevices.getDisplayMedia = originalGetDisplayMedia;
+    };
+  }, [videoEnabled]);
+
+  useEffect(() => {
     let cancelled = false;
     let client: IAgoraRTCClient | null = null;
     let audioTrack: IMicrophoneAudioTrack | null = null;

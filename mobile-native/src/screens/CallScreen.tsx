@@ -5,6 +5,7 @@ import {
   Alert,
   Animated,
   Image,
+  NativeModules,
   PermissionsAndroid,
   Platform,
   Pressable,
@@ -33,6 +34,7 @@ import type {RootStackParamList} from '../types/navigation';
 type Props = NativeStackScreenProps<RootStackParamList, 'Call'>;
 type Call = Database['public']['Tables']['calls']['Row'];
 type AgoraToken = {appId: string; channel: string; token: string; uid: string; expiresAt: number};
+const SecureWindow = NativeModules.SecureWindow as {setSecure?: (enabled: boolean) => void} | undefined;
 
 export function CallScreen({route, navigation}: Props) {
   const insets = useSafeAreaInsets();
@@ -75,6 +77,11 @@ export function CallScreen({route, navigation}: Props) {
     setOtherName(account?.display_name || 'Kizo user');
     setOtherAvatar(media?.cloudinary_url || null);
   }, [callId, viewer]);
+
+  useEffect(() => {
+    SecureWindow?.setSecure?.(true);
+    return () => SecureWindow?.setSecure?.(false);
+  }, []);
 
   useEffect(() => {
     void loadCall();

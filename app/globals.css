@@ -3092,6 +3092,22 @@ a.header-balance:active {
   transform: rotate(135deg);
 }
 
+@media print {
+  .call-overlay,
+  .agora-call-session,
+  .incoming-call-overlay {
+    display: none !important;
+  }
+
+  body::before {
+    content: "Private call content is hidden.";
+    display: block;
+    padding: 24px;
+    color: #111;
+    font: 700 18px/1.4 Arial, Helvetica, sans-serif;
+  }
+}
+
 /* Random matching */
 .random-page {
   min-height: 100vh;
