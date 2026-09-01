@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import {ChevronLeft, MapPin, UserRound} from 'lucide-react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {FormField} from '../components/FormField';
 import {SelectField} from '../components/SelectField';
 import {WetButton} from '../components/WetButton';
@@ -24,6 +25,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 type Gender = 'male' | 'female' | '';
 
 export function RegisterScreen({navigation}: Props) {
+  const insets = useSafeAreaInsets();
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [gender, setGender] = useState<Gender>('');
@@ -97,7 +99,7 @@ export function RegisterScreen({navigation}: Props) {
         <View style={styles.progress}><View style={[styles.progressFill, {width: `${(step / 3) * 100}%`}]} /></View>
         <Text style={styles.step}>{step}/3</Text>
       </View>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={[styles.content, {paddingBottom: Math.max(insets.bottom + spacing.md, spacing.xl)}]} keyboardShouldPersistTaps="handled">
         {step === 1 ? (
           <>
             <View style={styles.heading}><Text style={styles.aqua}>STEP ONE</Text><Text style={styles.title}>Create your profile</Text><Text style={styles.headingCopy}>Choose how you want to appear in the community.</Text></View>

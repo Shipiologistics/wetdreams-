@@ -2,6 +2,7 @@ import {useEffect, useState} from 'react';
 import {Alert, Image, Modal, StyleSheet, Text, View} from 'react-native';
 import ImagePicker, {type Image as PickerImage} from 'react-native-image-crop-picker';
 import {Camera, RotateCw} from 'lucide-react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {uploadToCloudinary} from '../lib/cloudinary';
 import {supabase} from '../lib/supabase';
 import {useApp} from '../state/AppProvider';
@@ -10,6 +11,7 @@ import {WetButton} from './WetButton';
 
 export function ProfileImageGate() {
   const {viewer, refreshViewer} = useApp();
+  const insets = useSafeAreaInsets();
   const [needsImage, setNeedsImage] = useState(false);
   const [image, setImage] = useState<PickerImage | null>(null);
   const [loading, setLoading] = useState(false);
@@ -73,7 +75,7 @@ export function ProfileImageGate() {
 
   return (
     <Modal visible={needsImage} animationType="slide" presentationStyle="fullScreen">
-      <View style={styles.root}>
+      <View style={[styles.root, {paddingBottom: Math.max(insets.bottom + spacing.md, spacing.xl)}]}>
         <View style={styles.heading}><Text style={styles.aqua}>Please upload</Text><Text style={styles.title}>Your real photo</Text></View>
         <View style={styles.preview}>
           {image ? <Image source={{uri: image.path}} style={styles.image} /> : <Camera size={72} color={colors.teal} />}
