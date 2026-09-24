@@ -79,6 +79,7 @@ export default async function PublicProfilePage({ params }: Params) {
   const canReview = Boolean(viewer && viewer.id !== account.id && completedCall?.length);
   const existingReview = viewer ? reviews.find((item) => item.rater_id === viewer.id) ?? null : null;
   const busy = account.status === "busy" || account.status === "in_call";
+  const availableForChat = account.gender === "female" && account.is_verified && account.status === "offline";
 
   return (
     <main className="public-profile">
@@ -93,8 +94,8 @@ export default async function PublicProfilePage({ params }: Params) {
         </div>
         <div className="public-profile-copy">
           <div className="public-status">
-            <span className={account.status === "online" ? "online" : account.status === "busy" || account.status === "in_call" ? "busy" : ""} />
-            {account.status === "online" ? "Online now" : account.status === "busy" || account.status === "in_call" ? "Busy" : "Away"}
+            <span className={account.status === "online" ? "online" : busy ? "busy" : availableForChat ? "available" : ""} />
+            {account.status === "online" ? "Online now" : busy ? "Busy" : availableForChat ? "Available for chat" : "Away"}
           </div>
           <h1>{account.display_name}{profile.age ? `, ${profile.age}` : ""}</h1>
           <div className="public-profile-meta">

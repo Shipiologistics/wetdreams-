@@ -171,6 +171,7 @@ function ProfileCard({ profile, viewerId, eagerImage }: { profile: DiscoveryProf
   const [topupOpen, setTopupOpen] = useState(false);
   const { account, media } = profile;
   const busy = account.status === "busy" || account.status === "in_call";
+  const availableForChat = account.gender === "female" && account.is_verified && account.status === "offline";
 
   async function getRoom() {
     const { data, error: roomError } = await createClient().rpc("create_or_get_direct_room", {
@@ -262,8 +263,8 @@ function ProfileCard({ profile, viewerId, eagerImage }: { profile: DiscoveryProf
           </div>
         ))}
         <div className="profile-card-topline">
-          <span className={clsx("presence-badge", account.status === "online" && "online", busy && "busy")}>
-            <span /> {busy ? "Busy" : account.status === "online" ? "Online" : "Away"}
+          <span className={clsx("presence-badge", account.status === "online" && "online", busy && "busy", availableForChat && "available")}>
+            <span /> {busy ? "Busy" : account.status === "online" ? "Online now" : availableForChat ? "Available for chat" : "Away"}
           </span>
           <button className={clsx("floating-icon", favorite && "selected")} type="button" onClick={toggleFavorite} title={favorite ? "Remove favorite" : "Add favorite"}>
             <Heart size={19} fill={favorite ? "currentColor" : "none"} />
