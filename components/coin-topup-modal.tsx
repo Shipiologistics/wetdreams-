@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { CheckCircle2, Coins, LoaderCircle, Smartphone, X } from "lucide-react";
 import { coinPackages, regularCoinsFor } from "@/lib/coin-packages";
 import { formatMoney } from "@/lib/format";
@@ -19,6 +20,18 @@ export function CoinTopupModal({
   const [error, setError] = useState<string | null>(null);
   const [order, setOrder] = useState<{ orderId: string; coins: number; intentUri: string } | null>(null);
   const [completed, setCompleted] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setMounted(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    document.documentElement.classList.add("coin-topup-open");
+    return () => document.documentElement.classList.remove("coin-topup-open");
+  }, [open]);
 
   useEffect(() => {
     if (!open || !order || completed) return;
@@ -80,49 +93,54 @@ export function CoinTopupModal({
     window.location.assign(payload.intentUri);
   }
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
       <div className="modal compact-modal coin-topup-modal" role="dialog" aria-modal="true" aria-labelledby="quick-topup-title" onMouseDown={(event) => event.stopPropagation()}>
         <div className="modal-header">
           <div><span className="eyebrow">Secure UPI payment</span><h2 id="quick-topup-title">Add coins</h2></div>
           <button className="icon-button" title="Close" type="button" onClick={onClose}><X size={20} /></button>
         </div>
-        <p className="coin-offer-note">Choose a pack, pay in any UPI app, and your coins will be credited automatically after confirmation.</p>
-        <div className="coin-packages">
-          {coinPackages.map((packageItem, index) => {
-            const regularCoins = regularCoinsFor(packageItem);
-            const hasBonus = packageItem.coins > regularCoins;
-            const bonusCoins = Math.max(0, packageItem.coins - regularCoins);
-            return (
-              <button key={packageItem.priceInr} type="button" className={selected === index ? "selected" : ""} onClick={() => setSelected(index)} disabled={pending}>
-                <span className="offer-label">{packageItem.label}</span>
-                <Coins size={20} />
-                <strong>{formatMoney(packageItem.coins)} coins</strong>
-                <span className="coin-price-row">
-                  <span>₹{formatMoney(packageItem.priceInr)}</span>
-                  {hasBonus && <span className="coin-bonus">+{formatMoney(bonusCoins)} bonus</span>}
-                </span>
-                <span className="discount-code">{packageItem.code}</span>
-              </button>
-            );
-          })}
-        </div>
-        {completed ? (
-          <div className="payment-state success" role="status"><CheckCircle2 size={20} /> Payment confirmed. Coins added.</div>
-        ) : order ? (
-          <div className="payment-actions">
-            <p className="payment-state"><LoaderCircle className="spin" size={18} /> Waiting for Pay100 confirmation…</p>
-            <a className="button primary wide" href={order.intentUri}><Smartphone size={18} /> Open UPI app again</a>
+        <div className="coin-topup-scroll">
+          <p className="coin-offer-note">Choose a pack, pay in any UPI app, and your coins will be credited automatically after confirmation.</p>
+          <div className="coin-packages">
+            {coinPackages.map((packageItem, index) => {
+              const regularCoins = regularCoinsFor(packageItem);
+              const hasBonus = packageItem.coins > regularCoins;
+              const bonusCoins = Math.max(0, packageItem.coins - regularCoins);
+              return (
+                <button key={packageItem.priceInr} type="button" className={selected === index ? "selected" : ""} onClick={() => setSelected(index)} disabled={pending}>
+                  <span className="offer-label">{packageItem.label}</span>
+                  <Coins size={20} />
+                  <strong>{formatMoney(packageItem.coins)} coins</strong>
+                  <span className="coin-price-row">
+                    <span>₹{formatMoney(packageItem.priceInr)}</span>
+                    {hasBonus && <span className="coin-bonus">+{formatMoney(bonusCoins)} bonus</span>}
+                  </span>
+                  <span className="discount-code">{packageItem.code}</span>
+                </button>
+              );
+            })}
           </div>
-        ) : (
-          <button className="button primary wide" type="button" onClick={() => void topup()} disabled={pending}>
-            {pending ? <LoaderCircle className="spin" size={18} /> : <Smartphone size={18} />} Pay ₹{formatMoney(coinPackages[selected].priceInr)} with UPI
-          </button>
-        )}
-        {error && <p className="card-error" role="alert">{error}</p>}
+        </div>
+        <div className="coin-topup-footer">
+          {error && <p className="card-error" role="alert">{error}</p>}
+          {completed ? (
+            <div className="payment-state success" role="status"><CheckCircle2 size={20} /> Payment confirmed. Coins added.</div>
+          ) : order ? (
+            <div className="payment-actions">
+              <p className="payment-state"><LoaderCircle className="spin" size={18} /> Waiting for Pay100 confirmation…</p>
+              <a className="button primary wide" href={order.intentUri}><Smartphone size={18} /> Open UPI app again</a>
+            </div>
+          ) : (
+            <button className="button primary wide" type="button" onClick={() => void topup()} disabled={pending}>
+              {pending ? <LoaderCircle className="spin" size={18} /> : <Smartphone size={18} />} Pay ₹{formatMoney(coinPackages[selected].priceInr)} with UPI
+            </button>
+          )}
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
