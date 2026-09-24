@@ -1,5 +1,5 @@
 import {useEffect, useState} from 'react';
-import {Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Alert, Linking, Modal, NativeModules, Platform, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {CheckCircle2, Coins, Smartphone, X} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {colors, radii, spacing} from '../theme';
@@ -13,6 +13,16 @@ export const coinPackages = [
   {price: 500, coins: 580, code: 'BOOST80', label: 'Best deal'},
   {price: 1000, coins: 1200, code: 'MEGA200', label: 'Max bonus'},
 ] as const;
+
+const UpiLauncher = NativeModules.UpiLauncher as {open?: (uri: string) => Promise<void>} | undefined;
+
+async function openUpiApp(intentUri: string) {
+  if (Platform.OS === 'android' && UpiLauncher?.open) {
+    await UpiLauncher.open(intentUri);
+    return;
+  }
+  await Linking.openURL(intentUri);
+}
 
 export function CoinTopupModal({visible, onClose, onComplete}: {visible: boolean; onClose: () => void; onComplete?: (coins: number) => void}) {
   const insets = useSafeAreaInsets();
@@ -57,7 +67,7 @@ export function CoinTopupModal({visible, onClose, onComplete}: {visible: boolean
       const result = await authenticatedPost<{orderId: string; intentUri: string; coins: number}>('/api/payments/pay100/create', {packageCode: pack.code});
       setPayment(result);
       setCompleted(false);
-      await Linking.openURL(result.intentUri);
+      await openUpiApp(result.intentUri);
     } catch (error) {
       setLoading(false);
       Alert.alert('Payment unavailable', error instanceof Error ? error.message : 'Could not start UPI payment.');
@@ -85,7 +95,7 @@ export function CoinTopupModal({visible, onClose, onComplete}: {visible: boolean
           </ScrollView>
           {completed ? <View style={styles.success}><CheckCircle2 size={20} color={colors.success} /><Text style={styles.successText}>Payment confirmed. Coins added.</Text></View> : payment ? <>
             <Text style={styles.waiting}>Waiting for Pay100 confirmation…</Text>
-            <WetButton title="Open UPI app again" onPress={() => void Linking.openURL(payment.intentUri)} icon={<Smartphone size={19} color={colors.white} />} />
+            <WetButton title="Choose UPI app" onPress={() => void openUpiApp(payment.intentUri)} icon={<Smartphone size={19} color={colors.white} />} />
           </> : <WetButton title={`Pay ₹${pack.price} with UPI`} onPress={() => void startPayment()} loading={loading} icon={<Smartphone size={19} color={colors.white} />} />}
         </Pressable>
       </Pressable>

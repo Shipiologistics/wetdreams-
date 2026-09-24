@@ -75,6 +75,13 @@ export function CoinTopupModal({
 
   async function topup() {
     const packageItem = coinPackages[selected];
+    // Reserve a browser window while this click is still a trusted user gesture.
+    // Mobile browsers often block a custom-scheme navigation after an async fetch.
+    const upiWindow = window.open("", "_blank");
+    if (upiWindow) {
+      upiWindow.document.title = "Opening UPI";
+      upiWindow.document.body.innerHTML = '<p style="font:600 16px system-ui;padding:24px">Preparing your secure UPI payment…</p>';
+    }
     setPending(true);
     setError(null);
     setCompleted(false);
@@ -85,12 +92,23 @@ export function CoinTopupModal({
     }).catch(() => null);
     const payload = response ? await response.json().catch(() => null) as { orderId?: string; coins?: number; intentUri?: string; error?: string } | null : null;
     if (!response?.ok || !payload?.orderId || !payload.intentUri) {
+      upiWindow?.close();
       setPending(false);
       setError(payload?.error || "Could not start payment. Please try again.");
       return;
     }
     setOrder({ orderId: payload.orderId, coins: Number(payload.coins ?? packageItem.coins), intentUri: payload.intentUri });
-    window.location.assign(payload.intentUri);
+    setPending(false);
+    if (upiWindow && !upiWindow.closed) {
+      upiWindow.location.replace(payload.intentUri);
+    } else {
+      const link = document.createElement("a");
+      link.href = payload.intentUri;
+      link.style.display = "none";
+      document.body.append(link);
+      link.click();
+      link.remove();
+    }
   }
 
   if (!open || !mounted) return null;
@@ -130,8 +148,8 @@ export function CoinTopupModal({
             <div className="payment-state success" role="status"><CheckCircle2 size={20} /> Payment confirmed. Coins added.</div>
           ) : order ? (
             <div className="payment-actions">
-              <p className="payment-state"><LoaderCircle className="spin" size={18} /> Waiting for Pay100 confirmation…</p>
-              <a className="button primary wide" href={order.intentUri}><Smartphone size={18} /> Open UPI app again</a>
+              <p className="payment-state"><LoaderCircle className="spin" size={18} /> Waiting for payment confirmation…</p>
+              <a className="button primary wide" href={order.intentUri}><Smartphone size={18} /> Choose UPI app</a>
             </div>
           ) : (
             <button className="button primary wide" type="button" onClick={() => void topup()} disabled={pending}>
