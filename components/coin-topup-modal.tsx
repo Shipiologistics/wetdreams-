@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { CheckCircle2, Coins, LoaderCircle, Smartphone, X } from "lucide-react";
 import { coinPackages, regularCoinsFor } from "@/lib/coin-packages";
 import { formatMoney } from "@/lib/format";
+import { createUpiAppLink, type UpiApp } from "@/lib/payments/upi-links";
 
 export function CoinTopupModal({
   open,
@@ -17,6 +18,7 @@ export function CoinTopupModal({
 }) {
   const [selected, setSelected] = useState(1);
   const [pending, setPending] = useState(false);
+  const [pendingApp, setPendingApp] = useState<UpiApp | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [order, setOrder] = useState<{ orderId: string; coins: number; intentUri: string } | null>(null);
   const [completed, setCompleted] = useState(false);
@@ -48,10 +50,12 @@ export function CoinTopupModal({
         const coins = Number(payload.coins ?? order!.coins);
         setCompleted(true);
         setPending(false);
+        setPendingApp(null);
         window.dispatchEvent(new CustomEvent("wetdreams:wallet-updated", { detail: { coins: balance } }));
         onComplete?.(balance, coins);
       } else if (payload?.status === "failed") {
         setPending(false);
+        setPendingApp(null);
         setError("Payment failed. No coins were added.");
       } else if (!response?.ok && payload?.error && checks > 2) {
         setError(payload.error);
@@ -73,16 +77,17 @@ export function CoinTopupModal({
     };
   }, [completed, onComplete, open, order]);
 
-  async function topup() {
+  async function topup(app: UpiApp) {
     const packageItem = coinPackages[selected];
     // Reserve a browser window while this click is still a trusted user gesture.
     // Mobile browsers often block a custom-scheme navigation after an async fetch.
     const upiWindow = window.open("", "_blank");
     if (upiWindow) {
       upiWindow.document.title = "Opening UPI";
-      upiWindow.document.body.innerHTML = '<p style="font:600 16px system-ui;padding:24px">Preparing your secure UPI payment…</p>';
+      upiWindow.document.body.innerHTML = '<p style="font:600 16px system-ui;padding:24px">Preparing your secure UPI payment...</p>';
     }
     setPending(true);
+    setPendingApp(app);
     setError(null);
     setCompleted(false);
     const response = await fetch("/api/payments/pay100/create", {
@@ -94,16 +99,19 @@ export function CoinTopupModal({
     if (!response?.ok || !payload?.orderId || !payload.intentUri) {
       upiWindow?.close();
       setPending(false);
+      setPendingApp(null);
       setError(payload?.error || "Could not start payment. Please try again.");
       return;
     }
+    const launchUri = createUpiAppLink(payload.intentUri, app);
     setOrder({ orderId: payload.orderId, coins: Number(payload.coins ?? packageItem.coins), intentUri: payload.intentUri });
     setPending(false);
+    setPendingApp(null);
     if (upiWindow && !upiWindow.closed) {
-      upiWindow.location.replace(payload.intentUri);
+      upiWindow.location.replace(launchUri);
     } else {
       const link = document.createElement("a");
-      link.href = payload.intentUri;
+      link.href = launchUri;
       link.style.display = "none";
       document.body.append(link);
       link.click();
@@ -148,13 +156,25 @@ export function CoinTopupModal({
             <div className="payment-state success" role="status"><CheckCircle2 size={20} /> Payment confirmed. Coins added.</div>
           ) : order ? (
             <div className="payment-actions">
-              <p className="payment-state"><LoaderCircle className="spin" size={18} /> Waiting for payment confirmation…</p>
-              <a className="button primary wide" href={order.intentUri}><Smartphone size={18} /> Choose UPI app</a>
+              <p className="payment-state"><LoaderCircle className="spin" size={18} /> Waiting for payment confirmation...</p>
+              <div className="upi-app-launchers">
+                <a className="button phonepe wide" href={createUpiAppLink(order.intentUri, "phonepe")}><Smartphone size={18} /> Open PhonePe</a>
+                <a className="button gpay wide" href={createUpiAppLink(order.intentUri, "gpay")}><Smartphone size={18} /> Open Google Pay</a>
+              </div>
+              <a className="button secondary wide" href={createUpiAppLink(order.intentUri, "other")}><Smartphone size={18} /> Other UPI app</a>
             </div>
           ) : (
-            <button className="button primary wide" type="button" onClick={() => void topup()} disabled={pending}>
-              {pending ? <LoaderCircle className="spin" size={18} /> : <Smartphone size={18} />} Pay ₹{formatMoney(coinPackages[selected].priceInr)} with UPI
-            </button>
+            <div className="upi-app-launchers initial">
+              <button className="button phonepe wide" type="button" onClick={() => void topup("phonepe")} disabled={pending}>
+                {pending && pendingApp === "phonepe" ? <LoaderCircle className="spin" size={18} /> : <Smartphone size={18} />} Pay ₹{formatMoney(coinPackages[selected].priceInr)} with PhonePe
+              </button>
+              <button className="button gpay wide" type="button" onClick={() => void topup("gpay")} disabled={pending}>
+                {pending && pendingApp === "gpay" ? <LoaderCircle className="spin" size={18} /> : <Smartphone size={18} />} Google Pay
+              </button>
+              <button className="button secondary wide" type="button" onClick={() => void topup("other")} disabled={pending}>
+                {pending && pendingApp === "other" ? <LoaderCircle className="spin" size={18} /> : <Smartphone size={18} />} Other UPI app
+              </button>
+            </div>
           )}
         </div>
       </div>
