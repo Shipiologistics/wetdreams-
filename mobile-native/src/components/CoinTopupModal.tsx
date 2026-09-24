@@ -1,9 +1,10 @@
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
-import {Coins, MessageCircle, X} from 'lucide-react-native';
+import {CheckCircle2, Coins, Smartphone, X} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {colors, radii, spacing} from '../theme';
 import {WetButton} from './WetButton';
+import {authenticatedGet, authenticatedPost} from '../lib/api';
 
 export const coinPackages = [
   {price: 50, coins: 45, code: 'START45', label: 'Starter'},
@@ -17,20 +18,52 @@ export function CoinTopupModal({visible, onClose, onComplete}: {visible: boolean
   const insets = useSafeAreaInsets();
   const [selected, setSelected] = useState(3);
   const [loading, setLoading] = useState(false);
+  const [payment, setPayment] = useState<{orderId: string; intentUri: string; coins: number} | null>(null);
+  const [completed, setCompleted] = useState(false);
   const pack = coinPackages[selected];
 
-  async function requestOnWhatsApp() {
+  useEffect(() => {
+    if (!visible || !payment || completed) return;
+    let cancelled = false;
+    let checks = 0;
+    async function check() {
+      checks += 1;
+      try {
+        const result = await authenticatedGet<{status: string; balance: number | null; coins: number}>(`/api/payments/pay100/status?orderId=${encodeURIComponent(payment!.orderId)}`);
+        if (cancelled) return;
+        if (result.status === 'success') {
+          setCompleted(true);
+          setLoading(false);
+          onComplete?.(result.coins);
+        } else if (result.status === 'failed') {
+          setLoading(false);
+          Alert.alert('Payment failed', 'No coins were added.');
+        }
+      } catch {
+        // A temporary status error is retried while the payment sheet stays open.
+      }
+    }
+    const first = setTimeout(() => void check(), 1800);
+    const interval = setInterval(() => {
+      if (checks >= 200) return clearInterval(interval);
+      void check();
+    }, 3000);
+    return () => { cancelled = true; clearTimeout(first); clearInterval(interval); };
+  }, [completed, onComplete, payment, visible]);
+
+  async function startPayment() {
     setLoading(true);
-    const text = `Hi Kizo support, I want to buy ${pack.coins} coins for Rs ${pack.price}. Code: ${pack.code}. Please credit after payment confirmation.`;
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     try {
-      await Linking.openURL(url);
-      onComplete?.(pack.coins);
-      onClose();
-    } catch {
-      Alert.alert('WhatsApp unavailable', 'Install WhatsApp or contact support to recharge coins.');
-    } finally {
+      const result = await authenticatedPost<{orderId: string; intentUri: string; coins: number}>('/api/payments/pay100/create', {packageCode: pack.code});
+      setPayment(result);
+      setCompleted(false);
+      await Linking.openURL(result.intentUri);
+    } catch (error) {
       setLoading(false);
+      Alert.alert('Payment unavailable', error instanceof Error ? error.message : 'Could not start UPI payment.');
+      return;
+    } finally {
+      if (!payment) setLoading(false);
     }
   }
 
@@ -38,8 +71,8 @@ export function CoinTopupModal({visible, onClose, onComplete}: {visible: boolean
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={[styles.modal, {paddingBottom: Math.max(insets.bottom + spacing.md, spacing.xl)}]} onPress={() => undefined}>
-          <View style={styles.header}><View><Text style={styles.eyebrow}>WhatsApp recharge</Text><Text style={styles.title}>Add coins</Text></View><Pressable onPress={onClose} style={styles.close}><X size={25} color={colors.ink} /></Pressable></View>
-          <Text style={styles.note}>Choose a pack and continue on WhatsApp. Coins are credited manually by admin after payment confirmation.</Text>
+          <View style={styles.header}><View><Text style={styles.eyebrow}>Secure UPI payment</Text><Text style={styles.title}>Add coins</Text></View><Pressable onPress={onClose} style={styles.close}><X size={25} color={colors.ink} /></Pressable></View>
+          <Text style={styles.note}>Choose a pack, pay in any UPI app, and coins are added automatically after confirmation.</Text>
           <ScrollView contentContainerStyle={styles.packages} showsVerticalScrollIndicator={false}>
             {coinPackages.map((item, index) => (
               <Pressable key={item.price} onPress={() => setSelected(index)} style={[styles.pack, selected === index && styles.packSelected]}>
@@ -50,7 +83,10 @@ export function CoinTopupModal({visible, onClose, onComplete}: {visible: boolean
               </Pressable>
             ))}
           </ScrollView>
-          <WetButton title={`Request on WhatsApp`} onPress={() => void requestOnWhatsApp()} loading={loading} icon={<MessageCircle size={19} color={colors.white} />} />
+          {completed ? <View style={styles.success}><CheckCircle2 size={20} color={colors.success} /><Text style={styles.successText}>Payment confirmed. Coins added.</Text></View> : payment ? <>
+            <Text style={styles.waiting}>Waiting for Pay100 confirmation…</Text>
+            <WetButton title="Open UPI app again" onPress={() => void Linking.openURL(payment.intentUri)} icon={<Smartphone size={19} color={colors.white} />} />
+          </> : <WetButton title={`Pay ₹${pack.price} with UPI`} onPress={() => void startPayment()} loading={loading} icon={<Smartphone size={19} color={colors.white} />} />}
         </Pressable>
       </Pressable>
     </Modal>
@@ -76,4 +112,7 @@ const styles = StyleSheet.create({
   price: {fontSize: 18, fontWeight: '900', color: colors.ink},
   regular: {fontSize: 12, textDecorationLine: 'line-through', color: colors.muted},
   code: {alignSelf: 'flex-start', paddingHorizontal: spacing.sm, paddingVertical: 4, borderRadius: radii.round, color: colors.teal, fontSize: 12, fontWeight: '900', backgroundColor: colors.tealSoft},
+  waiting: {padding: spacing.sm, textAlign: 'center', color: colors.muted, fontWeight: '800'},
+  success: {minHeight: 52, padding: spacing.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, borderRadius: radii.md, backgroundColor: colors.tealSoft},
+  successText: {color: colors.success, fontWeight: '900'},
 });

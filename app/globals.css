@@ -3948,6 +3948,43 @@ body:has(.modal-backdrop) .global-back-button-fixed {
   background: #fff8de;
 }
 
+.coin-packages button.selected {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgb(244 196 95 / 18%);
+}
+
+.payment-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.payment-state {
+  min-height: 44px;
+  margin: 14px 0 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.payment-state.success {
+  border-color: rgb(55 214 136 / 40%);
+  background: rgb(55 214 136 / 10%);
+  color: var(--success);
+}
+
+.coin-topup-modal > .button.wide {
+  margin-top: 14px;
+}
+
 .coin-packages strong {
   margin-top: 4px;
   font-size: 19px;

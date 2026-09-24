@@ -193,7 +193,7 @@ export function AdminDashboard({
       user,
       currency: "coin",
       amount: "100",
-      notes: "WhatsApp recharge confirmed",
+      notes: "Manual coin credit",
     });
   }
 

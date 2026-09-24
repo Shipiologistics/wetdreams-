@@ -68,7 +68,7 @@ export function HostProfileScreen({route, navigation}: Props) {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Please try again.';
       if (errorMessage.includes('INSUFFICIENT')) {
-        Alert.alert('Add coins first', 'Open Wallet and request coins on WhatsApp.', [
+        Alert.alert('Add coins first', 'Open Wallet to buy coins with UPI.', [
           {text: 'Cancel', style: 'cancel'},
           {text: 'Open Wallet', onPress: () => navigation.navigate('Main', {screen: 'Wallet'})},
         ]);

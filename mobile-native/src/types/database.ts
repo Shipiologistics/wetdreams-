@@ -453,7 +453,11 @@ export type Database = {
           coins_requested: number
           completed_at: string | null
           created_at: string
+          expires_at: string | null
           gateway: string
+          gateway_order_id: string | null
+          gateway_request_id: string | null
+          gateway_status: string | null
           id: string
           status: string
           user_id: string
@@ -463,7 +467,11 @@ export type Database = {
           coins_requested: number
           completed_at?: string | null
           created_at?: string
+          expires_at?: string | null
           gateway?: string
+          gateway_order_id?: string | null
+          gateway_request_id?: string | null
+          gateway_status?: string | null
           id?: string
           status?: string
           user_id: string
@@ -473,7 +481,11 @@ export type Database = {
           coins_requested?: number
           completed_at?: string | null
           created_at?: string
+          expires_at?: string | null
           gateway?: string
+          gateway_order_id?: string | null
+          gateway_request_id?: string | null
+          gateway_status?: string | null
           id?: string
           status?: string
           user_id?: string
@@ -1199,6 +1211,15 @@ export type Database = {
         }
       }
       complete_dummy_payment: { Args: { p_intent_id: string }; Returns: number }
+      complete_pay100_payment: {
+        Args: { p_amount_inr: number; p_order_id: string }
+        Returns: {
+          already_completed: boolean
+          coins_balance: number
+          coins_credited: number
+          user_id: string
+        }[]
+      }
       create_or_get_direct_room: {
         Args: { p_target_user: string }
         Returns: string

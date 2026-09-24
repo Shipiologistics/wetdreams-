@@ -22,3 +22,19 @@ export async function authenticatedPost<T>(path: string, body: unknown): Promise
   }
   return payload as T;
 }
+
+export async function authenticatedGet<T>(path: string): Promise<T> {
+  const {data: sessionData} = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error('Please sign in again.');
+
+  const response = await fetch(`${config.appUrl}${path}`, {
+    headers: {Authorization: `Bearer ${token}`},
+  });
+  const payload = (await response.json().catch(() => null)) as T | {error?: string} | null;
+  if (!response.ok) {
+    const error = payload && typeof payload === 'object' && 'error' in payload ? payload.error : null;
+    throw new Error(error || `Request failed (${response.status}).`);
+  }
+  return payload as T;
+}

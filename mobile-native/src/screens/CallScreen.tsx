@@ -240,7 +240,7 @@ export function CallScreen({route, navigation}: Props) {
   async function sendTip(amount: number) {
     if (!call) return false;
     const {error} = await supabase.rpc('send_tip', {p_amount: amount, p_room_id: call.room_id, p_call_id: call.id});
-    if (error) { Alert.alert(error.message.includes('INSUFFICIENT') ? 'Not enough coins' : 'Tip failed', error.message.includes('INSUFFICIENT') ? 'Request coins from Wallet on WhatsApp after the call.' : error.message); return false; }
+    if (error) { Alert.alert(error.message.includes('INSUFFICIENT') ? 'Not enough coins' : 'Tip failed', error.message.includes('INSUFFICIENT') ? 'Buy coins from Wallet with UPI after the call.' : error.message); return false; }
     await refreshViewer();
     setTipText(`${amount} coin tip sent!`);
     tipScale.setValue(0);

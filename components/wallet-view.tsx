@@ -12,13 +12,12 @@ import {
   Coins,
   History,
   LoaderCircle,
-  MessageCircle,
   Plus,
   WalletCards,
   X,
 } from "lucide-react";
 import type { Database } from "@/lib/database.types";
-import { coinPackages, regularCoinsFor } from "@/lib/coin-packages";
+import { CoinTopupModal } from "@/components/coin-topup-modal";
 import { formatMoney, formatRelativeTime, messageForError } from "@/lib/format";
 import { createClient } from "@/lib/supabase/client";
 
@@ -62,15 +61,6 @@ export function WalletView({
     if (searchParams.get("buy") === "coins") router.replace("/wallet", { scroll: false });
   }
 
-  function topup(packageIndex: number) {
-    const packageItem = coinPackages[packageIndex];
-    setMessage(null);
-    const text = `Hi Kizo support, I want to buy ${packageItem.coins} coins for Rs ${packageItem.priceInr}. Code: ${packageItem.code}. Please credit after payment confirmation.`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
-    closeTopup();
-    setMessage("WhatsApp opened. Coins will be credited by admin after payment confirmation.");
-  }
-
   async function withdraw(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending("withdraw");
@@ -107,7 +97,7 @@ export function WalletView({
           <div className="balance-icon"><Coins size={24} /></div>
           <span>Coins</span>
           <strong>{formatMoney(wallet.coins_balance)}</strong>
-          <p>Recharge through WhatsApp</p>
+          <p>Instant UPI recharge</p>
           <button className="button light" type="button" onClick={() => setTopupOpen(true)}><Plus size={18} /> Add coins</button>
         </article>
         {isHost && <article className="balance-card beans-card">
@@ -179,34 +169,14 @@ export function WalletView({
         </section>
       )}
 
-      {topupOpen && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={closeTopup}>
-          <div className="modal coin-topup-modal" role="dialog" aria-modal="true" aria-labelledby="topup-title" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="modal-header"><div><span className="eyebrow">WhatsApp recharge</span><h2 id="topup-title">Add coins</h2></div><button className="icon-button" title="Close" onClick={closeTopup}><X size={20} /></button></div>
-            <p className="coin-offer-note">Choose a pack and continue on WhatsApp. Coins are credited manually by admin after payment confirmation.</p>
-            <div className="coin-packages">
-              {coinPackages.map((packageItem, index) => {
-                const regularCoins = regularCoinsFor(packageItem);
-                const hasBonus = packageItem.coins > regularCoins;
-                const bonusCoins = Math.max(0, packageItem.coins - regularCoins);
-                return (
-                  <button key={packageItem.priceInr} type="button" onClick={() => topup(index)} disabled={pending !== null}>
-                    <span className="offer-label">{packageItem.label}</span>
-                    <Coins size={20} />
-                    <strong>{formatMoney(packageItem.coins)} coins</strong>
-                    <span className="coin-price-row">
-                      <span>₹{formatMoney(packageItem.priceInr)}</span>
-                      {hasBonus && <span className="coin-bonus">+{formatMoney(bonusCoins)} bonus</span>}
-                    </span>
-                    <span className="discount-code">{packageItem.code}</span>
-                    <MessageCircle size={17} />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
+      <CoinTopupModal
+        open={topupOpen}
+        onClose={closeTopup}
+        onComplete={(_balance, coins) => {
+          setMessage(`${formatMoney(coins)} coins added successfully.`);
+          router.refresh();
+        }}
+      />
 
       {isHost && withdrawOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setWithdrawOpen(false)}>

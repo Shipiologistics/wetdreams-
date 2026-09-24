@@ -68,7 +68,7 @@ export function HostProfileActions({
       const message = errorMessage(caught, "Could not start call.");
       if (message.includes("INSUFFICIENT_BALANCE")) {
         setTopupOpen(true);
-        setError("Request coins on WhatsApp to start this call.");
+        setError("Buy coins with UPI to start this call.");
       } else {
         setError(messageForError(message));
       }
@@ -94,7 +94,7 @@ export function HostProfileActions({
       <CoinTopupModal
         open={topupOpen}
         onClose={() => setTopupOpen(false)}
-        onComplete={() => setError("WhatsApp opened. Admin will credit coins after payment confirmation.")}
+        onComplete={(_balance, coins) => setError(`${coins} coins added successfully.`)}
       />
     </div>
   );

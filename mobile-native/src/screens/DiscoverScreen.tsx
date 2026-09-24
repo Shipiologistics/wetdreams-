@@ -154,7 +154,7 @@ export function DiscoverScreen() {
     if (roomError || !roomId) return Alert.alert('Could not start call', roomError?.message || 'Please try again.');
     const {data: callId, error} = await supabase.rpc('start_call', {p_room_id: roomId, p_call_type: type});
     if (error || !callId) {
-      if (error?.message.includes('INSUFFICIENT_BALANCE')) return Alert.alert('Add coins first', 'Open Wallet and request coins on WhatsApp.', [
+      if (error?.message.includes('INSUFFICIENT_BALANCE')) return Alert.alert('Add coins first', 'Open Wallet to buy coins with UPI.', [
         {text: 'Cancel', style: 'cancel'},
         {text: 'Open Wallet', onPress: () => navigation.navigate('Main', {screen: 'Wallet'})},
       ]);
