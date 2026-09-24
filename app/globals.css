@@ -3969,41 +3969,127 @@ body:has(.modal-backdrop) .global-back-button-fixed {
   margin-top: 14px;
 }
 
-.upi-app-launchers {
+.welcome-recharge-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  border: 1px solid rgb(46 196 182 / 34%);
+  border-radius: 8px;
+  background: rgb(46 196 182 / 10%);
+  color: var(--teal);
+  padding: 11px 12px;
+}
+
+.welcome-recharge-note > svg {
+  flex: 0 0 auto;
+}
+
+.welcome-recharge-note div {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.welcome-recharge-note strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.welcome-recharge-note span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.payment-method-section {
+  margin-top: 16px;
+}
+
+.payment-method-title {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.payment-method-picker {
+  display: grid;
   gap: 8px;
 }
 
-.upi-app-launchers.initial {
-  grid-template-columns: 1fr;
+.payment-method {
+  width: 100%;
+  min-height: 62px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 22px;
+  align-items: center;
+  gap: 11px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 8px 12px;
+  text-align: left;
 }
 
-.upi-app-launchers .button {
-  min-width: 0;
-  padding-inline: 12px;
-  text-align: center;
+.payment-method:hover:not(:disabled),
+.payment-method.selected {
+  border-color: var(--teal);
+  background: rgb(46 196 182 / 8%);
 }
 
-.button.phonepe {
-  border-color: #5f259f;
-  background: #5f259f;
-  color: #fff;
-}
-
-.button.gpay {
-  border-color: #d9dee8;
+.payment-brand-mark {
+  width: 42px;
+  height: 42px;
+  border: 1px solid #e4e7ec;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
   background: #fff;
-  color: #202124;
+  color: #222;
 }
 
-.button.phonepe:hover:not(:disabled) {
-  background: #4c1d80;
+.payment-brand-mark.gpay svg {
+  width: 25px;
+  height: 22px;
 }
 
-.button.gpay:hover:not(:disabled) {
-  border-color: #aeb8c8;
-  background: #f5f7fa;
+.payment-method-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.payment-method-copy strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.payment-method-copy small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.payment-radio {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+
+.payment-method.selected .payment-radio {
+  border-color: var(--teal);
+}
+
+.payment-method.selected .payment-radio span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--teal);
 }
 
 .payment-state {
@@ -5490,6 +5576,57 @@ body:has(.modal-backdrop) .global-back-button-fixed {
   color: var(--ink);
   font-size: 15px;
   font-weight: 800;
+}
+
+.setting-row.signup-bonus-setting {
+  grid-template-columns: minmax(0, 1fr) 190px;
+}
+
+.admin-setting-toggle {
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--canvas);
+  color: var(--muted);
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.admin-setting-toggle.active {
+  border-color: rgb(46 196 182 / 50%);
+  background: rgb(46 196 182 / 10%);
+  color: var(--teal);
+}
+
+.admin-setting-toggle-track {
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  background: var(--line);
+  padding: 3px;
+}
+
+.admin-setting-toggle-track span {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 160ms ease;
+}
+
+.admin-setting-toggle.active .admin-setting-toggle-track {
+  background: var(--teal);
+}
+
+.admin-setting-toggle.active .admin-setting-toggle-track span {
+  transform: translateX(16px);
 }
 
 .audit-list > div {

@@ -1,4 +1,5 @@
 import type {Session} from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {ReactNode} from 'react';
 import {
   AppState,
@@ -42,6 +43,9 @@ type AppContextValue = {
   deviceBanned: boolean;
   unreadNotifications: number;
   unreadChats: number;
+  welcomeRechargeCoins: number | null;
+  welcomeRechargeOpen: boolean;
+  dismissWelcomeRecharge: () => void;
   refreshViewer: () => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -55,6 +59,8 @@ export function AppProvider({children}: {children: ReactNode}) {
   const [deviceBanned, setDeviceBanned] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [unreadChats, setUnreadChats] = useState(0);
+  const [welcomeRechargeCoins, setWelcomeRechargeCoins] = useState<number | null>(null);
+  const [welcomeRechargeOpen, setWelcomeRechargeOpen] = useState(false);
   const sessionRef = useRef<Session | null>(null);
   const signupBonusClaimRef = useRef<string | null>(null);
   sessionRef.current = session;
@@ -133,9 +139,15 @@ export function AppProvider({children}: {children: ReactNode}) {
     if (!session) return;
     if (signupBonusClaimRef.current !== session.user.id) {
       signupBonusClaimRef.current = session.user.id;
-      authenticatedPost<{credited: boolean}>('/api/wallet/signup-bonus', {})
-        .then((result) => {
+      authenticatedPost<{credited: boolean; coins?: number; showRechargePrompt?: boolean}>('/api/wallet/signup-bonus', {})
+        .then(async (result) => {
           if (result.credited) void refreshViewer();
+          if (!result.showRechargePrompt || !Number.isFinite(result.coins)) return;
+          const promptKey = `kizo:welcome-recharge:${session.user.id}`;
+          if (await AsyncStorage.getItem(promptKey)) return;
+          await AsyncStorage.setItem(promptKey, 'shown');
+          setWelcomeRechargeCoins(Number(result.coins));
+          setWelcomeRechargeOpen(true);
         })
         .catch(() => undefined);
     }
@@ -201,11 +213,15 @@ export function AppProvider({children}: {children: ReactNode}) {
       p_user_agent: 'Kizo React Native Android',
     });
     await supabase.auth.signOut();
+    setWelcomeRechargeOpen(false);
+    setWelcomeRechargeCoins(null);
   }, []);
 
+  const dismissWelcomeRecharge = useCallback(() => setWelcomeRechargeOpen(false), []);
+
   const value = useMemo<AppContextValue>(
-    () => ({session, viewer, loading, deviceBanned, unreadNotifications, unreadChats, refreshViewer, signOut}),
-    [session, viewer, loading, deviceBanned, unreadNotifications, unreadChats, refreshViewer, signOut],
+    () => ({session, viewer, loading, deviceBanned, unreadNotifications, unreadChats, welcomeRechargeCoins, welcomeRechargeOpen, dismissWelcomeRecharge, refreshViewer, signOut}),
+    [session, viewer, loading, deviceBanned, unreadNotifications, unreadChats, welcomeRechargeCoins, welcomeRechargeOpen, dismissWelcomeRecharge, refreshViewer, signOut],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

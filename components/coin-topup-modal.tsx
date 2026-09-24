@@ -1,24 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { CheckCircle2, Coins, LoaderCircle, Smartphone, X } from "lucide-react";
 import { coinPackages, regularCoinsFor } from "@/lib/coin-packages";
 import { formatMoney } from "@/lib/format";
 import { createUpiAppLink, type UpiApp } from "@/lib/payments/upi-links";
+import { GooglePayIcon, PhonePeIcon } from "@/components/payment-brand-icons";
 
 export function CoinTopupModal({
   open,
   onClose,
   onComplete,
+  welcomeCoins,
 }: {
   open: boolean;
   onClose: () => void;
   onComplete?: (balance: number, coins: number) => void;
+  welcomeCoins?: number;
 }) {
   const [selected, setSelected] = useState(0);
+  const [paymentApp, setPaymentApp] = useState<UpiApp>("phonepe");
   const [pending, setPending] = useState(false);
-  const [pendingApp, setPendingApp] = useState<UpiApp | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [order, setOrder] = useState<{ orderId: string; coins: number; intentUri: string } | null>(null);
   const [completed, setCompleted] = useState(false);
@@ -50,12 +53,10 @@ export function CoinTopupModal({
         const coins = Number(payload.coins ?? order!.coins);
         setCompleted(true);
         setPending(false);
-        setPendingApp(null);
         window.dispatchEvent(new CustomEvent("wetdreams:wallet-updated", { detail: { coins: balance } }));
         onComplete?.(balance, coins);
       } else if (payload?.status === "failed") {
         setPending(false);
-        setPendingApp(null);
         setError("Payment failed. No coins were added.");
       } else if (!response?.ok && payload?.error && checks > 2) {
         setError(payload.error);
@@ -87,7 +88,6 @@ export function CoinTopupModal({
       upiWindow.document.body.innerHTML = '<p style="font:600 16px system-ui;padding:24px">Preparing your secure UPI payment...</p>';
     }
     setPending(true);
-    setPendingApp(app);
     setError(null);
     setCompleted(false);
     const response = await fetch("/api/payments/pay100/create", {
@@ -99,14 +99,12 @@ export function CoinTopupModal({
     if (!response?.ok || !payload?.orderId || !payload.intentUri) {
       upiWindow?.close();
       setPending(false);
-      setPendingApp(null);
       setError(payload?.error || "Could not start payment. Please try again.");
       return;
     }
     const launchUri = createUpiAppLink(payload.intentUri, app);
     setOrder({ orderId: payload.orderId, coins: Number(payload.coins ?? packageItem.coins), intentUri: payload.intentUri });
     setPending(false);
-    setPendingApp(null);
     if (upiWindow && !upiWindow.closed) {
       upiWindow.location.replace(launchUri);
     } else {
@@ -119,16 +117,30 @@ export function CoinTopupModal({
     }
   }
 
+  function openExistingPayment() {
+    if (!order) return;
+    window.location.assign(createUpiAppLink(order.intentUri, paymentApp));
+  }
+
   if (!open || !mounted) return null;
 
   return createPortal(
     <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
       <div className="modal compact-modal coin-topup-modal" role="dialog" aria-modal="true" aria-labelledby="quick-topup-title" onMouseDown={(event) => event.stopPropagation()}>
         <div className="modal-header">
-          <div><span className="eyebrow">Secure UPI payment</span><h2 id="quick-topup-title">Add coins</h2></div>
+          <div>
+            <span className="eyebrow">{welcomeCoins ? "Welcome bonus added" : "Secure UPI payment"}</span>
+            <h2 id="quick-topup-title">{welcomeCoins ? "Recharge now" : "Add coins"}</h2>
+          </div>
           <button className="icon-button" title="Close" type="button" onClick={onClose}><X size={20} /></button>
         </div>
         <div className="coin-topup-scroll">
+          {welcomeCoins ? (
+            <div className="welcome-recharge-note">
+              <Coins size={21} />
+              <div><strong>{formatMoney(welcomeCoins)} free coins are ready</strong><span>Your first recharge starts at ₹100.</span></div>
+            </div>
+          ) : null}
           <p className="coin-offer-note">Choose a pack, pay in any UPI app, and your coins will be credited automatically after confirmation.</p>
           <div className="coin-packages">
             {coinPackages.map((packageItem, index) => {
@@ -149,30 +161,18 @@ export function CoinTopupModal({
               );
             })}
           </div>
+          <PaymentMethodPicker selected={paymentApp} onSelect={setPaymentApp} disabled={pending} />
         </div>
         <div className="coin-topup-footer">
           {error && <p className="card-error" role="alert">{error}</p>}
           {completed ? (
             <div className="payment-state success" role="status"><CheckCircle2 size={20} /> Payment confirmed. Coins added.</div>
-          ) : order ? (
-            <div className="payment-actions">
-              <p className="payment-state"><LoaderCircle className="spin" size={18} /> Waiting for payment confirmation...</p>
-              <div className="upi-app-launchers">
-                <a className="button phonepe wide" href={createUpiAppLink(order.intentUri, "phonepe")}><Smartphone size={18} /> Open PhonePe</a>
-                <a className="button gpay wide" href={createUpiAppLink(order.intentUri, "gpay")}><Smartphone size={18} /> Open Google Pay</a>
-              </div>
-              <a className="button secondary wide" href={createUpiAppLink(order.intentUri, "other")}><Smartphone size={18} /> Other UPI app</a>
-            </div>
           ) : (
-            <div className="upi-app-launchers initial">
-              <button className="button phonepe wide" type="button" onClick={() => void topup("phonepe")} disabled={pending}>
-                {pending && pendingApp === "phonepe" ? <LoaderCircle className="spin" size={18} /> : <Smartphone size={18} />} Pay ₹{formatMoney(coinPackages[selected].priceInr)} with PhonePe
-              </button>
-              <button className="button gpay wide" type="button" onClick={() => void topup("gpay")} disabled={pending}>
-                {pending && pendingApp === "gpay" ? <LoaderCircle className="spin" size={18} /> : <Smartphone size={18} />} Google Pay
-              </button>
-              <button className="button secondary wide" type="button" onClick={() => void topup("other")} disabled={pending}>
-                {pending && pendingApp === "other" ? <LoaderCircle className="spin" size={18} /> : <Smartphone size={18} />} Other UPI app
+            <div className="payment-actions">
+              {order ? <p className="payment-state"><LoaderCircle className="spin" size={18} /> Waiting for payment confirmation...</p> : null}
+              <button className="button primary wide" type="button" onClick={order ? openExistingPayment : () => void topup(paymentApp)} disabled={pending}>
+                {pending ? <LoaderCircle className="spin" size={18} /> : <SelectedPaymentIcon app={paymentApp} />}
+                {order ? `Open ${paymentAppName(paymentApp)} again` : `Pay ₹${formatMoney(coinPackages[selected].priceInr)} now`}
               </button>
             </div>
           )}
@@ -180,5 +180,56 @@ export function CoinTopupModal({
       </div>
     </div>,
     document.body,
+  );
+}
+
+function paymentAppName(app: UpiApp) {
+  if (app === "phonepe") return "PhonePe";
+  if (app === "gpay") return "Google Pay";
+  return "a UPI app";
+}
+
+function SelectedPaymentIcon({ app }: { app: UpiApp }) {
+  if (app === "phonepe") return <PhonePeIcon size={20} />;
+  if (app === "gpay") return <GooglePayIcon size={20} />;
+  return <Smartphone size={19} />;
+}
+
+function PaymentMethodPicker({
+  selected,
+  onSelect,
+  disabled,
+}: {
+  selected: UpiApp;
+  onSelect: (app: UpiApp) => void;
+  disabled: boolean;
+}) {
+  const methods: Array<{ app: UpiApp; name: string; detail: string; icon: ReactNode }> = [
+    { app: "phonepe", name: "PhonePe", detail: "Open PhonePe directly", icon: <PhonePeIcon /> },
+    { app: "gpay", name: "Google Pay", detail: "Open Google Pay directly", icon: <GooglePayIcon /> },
+    { app: "other", name: "Other UPI app", detail: "Choose another installed app", icon: <Smartphone size={24} /> },
+  ];
+
+  return (
+    <div className="payment-method-section">
+      <strong className="payment-method-title">Pay using</strong>
+      <div className="payment-method-picker" role="radiogroup" aria-label="Choose a UPI app">
+        {methods.map((method) => (
+          <button
+            key={method.app}
+            className={selected === method.app ? "payment-method selected" : "payment-method"}
+            type="button"
+            role="radio"
+            aria-checked={selected === method.app}
+            onClick={() => onSelect(method.app)}
+            disabled={disabled}
+          >
+            <span className={`payment-brand-mark ${method.app}`}>{method.icon}</span>
+            <span className="payment-method-copy"><strong>{method.name}</strong><small>{method.detail}</small></span>
+            <span className="payment-radio" aria-hidden="true"><span /></span>
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -115,6 +115,7 @@ export function AdminDashboard({
     bean_payout_ratio: String(configNumber(platformConfig, "bean_payout_ratio", 0.8)),
     free_message_limit: String(configNumber(platformConfig, "free_message_limit", 10)),
   }));
+  const [signupBonusEnabled, setSignupBonusEnabled] = useState(() => configNumber(platformConfig, "signup_bonus_enabled", 0) === 1);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -262,6 +263,25 @@ export function AdminDashboard({
       p_value: value,
       p_notes: `${label} changed to ${value}`,
     }));
+  }
+
+  async function setSignupBonus(enabled: boolean) {
+    const id = "setting-signup_bonus_enabled";
+    setPending(id);
+    setMessage(null);
+    const result = await createClient().rpc("admin_update_platform_config", {
+      p_key: "signup_bonus_enabled",
+      p_value: enabled ? 1 : 0,
+      p_notes: `Signup bonus ${enabled ? "enabled at 45 coins" : "disabled"}`,
+    });
+    setPending(null);
+    if (result.error) {
+      setMessage(messageForError(result.error.message));
+      return;
+    }
+    setSignupBonusEnabled(enabled);
+    setMessage(enabled ? "New accounts will now receive 45 signup coins." : "Signup bonus is off. New accounts will start with 0 coins.");
+    router.refresh();
   }
 
   async function signOut() {
@@ -536,6 +556,23 @@ export function AdminDashboard({
 
         {section === "settings" && (
           <div className="settings-list">
+            <div className="setting-row signup-bonus-setting">
+              <div>
+                <h3>New account signup bonus</h3>
+                <p>Default is off. When enabled, accounts created afterward receive 45 coins once.</p>
+              </div>
+              <button
+                className={clsx("admin-setting-toggle", signupBonusEnabled && "active")}
+                type="button"
+                role="switch"
+                aria-checked={signupBonusEnabled}
+                disabled={pending === "setting-signup_bonus_enabled"}
+                onClick={() => void setSignupBonus(!signupBonusEnabled)}
+              >
+                <span className="admin-setting-toggle-track"><span /></span>
+                {pending === "setting-signup_bonus_enabled" ? "Saving..." : signupBonusEnabled ? "On · 45 coins" : "Off · 0 coins"}
+              </button>
+            </div>
             {(Object.keys(settingLabels) as Array<keyof typeof settingsDraft>).map((key) => {
               const meta = settingLabels[key];
               return (

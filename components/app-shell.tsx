@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { BrandedLoader } from "@/components/branded-loader";
+import { CoinTopupModal } from "@/components/coin-topup-modal";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { Logo } from "@/components/logo";
 import { Avatar } from "@/components/avatar";
@@ -61,6 +62,8 @@ export function AppShell({
   const router = useRouter();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const [coinBalance, setCoinBalance] = useState(viewer.coins);
+  const [welcomeRechargeCoins, setWelcomeRechargeCoins] = useState<number | null>(null);
+  const [welcomeRechargeOpen, setWelcomeRechargeOpen] = useState(false);
   const [unreadChatCount, setUnreadChatCount] = useState(viewer.unreadChatCount);
   const [chatRoomIds, setChatRoomIds] = useState(() => new Set(viewer.chatRoomIds));
   const chatRoomIdsRef = useRef(chatRoomIds);
@@ -106,12 +109,33 @@ export function AppShell({
     async function claimSignupBonus() {
       const response = await fetch("/api/wallet/signup-bonus", { method: "POST" }).catch(() => null);
       if (!response?.ok) return;
-      const payload = await response.json().catch(() => null) as { credited?: boolean } | null;
-      if (payload?.credited) router.refresh();
+      const payload = await response.json().catch(() => null) as {
+        credited?: boolean;
+        balance?: number;
+        coins?: number;
+        showRechargePrompt?: boolean;
+      } | null;
+      if (payload?.credited) {
+        if (Number.isFinite(payload.balance)) setCoinBalance(Number(payload.balance));
+        router.refresh();
+      }
+      const promptKey = `kizo:welcome-recharge:${viewer.id}`;
+      if (payload?.showRechargePrompt && Number.isFinite(payload.coins) && !window.localStorage.getItem(promptKey)) {
+        setWelcomeRechargeCoins(Number(payload.coins));
+      }
     }
 
     void claimSignupBonus();
   }, [router, viewer.id]);
+
+  useEffect(() => {
+    if (!welcomeRechargeCoins || viewer.requiresLocation || viewer.requiresProfileImage) return;
+    const promptKey = `kizo:welcome-recharge:${viewer.id}`;
+    if (window.localStorage.getItem(promptKey)) return;
+    window.localStorage.setItem(promptKey, "shown");
+    const timer = window.setTimeout(() => setWelcomeRechargeOpen(true), 0);
+    return () => window.clearTimeout(timer);
+  }, [viewer.id, viewer.requiresLocation, viewer.requiresProfileImage, welcomeRechargeCoins]);
 
   useEffect(() => {
     chatRoomIdsRef.current = chatRoomIds;
@@ -271,6 +295,12 @@ export function AppShell({
       <DeviceRegistrar />
       <LocationGate required={viewer.requiresLocation} />
       <ProfileImageGate required={viewer.requiresProfileImage} />
+      <CoinTopupModal
+        open={welcomeRechargeOpen}
+        onClose={() => setWelcomeRechargeOpen(false)}
+        welcomeCoins={welcomeRechargeCoins ?? undefined}
+        onComplete={(balance) => setCoinBalance(balance)}
+      />
       <aside className="side-nav">
         <div className="side-nav-head">
           <Logo />

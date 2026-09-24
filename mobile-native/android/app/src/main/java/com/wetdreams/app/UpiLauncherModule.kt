@@ -13,7 +13,10 @@ class UpiLauncherModule(private val reactContext: ReactApplicationContext) : Rea
 
   @ReactMethod
   fun open(intentUri: String, promise: Promise) {
-    if (!intentUri.startsWith("upi://pay?")) {
+    val supportedUri = intentUri.startsWith("upi://pay?") ||
+      intentUri.startsWith("phonepe://pay?") ||
+      intentUri.startsWith("gpay://upi/pay?")
+    if (!supportedUri) {
       promise.reject("INVALID_UPI_URI", "The payment provider returned an invalid UPI link.")
       return
     }
@@ -27,8 +30,11 @@ class UpiLauncherModule(private val reactContext: ReactApplicationContext) : Rea
     activity.runOnUiThread {
       try {
         val paymentIntent = Intent(Intent.ACTION_VIEW, Uri.parse(intentUri))
-        val chooser = Intent.createChooser(paymentIntent, "Pay with UPI")
-        activity.startActivity(chooser)
+        if (intentUri.startsWith("upi://pay?")) {
+          activity.startActivity(Intent.createChooser(paymentIntent, "Pay with UPI"))
+        } else {
+          activity.startActivity(paymentIntent)
+        }
         promise.resolve(null)
       } catch (_: ActivityNotFoundException) {
         promise.reject("NO_UPI_APP", "No UPI payment app is installed on this phone.")

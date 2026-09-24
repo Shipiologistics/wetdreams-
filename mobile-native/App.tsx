@@ -7,6 +7,7 @@ import {StatusBar, StyleSheet, Text, View} from 'react-native';
 import {Compass, HeartHandshake, MessageCircle, UserRound, WalletCards} from 'lucide-react-native';
 import {SafeAreaProvider, SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {BrandedLoader} from './src/components/BrandedLoader';
+import {CoinTopupModal} from './src/components/CoinTopupModal';
 import {IncomingCallListener} from './src/components/IncomingCallListener';
 import {ProfileImageGate} from './src/components/ProfileImageGate';
 import {handleNotificationEvent, consumeInitialNotification} from './src/lib/notifications';
@@ -72,7 +73,7 @@ function MainTabs() {
 }
 
 function AppNavigator() {
-  const {session, viewer, loading, deviceBanned} = useApp();
+  const {session, viewer, loading, deviceBanned, welcomeRechargeCoins, welcomeRechargeOpen, dismissWelcomeRecharge, refreshViewer} = useApp();
   if (loading || (session && !viewer)) return <BrandedLoader label="Preparing Kizo" />;
   if (deviceBanned) return <BannedScreen />;
 
@@ -97,6 +98,14 @@ function AppNavigator() {
         )}
       </Stack.Navigator>
       {session ? <IncomingCallListener /> : null}
+      {session ? (
+        <CoinTopupModal
+          visible={welcomeRechargeOpen}
+          welcomeCoins={welcomeRechargeCoins ?? undefined}
+          onClose={dismissWelcomeRecharge}
+          onComplete={() => void refreshViewer()}
+        />
+      ) : null}
       {session ? <ProfileImageGate /> : null}
     </>
   );
