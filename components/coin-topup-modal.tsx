@@ -16,7 +16,7 @@ export function CoinTopupModal({
   onClose: () => void;
   onComplete?: (balance: number, coins: number) => void;
 }) {
-  const [selected, setSelected] = useState(1);
+  const [selected, setSelected] = useState(0);
   const [pending, setPending] = useState(false);
   const [pendingApp, setPendingApp] = useState<UpiApp | null>(null);
   const [error, setError] = useState<string | null>(null);

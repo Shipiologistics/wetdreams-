@@ -7,10 +7,10 @@ import {WetButton} from './WetButton';
 import {authenticatedGet, authenticatedPost} from '../lib/api';
 
 export const coinPackages = [
-  {price: 50, coins: 45, code: 'START45', label: 'Starter'},
-  {price: 100, coins: 110, code: 'BONUS10', label: 'Popular'},
+  {price: 100, coins: 110, code: 'BONUS10', label: 'Starter'},
   {price: 250, coins: 285, code: 'PLUS35', label: 'Value'},
   {price: 500, coins: 580, code: 'BOOST80', label: 'Best deal'},
+  {price: 750, coins: 850, code: 'SUPER100', label: 'Super saver'},
   {price: 1000, coins: 1200, code: 'MEGA200', label: 'Max bonus'},
 ] as const;
 
@@ -26,7 +26,7 @@ async function openUpiApp(intentUri: string) {
 
 export function CoinTopupModal({visible, onClose, onComplete}: {visible: boolean; onClose: () => void; onComplete?: (coins: number) => void}) {
   const insets = useSafeAreaInsets();
-  const [selected, setSelected] = useState(3);
+  const [selected, setSelected] = useState(0);
   const [loading, setLoading] = useState(false);
   const [payment, setPayment] = useState<{orderId: string; intentUri: string; coins: number} | null>(null);
   const [completed, setCompleted] = useState(false);

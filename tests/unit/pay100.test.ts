@@ -6,6 +6,8 @@ const orderId = "KZ-0123456789ABCDEF0123456789ABCDEF";
 describe("Pay100 payment validation", () => {
   it("accepts only server-defined coin packages", () => {
     expect(findCoinPackage("BONUS10")).toMatchObject({ priceInr: 100, coins: 110 });
+    expect(findCoinPackage("SUPER100")).toMatchObject({ priceInr: 750, coins: 850 });
+    expect(findCoinPackage("START45")).toBeNull();
     expect(findCoinPackage("FAKE5000")).toBeNull();
   });
 
